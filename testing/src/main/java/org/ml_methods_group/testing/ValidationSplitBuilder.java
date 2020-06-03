@@ -27,15 +27,15 @@ public class ValidationSplitBuilder implements Iterable<Map.Entry<Dataset, Datas
     @Override
     public Iterator<Map.Entry<Dataset, Dataset>> iterator() {
         final List<Integer> sessions = holder.getSolutions().stream()
-                .map(Solution::getSessionId)
+                .map(Solution::getId)
                 .collect(Collectors.toList());
         Collections.shuffle(sessions, random);
         final List<Map.Entry<Dataset, Dataset>> buffer = new ArrayList<>();
         final int n = holder.size() / k;
         for (int i = 0; i < k; i++) {
             final Set<Integer> ids = new HashSet<>(sessions.subList(i * n, (i + 1) * n));
-            final Dataset validate = dataset.filter(x -> ids.contains(x.getSessionId()));
-            final Dataset train = dataset.filter(x -> !ids.contains(x.getSessionId()));
+            final Dataset validate = dataset.filter(x -> ids.contains(x.getId()));
+            final Dataset train = dataset.filter(x -> !ids.contains(x.getId()));
             buffer.add(Map.entry(train, validate));
         }
         return buffer.iterator();

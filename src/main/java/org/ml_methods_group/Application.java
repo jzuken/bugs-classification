@@ -28,9 +28,7 @@ import org.ml_methods_group.parsing.JavaCodeValidator;
 import org.ml_methods_group.parsing.ParsingUtils;
 import org.ml_methods_group.testing.extractors.CachedFeaturesExtractor;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -94,36 +92,66 @@ public class Application {
 
     public static void parse(Path data, Path storage, int problemId) throws IOException {
         try (InputStream input = new FileInputStream(data.toFile())) {
-            final Dataset dataset = ParsingUtils.parse(input, new JavaCodeValidator(), x -> x == problemId);
+            final Dataset dataset = ParsingUtils.parse(input);
             ProtobufSerializationUtils.storeDataset(dataset, storage);
         }
     }
 
     public static void cluster(Path data, Path storage) throws IOException {
         final Dataset dataset = ProtobufSerializationUtils.loadDataset(data);
-        final ASTGenerator astGenerator = new CachedASTGenerator(new NamesASTNormalizer());
+        final ASTGenerator astGenerator =
+                new CachedASTGenerator(
+                        null
+                        //new NamesASTNormalizer()
+                );
         final ChangeGenerator changeGenerator = new BasicChangeGenerator(astGenerator);
-        final Unifier<Solution> unifier = new BasicUnifier<>(
-                CommonUtils.compose(astGenerator::buildTree, ITree::getHash)::apply,
-                CommonUtils.checkEquals(astGenerator::buildTree, ASTUtils::deepEquals),
-                new MinValuePicker<>(Comparator.comparingInt(Solution::getSolutionId)));
-        final OptionSelector<Solution, Solution> selector = new ClosestPairSelector<>(
-                unifier.unify(dataset.getValues(CommonUtils.check(Solution::getVerdict, OK::equals))),
-                new HeuristicChangesBasedDistanceFunction(changeGenerator));
-        final var extractor = new CachedFeaturesExtractor<>(
-                new ChangesExtractor(changeGenerator, selector),
-                Solution::getSolutionId);
-        final var changes = dataset.getValues(CommonUtils.check(Solution::getVerdict, FAIL::equals))
-                .stream()
-                .map(extractor::process)
-                .collect(Collectors.toList());
+        final var solutionGroups = dataset.getValues().stream().collect(Collectors.groupingBy(Solution::getId));
+
+        var changes = new ArrayList<Changes>();
+
+        for (var solutionGroup : solutionGroups.values()) {
+
+            Solution rightOne =
+                    solutionGroup
+                            .stream()
+                            .filter(x -> x.getVerdict() == OK)
+                            .findFirst()
+                            .orElseThrow(RuntimeException::new);
+
+            changes.addAll(
+                    solutionGroup
+                            .stream()
+                            .filter(x -> x.getVerdict() == FAIL)
+                            .map(x -> changeGenerator.getChanges(x, rightOne))
+                            .collect(Collectors.toList()));
+        }
+
         final var bowExtractor = getBOWExtractor(20000, changes);
         final Clusterer<Changes> clusterer = new CompositeClusterer<>(bowExtractor, new HAC<>(
                 0.3,
                 1,
                 CommonUtils.metricFor(BOWExtractor::cosineDistance, Wrapper::getFeatures)));
         final var clusters = clusterer.buildClusters(changes);
-        ProtobufSerializationUtils.storeChangesClusters(clusters, storage);
+        SaveClustersToReadableFormat(clusters, storage);
+        //ProtobufSerializationUtils.storeChangesClusters(clusters, storage);
+    }
+
+    private static void SaveClustersToReadableFormat(Clusters<Changes> clusters, Path storage) throws IOException {
+        Clusters<Integer> idClusters = clusters.map(x -> x.getOrigin().getId());
+
+        FileOutputStream fileStream = new FileOutputStream(storage.toFile(), false);
+
+        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fileStream));
+
+        for (var cluster : idClusters.getClusters()) {
+            for (Integer id : cluster.getElements()) {
+                bw.write(id.toString());
+                bw.newLine();
+            }
+            bw.newLine();
+        }
+
+        bw.close();
     }
 
     public static void mark(Path data, Path dst, int numExamples, int numClusters) throws IOException {
@@ -140,7 +168,7 @@ public class Application {
                 for (int i = 0; i < Math.min(numExamples, solutions.size()); i++) {
                     final var solution = solutions.get(i);
                     System.out.println("    Example #" + i);
-                    System.out.println("    Session id: " + solution.getOrigin().getSessionId());
+                    System.out.println("    Id: " + solution.getOrigin().getId());
                     System.out.println(solution.getOrigin().getCode());
                     System.out.println();
                     System.out.println("    Submission fix:");

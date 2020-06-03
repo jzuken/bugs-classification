@@ -74,10 +74,10 @@ public class MarkerScript {
                 System.out.println("Next submission:");
                 var closest = selector.selectOption(solution).orElseGet(Solution::new);
                 System.out.println("Closest correct submission:");
-                System.out.println(closest.getSessionId());
+                System.out.println(closest.getId());
                 System.out.println(closest.getCode());
                 System.out.println("Submission:");
-                System.out.println(solution.getSessionId());
+                System.out.println(solution.getId());
                 System.out.println(solution.getCode());
                 System.out.println("Changes:");
                 changesGenerator.getChanges(solution, closest).getChanges()

@@ -17,7 +17,7 @@ public class ManualSolutionMarker extends AbstractManualMarker<Solution, String>
 
     @Override
     protected String valueToString(Solution value) {
-        return "Session id:  " + value.getSessionId() + System.lineSeparator() +
+        return "Id:  " + value.getId() + System.lineSeparator() +
                 "Solution id: " + value.getSolutionId() + System.lineSeparator() +
                 "Code:" + System.lineSeparator() +
                 value.getCode() + System.lineSeparator();

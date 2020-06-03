@@ -27,13 +27,13 @@ public class NamedDatasetsCreator {
     }
 
 
-    private static void extract(int problemId, String name,
+    private static void extract(int id, String name,
                                Dataset train, Dataset test) throws IOException {
         ProtobufSerializationUtils.storeDataset(
-                train.filter(solution -> solution.getProblemId() == problemId),
+                train.filter(solution -> solution.getId() == id),
                 PATH_TO_DATASET.resolve(name).resolve("train.tmp"));
         ProtobufSerializationUtils.storeDataset(
-                test.filter(solution -> solution.getProblemId() == problemId),
+                test.filter(solution -> solution.getId() == id),
                 PATH_TO_DATASET.resolve(name).resolve("test.tmp"));
 
 

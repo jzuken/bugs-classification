@@ -22,14 +22,14 @@ public class TrainTestDatasetCreator {
         final Random random = new Random(seed);
         final Dataset dataset;
         try (InputStream fis = TrainTestDatasetCreator.class.getResourceAsStream("/dataset2.csv")) {
-            dataset = ParsingUtils.parse(fis, new JavaCodeValidator(), x -> true);
+            dataset = ParsingUtils.parse(fis);
         }
         final var incorrectIds = new LinkedHashMap<Integer, Set<Integer>>();
         final var correctIds = new LinkedHashMap<Integer, Set<Integer>>();
         for (Solution solution : dataset.getValues()) {
             final var tmp = solution.getVerdict() == FAIL ? incorrectIds : correctIds;
-            tmp.computeIfAbsent(solution.getProblemId(), x -> new LinkedHashSet<>())
-                    .add(solution.getSessionId());
+            tmp.computeIfAbsent(solution.getId(), x -> new LinkedHashSet<>())
+                    .add(solution.getId());
         }
         final var testSet = new HashSet<Integer>();
         for (var problemId : correctIds.keySet()) {
@@ -44,10 +44,10 @@ public class TrainTestDatasetCreator {
             testSet.addAll(permutation.subList(0, testSetSize));
         }
         ProtobufSerializationUtils.storeDataset(
-                dataset.filter(x -> testSet.contains(x.getSessionId())),
+                dataset.filter(x -> testSet.contains(x.getId())),
                 EvaluationInfo.PATH_TO_DATASET.resolve("test_dataset.tmp"));
         ProtobufSerializationUtils.storeDataset(
-                dataset.filter(x -> !testSet.contains(x.getSessionId())),
+                dataset.filter(x -> !testSet.contains(x.getId())),
                 EvaluationInfo.PATH_TO_DATASET.resolve("train_dataset.tmp"));
     }
 }

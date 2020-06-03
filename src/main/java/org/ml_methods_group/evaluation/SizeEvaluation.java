@@ -77,7 +77,7 @@ public class SizeEvaluation {
                     final List<Integer> sessions = fairSortSessions(dataset, seed);
                     for (int size : sizes) {
                         final Set<Integer> trainSessions = new HashSet<>(sessions.subList(0, Math.min(size, sessions.size())));
-                        final Dataset train = dataset.filter(x -> trainSessions.contains(x.getSessionId()));
+                        final Dataset train = dataset.filter(x -> trainSessions.contains(x.getId()));
                         final List<Solution> correct = train.getValues(x -> x.getVerdict() == OK);
                         final List<Solution> incorrect = train.getValues(x -> x.getVerdict() == FAIL);
                         final OptionSelector<Solution, Solution> selector = new CacheOptionSelector<>(
@@ -126,7 +126,7 @@ public class SizeEvaluation {
     public static List<Integer> fairSortSessions(Dataset dataset, long seed) {
         final List<Integer> sessions = dataset.getValues()
                 .stream()
-                .map(Solution::getSessionId)
+                .map(Solution::getId)
                 .distinct()
                 .sorted()
                 .collect(Collectors.toCollection(ArrayList::new));

@@ -34,14 +34,14 @@ public class ValidateSplitter {
             final Dataset dataset = ProtobufSerializationUtils.loadDataset(
                     PATH_TO_DATASET.resolve(problem).resolve("train.tmp"));
             final List<Integer> sessions = holder.getSolutions().stream()
-                    .map(Solution::getSessionId)
+                    .map(Solution::getId)
                     .collect(Collectors.toList());
             Collections.shuffle(sessions, new Random(seed));
             final int n = holder.size() / k;
             for (int i = 0; i < k; i++) {
                 final Set<Integer> ids = new HashSet<>(sessions.subList(i * n, (i + 1) * n));
-                final Dataset validate = dataset.filter(x -> ids.contains(x.getSessionId()));
-                final Dataset train = dataset.filter(x -> !ids.contains(x.getSessionId()));
+                final Dataset validate = dataset.filter(x -> ids.contains(x.getId()));
+                final Dataset train = dataset.filter(x -> !ids.contains(x.getId()));
                 ProtobufSerializationUtils.storeDataset(validate, PATH_TO_DATASET.resolve(problem).resolve("validation")
                         .resolve("step_" + i).resolve("validate.tmp"));
                 ProtobufSerializationUtils.storeDataset(train, PATH_TO_DATASET.resolve(problem).resolve("validation")

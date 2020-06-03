@@ -5,19 +5,17 @@ import java.io.Serializable;
 
 public class Solution implements Serializable {
     private final String code;
-    private final int problemId;
-    private final int sessionId;
+    private final int id;
     private final int solutionId;
     private final Verdict verdict;
 
     public Solution() {
-        this(null, 0, 0, 0, null);
+        this(null, 0, 0, null);
     }
 
-    public Solution(String code, int problemId, int sessionId, int solutionId, Verdict verdict) {
+    public Solution(String code, int id, int solutionId, Verdict verdict) {
         this.code = code;
-        this.problemId = problemId;
-        this.sessionId = sessionId;
+        this.id = id;
         this.solutionId = solutionId;
         this.verdict = verdict;
     }
@@ -26,12 +24,8 @@ public class Solution implements Serializable {
         return code;
     }
 
-    public int getProblemId() {
-        return problemId;
-    }
-
-    public int getSessionId() {
-        return sessionId;
+    public int getId() {
+        return id;
     }
 
     public Verdict getVerdict() {
@@ -59,7 +53,7 @@ public class Solution implements Serializable {
 
     @Override
     public String toString() {
-        return "Solution (session id: " + sessionId +
+        return "Solution (id: " + id +
                 ", solution id: " + solutionId +
                 ", verdict: " + verdict + ")";
     }
@@ -71,8 +65,7 @@ public class Solution implements Serializable {
 
         Solution solution = (Solution) o;
 
-        if (problemId != solution.problemId) return false;
-        if (sessionId != solution.sessionId) return false;
+        if (id != solution.id) return false;
         if (solutionId != solution.solutionId) return false;
         if (!code.equals(solution.code)) return false;
         return verdict == solution.verdict;
@@ -81,8 +74,7 @@ public class Solution implements Serializable {
     @Override
     public int hashCode() {
         int result = code.hashCode();
-        result = 31 * result + problemId;
-        result = 31 * result + sessionId;
+        result = 31 * result + id;
         result = 31 * result + solutionId;
         result = 31 * result + verdict.hashCode();
         return result;

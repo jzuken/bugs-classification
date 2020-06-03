@@ -1,7 +1,7 @@
 package org.ml_methods_group.common.ast.generation;
 
 import com.github.gumtreediff.gen.TreeGenerator;
-import com.github.gumtreediff.gen.jdt.JdtTreeGenerator;
+import com.github.gumtreediff.gen.srcml.SrcmlCTreeGenerator;
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.TreeContext;
 import org.ml_methods_group.common.Solution;
@@ -16,7 +16,7 @@ public class BasicASTGenerator implements ASTGenerator {
 
     public BasicASTGenerator(ASTNormalizer normalizer) {
         this.normalizer = normalizer;
-        generator = new JdtTreeGenerator();
+        generator = new SrcmlCTreeGenerator();
     }
 
     public BasicASTGenerator() {

@@ -32,7 +32,7 @@ public class ManualClusterMarker extends AbstractManualMarker<Cluster<Solution>,
         buffer.stream()
                 .limit(elementsBound)
                 .forEach(solution -> {
-                    builder.append("Session id: ").append(solution.getSessionId()).append(System.lineSeparator());
+                    builder.append("Id: ").append(solution.getId()).append(System.lineSeparator());
                     builder.append(solution.getCode()).append(System.lineSeparator()).append(System.lineSeparator());
                 });
         return builder.toString();

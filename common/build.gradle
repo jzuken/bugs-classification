@@ -34,6 +34,7 @@ dependencies {
     compile 'io.grpc:grpc-protobuf:1.0.0-pre2'
     // https://mvnrepository.com/artifact/com.github.gumtreediff/gen.jdt
     compile group: 'com.github.gumtreediff', name: 'gen.jdt', version: '2.1.0'
+    compile group: 'com.github.gumtreediff', name: 'gen.srcml', version: '2.1.0'
     // https://mvnrepository.com/artifact/com.github.javaparser/javaparser-core
     compile group: 'com.github.javaparser', name: 'javaparser-core', version: '3.6.15'
 

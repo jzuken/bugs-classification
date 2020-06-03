@@ -30,10 +30,10 @@ public class SolutionMarksHolderExpander {
         out.println("Next submission:");
         var closest = selector.selectOption(solution).orElseGet(Solution::new);
         out.println("Closest correct submission:");
-        out.println(closest.getSessionId());
+        out.println(closest.getId());
         out.println(closest.getCode());
         out.println("Submission:");
-        out.println(solution.getSessionId());
+        out.println(solution.getId());
         out.println(solution.getCode());
         out.println("Changes:");
         changesGenerator.getChanges(solution, closest).getChanges()

@@ -18,8 +18,7 @@ public class ProtoToEntityUtils {
     public static Solution transform(ProtoSolution proto) {
         return new Solution(
                 proto.getCode(),
-                proto.getProblemId(),
-                proto.getSessionId(),
+                proto.getId(),
                 proto.getSolutionId(),
                 Solution.Verdict.valueOf(proto.getVerdict())
         );

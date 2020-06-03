@@ -18,9 +18,8 @@ public class ManualSolutionValidator extends AbstractManualValidator<Solution, S
     @Override
     protected String valueToString(Solution value) {
         return "Solution:" + System.lineSeparator() +
-                "\tSession id: \t" + value.getSessionId() + System.lineSeparator() +
+                "\tId: \t" + value.getId() + System.lineSeparator() +
                 "\tSolution id:\t" + value.getSolutionId() + System.lineSeparator() +
-                "\tProblem id: \t" + value.getProblemId() + System.lineSeparator() +
                 "\tVerdict:    \t" + value.getVerdict() + System.lineSeparator() +
                 value.getCode() + System.lineSeparator() +
                 "-----------------------------------------------------------------";

@@ -30,7 +30,7 @@ public class ParseAllDiffs {
         final List<Solution> incorrect = dataset.getValues(check(Solution::getVerdict, FAIL::equals));
         final Map<Integer, Solution> correct = dataset.getValues(check(Solution::getVerdict, OK::equals))
                 .stream()
-                .collect(Collectors.toMap(Solution::getSessionId, Function.identity()));
+                .collect(Collectors.toMap(Solution::getId, Function.identity()));
         System.out.println("Loaded");
         final ChangeGenerator generator = new BasicChangeGenerator(new CachedASTGenerator(new NamesASTNormalizer()));
         int cnt = 0;
@@ -42,7 +42,7 @@ public class ParseAllDiffs {
                     System.out.println(100.0 * cnt / incorrect.size());
                 }
 
-                final Solution after = correct.get(before.getSessionId());
+                final Solution after = correct.get(before.getId());
                 if (after == null) {
                     continue;
                 }

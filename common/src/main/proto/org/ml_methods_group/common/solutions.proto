@@ -6,10 +6,9 @@ option java_multiple_files = true;
 
 message ProtoSolution {
     string code = 1;
-    int32 problem_id = 2;
-    int32 session_id = 3;
-    int32 solution_id = 4;
-    int32 verdict = 5;
+    int32 id = 2;
+    int32 solution_id = 3;
+    int32 verdict = 4;
 }
 
 message ProtoNodeState {

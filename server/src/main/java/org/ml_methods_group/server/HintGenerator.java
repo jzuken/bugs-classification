@@ -140,7 +140,7 @@ public class HintGenerator {
 
     private Optional<Solution> asSolution(HintRequest request) {
         return validator.validate(request.getCode())
-                .map(code -> new Solution(code, request.getProblem(), -1, -1, FAIL));
+                .map(code -> new Solution(code, request.getProblem(), -1, FAIL));
     }
 
     public static void main(String[] args) throws IOException {

@@ -16,8 +16,7 @@ public class EntityToProtoUtils {
     public static ProtoSolution transform(Solution solution) {
         return ProtoSolution.newBuilder()
                 .setCode(solution.getCode())
-                .setProblemId(solution.getProblemId())
-                .setSessionId(solution.getSessionId())
+                .setId(solution.getId())
                 .setSolutionId(solution.getSolutionId())
                 .setVerdict(solution.getVerdict().ordinal())
                 .build();
