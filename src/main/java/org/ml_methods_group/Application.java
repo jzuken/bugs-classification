@@ -46,14 +46,13 @@ public class Application {
         }
         switch (args[0]) {
             case "parse":
-                if (args.length != 4) {
+                if (args.length != 3) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
                             "    Path to .csv file with submissions" + System.lineSeparator() +
-                            "    Path to file to store parsed solutions" + System.lineSeparator() +
-                            "    ID of problem (integer)" + System.lineSeparator());
+                            "    Path to file to store parsed solutions" + System.lineSeparator());
                     return;
                 }
-                parse(Paths.get(args[1]), Paths.get(args[2]), Integer.parseInt(args[3]));
+                parse(Paths.get(args[1]), Paths.get(args[2]));
                 break;
             case "cluster":
                 if (args.length != 3) {
@@ -90,7 +89,7 @@ public class Application {
         }
     }
 
-    public static void parse(Path data, Path storage, int problemId) throws IOException {
+    public static void parse(Path data, Path storage) throws IOException {
         try (InputStream input = new FileInputStream(data.toFile())) {
             final Dataset dataset = ParsingUtils.parse(input);
             ProtobufSerializationUtils.storeDataset(dataset, storage);

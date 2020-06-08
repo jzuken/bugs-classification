@@ -7,6 +7,8 @@ import org.ml_methods_group.common.Solution.Verdict;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,11 +30,14 @@ public class ParsingUtils {
             if (code.isEmpty()) {
                 continue;
             }
+
+            String codeText = Files.readString(Paths.get(code));
+
             final Verdict verdict = parser.getBoolean(Column.VERDICT) ? OK : FAIL;
             final int solutionId = (id << 1) | verdict.ordinal();
 
             final Solution solution = new Solution(
-                        code,
+                        codeText,
                         id,
                         solutionId,
                         verdict);
