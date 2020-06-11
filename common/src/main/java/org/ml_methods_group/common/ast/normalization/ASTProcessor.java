@@ -4,6 +4,7 @@ import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.TreeContext;
 import org.ml_methods_group.common.ast.NodeType;
 
+import java.security.InvalidParameterException;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -21,7 +22,15 @@ public abstract class ASTProcessor {
     }
 
     protected ITree visit(ITree node) {
-        final NodeType type = NodeType.valueOf(node.getType());
+        NodeType type;
+        try {
+            type = NodeType.valueOf(node.getType());
+        } catch (InvalidParameterException ex) {
+            throw new IllegalStateException(
+                    String.format("Node type is not found for node:\n%s\n context:\n%s",
+                            node.toPrettyString(context),
+                            context.toString()));
+        }
         if (type == null) {
             throw new IllegalStateException();
         }
@@ -223,8 +232,13 @@ public abstract class ASTProcessor {
                 return visitMyMethodInvocationArguments(node);
             case MY_VARIABLE_NAME:
                 return visitMyVariableName(node);
+
+            case C_BLOCK:
+                return visitCBlock(node);
+            case C_NAME:
+                return visitCName(node);
             default:
-                throw new RuntimeException("Unexpected node type");
+                return defaultVisit(node);
         }
     }
 
@@ -617,6 +631,14 @@ public abstract class ASTProcessor {
     }
 
     protected ITree visitMyVariableName(ITree node) {
+        return defaultVisit(node);
+    }
+
+    protected ITree visitCName(ITree node) {
+        return defaultVisit(node);
+    }
+
+    protected ITree visitCBlock(ITree node) {
         return defaultVisit(node);
     }
 

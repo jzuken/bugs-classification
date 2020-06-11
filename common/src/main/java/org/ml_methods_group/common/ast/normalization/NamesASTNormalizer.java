@@ -2,18 +2,17 @@ package org.ml_methods_group.common.ast.normalization;
 
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.TreeContext;
+import org.ml_methods_group.common.ast.NodeType;
 import org.ml_methods_group.common.ast.changes.MetadataKeys;
 
-import java.util.ArrayDeque;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class NamesASTNormalizer extends BasicASTNormalizer {
     public void normalize(TreeContext context, String code) {
-        context.setRoot(new NamesProcessor(context, code).visit(context.getRoot()));
+        NamesProcessor processor = new NamesProcessor(context, code);
+        context.setRoot(processor.visit(context.getRoot()));
         context.validate();
     }
 
@@ -22,6 +21,8 @@ public class NamesASTNormalizer extends BasicASTNormalizer {
         private final Map<String, Integer> totalCounters = new HashMap<>();
         private final ArrayDeque<Map<String, Integer>> counters = new ArrayDeque<>();
         private final String code;
+
+        private final Set<String> cNames = new HashSet<>();
 
         NamesProcessor(TreeContext context, String code) {
             super(context, code);
@@ -82,6 +83,39 @@ public class NamesASTNormalizer extends BasicASTNormalizer {
             node.setLabel(getVariableAlias(oldLabel));
             node.setMetadata(MetadataKeys.ORIGINAL_NAME, oldLabel);
             return super.visitMyVariableName(node);
+        }
+
+        @Override
+        protected ITree visitCBlock(ITree node) {
+            pushLayer();
+            var result = super.visitCBlock(node);
+            popLayer();
+            return result;
+        }
+
+        @Override
+        protected ITree visitCName(ITree node) {
+            int type = node.getParent().getType();
+            List<Integer> wrongTypes =
+                    List.of(
+                            NodeType.C_TYPE,
+                            NodeType.C_FUNCTION,
+                            NodeType.C_CALL
+                    ).stream().map(NodeType::getId).collect(Collectors.toList());
+            if (!wrongTypes.contains(type)) {
+                if (node.getParent().getType() == NodeType.C_DECL.getId()
+                        && node.getParent().getChild(0).getType() == NodeType.C_TYPE.getId()) {
+                    List<String> typeParts = node.getParent().getChild(0).getChildren().stream().map(ITree::getLabel).collect(Collectors.toList());
+                    String typeLabel = String.join("_", typeParts);
+                    register(node.getLabel(), typeLabel);
+                }
+
+                if (getVariableAlias(node.getLabel()) != null) {
+                    node.setLabel(getVariableAlias(node.getLabel()));
+                }
+
+            }
+            return super.visitCName(node);
         }
     }
 }

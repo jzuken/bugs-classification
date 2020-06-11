@@ -100,8 +100,8 @@ public class Application {
         final Dataset dataset = ProtobufSerializationUtils.loadDataset(data);
         final ASTGenerator astGenerator =
                 new CachedASTGenerator(
-                        null
-                        //new NamesASTNormalizer()
+                        //null
+                        new NamesASTNormalizer()
                 );
         final ChangeGenerator changeGenerator = new BasicChangeGenerator(astGenerator);
         final var solutionGroups = dataset.getValues().stream().collect(Collectors.groupingBy(Solution::getId));

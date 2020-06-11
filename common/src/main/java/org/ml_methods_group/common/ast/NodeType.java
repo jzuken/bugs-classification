@@ -151,7 +151,9 @@ public enum NodeType {
     C_NAME(3373707),
     C_ARGUMENT_LIST(-40060704),
     C_PARAMETER_LIST(1133090676),
-    C_RETURN(-934396624);
+    C_RETURN(-934396624),
+    C_PRAGMA(-980228804),
+    C_STRUCT(-891974699);
 
     private int id = 0;
 
