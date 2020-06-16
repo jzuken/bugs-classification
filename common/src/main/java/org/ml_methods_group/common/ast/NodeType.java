@@ -3,9 +3,8 @@ package org.ml_methods_group.common.ast;
 
 import java.security.InvalidParameterException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.*;
+import java.util.stream.Collectors;
 
 public enum NodeType {
     NONE(0),
@@ -161,6 +160,10 @@ public enum NodeType {
 
     private static Map<Integer, NodeType> buffer = null;
 
+    static {
+        buffer = Arrays.stream(values()).collect(Collectors.toMap(NodeType::getId, x -> x));
+    }
+
     private NodeType(int id) {
         this();
         this.id = id;
@@ -185,12 +188,6 @@ public enum NodeType {
     }
 
     public static NodeType valueOf(int id) {
-        // not thread-safe
-        if (buffer == null) {
-            buffer = Arrays.stream(values()).collect(Collectors.toMap(NodeType::getId, x -> x));
-
-        }
-
         if (id == -1) return null;
 
         if (buffer.containsKey(id)) return buffer.get(id);

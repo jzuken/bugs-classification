@@ -3,6 +3,7 @@ package org.ml_methods_group;
 import com.github.gumtreediff.matchers.CompositeMatchers;
 import com.github.gumtreediff.matchers.MappingStore;
 import com.github.gumtreediff.tree.ITree;
+import com.github.gumtreediff.utils.Pair;
 import org.ml_methods_group.clustering.clusterers.CompositeClusterer;
 import org.ml_methods_group.clustering.clusterers.HAC;
 import org.ml_methods_group.common.*;
@@ -24,7 +25,6 @@ import org.ml_methods_group.common.preparation.Unifier;
 import org.ml_methods_group.common.preparation.basic.BasicUnifier;
 import org.ml_methods_group.common.preparation.basic.MinValuePicker;
 import org.ml_methods_group.common.serialization.ProtobufSerializationUtils;
-import org.ml_methods_group.parsing.JavaCodeValidator;
 import org.ml_methods_group.parsing.ParsingUtils;
 import org.ml_methods_group.testing.extractors.CachedFeaturesExtractor;
 
@@ -32,6 +32,7 @@ import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.ml_methods_group.common.Solution.Verdict.FAIL;
@@ -55,13 +56,17 @@ public class Application {
                 parse(Paths.get(args[1]), Paths.get(args[2]));
                 break;
             case "cluster":
-                if (args.length != 3) {
+                if (args.length < 3 || args.length > 5) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
                             "    Path to file which store parsed solutions" + System.lineSeparator() +
-                            "    Path to file to store clusters" + System.lineSeparator());
+                            "    Path to file to store clusters" + System.lineSeparator() +
+                            "    [Optional] --parallel to execute changes generation in parallel" + System.lineSeparator() +
+                            "    [Optional] --rename to rename variable names for to generic names" + System.lineSeparator());
                     return;
                 }
-                cluster(Paths.get(args[1]), Paths.get(args[2]));
+                cluster(Paths.get(args[1]), Paths.get(args[2]),
+                        Arrays.asList(args).contains("--parallel"),
+                        Arrays.asList(args).contains("--rename"));
                 break;
             case "mark":
                 if (args.length != 5) {
@@ -96,17 +101,13 @@ public class Application {
         }
     }
 
-    public static void cluster(Path data, Path storage) throws IOException {
+    public static void cluster(Path data, Path storage, boolean parallel, boolean rename) throws IOException {
+        var baseTime = System.currentTimeMillis();
         final Dataset dataset = ProtobufSerializationUtils.loadDataset(data);
-        final ASTGenerator astGenerator =
-                new CachedASTGenerator(
-                        //null
-                        new NamesASTNormalizer()
-                );
-        final ChangeGenerator changeGenerator = new BasicChangeGenerator(astGenerator);
+
         final var solutionGroups = dataset.getValues().stream().collect(Collectors.groupingBy(Solution::getId));
 
-        var changes = new ArrayList<Changes>();
+        List<Pair<Solution, Solution>> solutions = new ArrayList<>();
 
         for (var solutionGroup : solutionGroups.values()) {
 
@@ -117,13 +118,44 @@ public class Application {
                             .findFirst()
                             .orElseThrow(RuntimeException::new);
 
-            changes.addAll(
+            solutions.addAll(
                     solutionGroup
                             .stream()
                             .filter(x -> x.getVerdict() == FAIL)
-                            .map(x -> changeGenerator.getChanges(x, rightOne))
+                            .map(x -> new Pair<Solution, Solution>(x, rightOne))
                             .collect(Collectors.toList()));
         }
+
+
+        var diff = (System.currentTimeMillis() - baseTime) / 1000.0;
+        System.out.println(diff + ": Dataset and code files are loaded, " + solutions.size() + " tasks are formed");
+
+        AtomicInteger completed = new AtomicInteger(0);
+
+        final var solutionsStream = parallel ? solutions.parallelStream() : solutions.stream();
+
+        List<Changes> changes =
+                solutionsStream
+                        .map(x -> {
+                            final ASTGenerator astGenerator =
+                                    new CachedASTGenerator(
+                                            rename ? null : new NamesASTNormalizer()
+                                    );
+                            final ChangeGenerator changeGenerator = new BasicChangeGenerator(astGenerator);
+                            final var change = changeGenerator.getChanges(x.first, x.second);
+
+                            var localCompleted = completed.incrementAndGet();
+                            if (localCompleted % 100 == 0) {
+                                var threadDiff = (System.currentTimeMillis() - baseTime) / 1000.0;
+                                System.out.println(threadDiff + ": " + localCompleted + " tasks are done");
+                            }
+
+                            return change;
+                        })
+                        .collect(Collectors.toList());
+
+        diff = (System.currentTimeMillis() - baseTime) / 1000.0;
+        System.out.println(diff + ": All changes are processed, starting clustering");
 
         final var bowExtractor = getBOWExtractor(20000, changes);
         final Clusterer<Changes> clusterer = new CompositeClusterer<>(bowExtractor, new HAC<>(
@@ -131,8 +163,13 @@ public class Application {
                 1,
                 CommonUtils.metricFor(BOWExtractor::cosineDistance, Wrapper::getFeatures)));
         final var clusters = clusterer.buildClusters(changes);
+
+        diff = (System.currentTimeMillis() - baseTime) / 1000.0;
+        System.out.println(diff + ": Clusters are formed, saving results");
         SaveClustersToReadableFormat(clusters, storage);
         //ProtobufSerializationUtils.storeChangesClusters(clusters, storage);
+        diff = (System.currentTimeMillis() - baseTime) / 1000.0;
+        System.out.println(diff + ": Finished");
     }
 
     private static void SaveClustersToReadableFormat(Clusters<Changes> clusters, Path storage) throws IOException {
