@@ -29,6 +29,7 @@ import org.ml_methods_group.parsing.ParsingUtils;
 import org.ml_methods_group.testing.extractors.CachedFeaturesExtractor;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -46,6 +47,23 @@ public class Application {
             return;
         }
         switch (args[0]) {
+            case "create":
+                if (args.length < 5 || args.length > 6 || args.length == 6 && !Arrays.asList(args).contains("--rename")) {
+                    System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
+                            "    Problem id" + System.lineSeparator() +
+                            "    Path to code file before changes" + System.lineSeparator() +
+                            "    Path to code file after changes" + System.lineSeparator() +
+                            "    Path to file to store edit script" + System.lineSeparator() +
+                            "    [Optional] --rename to rename variable names to generic names" + System.lineSeparator());
+                    return;
+                }
+                createEditScript(
+                        Integer.parseInt(args[1]),
+                        Paths.get(args[2]),
+                        Paths.get(args[3]),
+                        Paths.get(args[4]),
+                        Arrays.asList(args).contains("--rename"));
+                break;
             case "parse":
                 if (args.length != 3) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
@@ -55,13 +73,22 @@ public class Application {
                 }
                 parse(Paths.get(args[1]), Paths.get(args[2]));
                 break;
+            case "clusterFolder":
+                if (args.length != 3) {
+                    System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
+                            "    Path to folder with edit scripts" + System.lineSeparator() +
+                            "    Path to file to store clusters" + System.lineSeparator());
+                    return;
+                }
+                clusterFolder(Paths.get(args[1]), Paths.get(args[2]));
+                break;
             case "cluster":
                 if (args.length < 3 || args.length > 5) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
                             "    Path to file which store parsed solutions" + System.lineSeparator() +
                             "    Path to file to store clusters" + System.lineSeparator() +
                             "    [Optional] --parallel to execute changes generation in parallel" + System.lineSeparator() +
-                            "    [Optional] --rename to rename variable names for to generic names" + System.lineSeparator());
+                            "    [Optional] --rename to rename variable names to generic names" + System.lineSeparator());
                     return;
                 }
                 cluster(Paths.get(args[1]), Paths.get(args[2]),
@@ -101,6 +128,48 @@ public class Application {
         }
     }
 
+    public static void createEditScript(int id, Path fromFile, Path toFile, Path outputFile, boolean rename) throws IOException {
+        final var fromCode = Files.readString(fromFile);
+        final int wrongSolutionId = (id << 1) | FAIL.ordinal();
+        final var fromSolution = new Solution(fromCode, id, wrongSolutionId, FAIL);
+
+        final var toCode = Files.readString(toFile);
+        final int rightSolutionId = (id << 1) | OK.ordinal();
+        final var toSolution = new Solution(toCode, id, rightSolutionId, OK);
+
+        final Changes change = getChanges(rename, fromSolution, toSolution);
+
+        ObjectOutputStream objectOutputStream = new ObjectOutputStream(
+                new FileOutputStream(outputFile.toString()));
+
+        objectOutputStream.writeObject(change);
+        objectOutputStream.close();
+    }
+
+    public static void clusterFolder(Path sourceFolder, Path storage) throws IOException {
+        var baseTime = System.currentTimeMillis();
+        var paths = Files.walk(sourceFolder);
+
+        var changes = paths
+                .filter(Files::isRegularFile)
+                .map(x -> {
+                    try {
+                        var objectInputStream = new ObjectInputStream(
+                                new FileInputStream(x.toString()));
+                        Object result = objectInputStream.readObject();
+                        objectInputStream.close();
+                        return result instanceof Changes ? (Changes) result : null;
+                    } catch (IOException | ClassNotFoundException e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        System.out.println(getDiff(baseTime) + ": Changes folder processed, " + changes.size() + " edit scripts are loaded");
+        doClustering(storage, baseTime, changes);
+    }
+
     public static void cluster(Path data, Path storage, boolean parallel, boolean rename) throws IOException {
         var baseTime = System.currentTimeMillis();
         final Dataset dataset = ProtobufSerializationUtils.loadDataset(data);
@@ -127,8 +196,7 @@ public class Application {
         }
 
 
-        var diff = (System.currentTimeMillis() - baseTime) / 1000.0;
-        System.out.println(diff + ": Dataset and code files are loaded, " + solutions.size() + " tasks are formed");
+        System.out.println(getDiff(baseTime) + ": Dataset and code files are loaded, " + solutions.size() + " tasks are formed");
 
         AtomicInteger completed = new AtomicInteger(0);
 
@@ -137,16 +205,11 @@ public class Application {
         List<Changes> changes =
                 solutionsStream
                         .map(x -> {
-                            final ASTGenerator astGenerator =
-                                    new CachedASTGenerator(
-                                            rename ? null : new NamesASTNormalizer()
-                                    );
-                            final ChangeGenerator changeGenerator = new BasicChangeGenerator(astGenerator);
-                            final var change = changeGenerator.getChanges(x.first, x.second);
+                            final Changes change = getChanges(rename, x.first, x.second);
 
                             var localCompleted = completed.incrementAndGet();
                             if (localCompleted % 100 == 0) {
-                                var threadDiff = (System.currentTimeMillis() - baseTime) / 1000.0;
+                                var threadDiff = getDiff(baseTime);
                                 System.out.println(threadDiff + ": " + localCompleted + " tasks are done");
                             }
 
@@ -154,9 +217,12 @@ public class Application {
                         })
                         .collect(Collectors.toList());
 
-        diff = (System.currentTimeMillis() - baseTime) / 1000.0;
-        System.out.println(diff + ": All changes are processed, starting clustering");
+        System.out.println(getDiff(baseTime) + ": All changes are processed, starting clustering");
 
+        doClustering(storage, baseTime, changes);
+    }
+
+    private static void doClustering(Path storage, long baseTime, List<Changes> changes) throws IOException {
         final var bowExtractor = getBOWExtractor(20000, changes);
         final Clusterer<Changes> clusterer = new CompositeClusterer<>(bowExtractor, new HAC<>(
                 0.3,
@@ -164,15 +230,12 @@ public class Application {
                 CommonUtils.metricFor(BOWExtractor::cosineDistance, Wrapper::getFeatures)));
         final var clusters = clusterer.buildClusters(changes);
 
-        diff = (System.currentTimeMillis() - baseTime) / 1000.0;
-        System.out.println(diff + ": Clusters are formed, saving results");
-        SaveClustersToReadableFormat(clusters, storage);
-        //ProtobufSerializationUtils.storeChangesClusters(clusters, storage);
-        diff = (System.currentTimeMillis() - baseTime) / 1000.0;
-        System.out.println(diff + ": Finished");
+        System.out.println(getDiff(baseTime) + ": Clusters are formed, saving results");
+        saveClustersToReadableFormat(clusters, storage);
+        System.out.println(getDiff(baseTime) + ": Finished");
     }
 
-    private static void SaveClustersToReadableFormat(Clusters<Changes> clusters, Path storage) throws IOException {
+    private static void saveClustersToReadableFormat(Clusters<Changes> clusters, Path storage) throws IOException {
         Clusters<Integer> idClusters = clusters.map(x -> x.getOrigin().getId());
 
         FileOutputStream fileStream = new FileOutputStream(storage.toFile(), false);
@@ -329,5 +392,18 @@ public class Application {
                 codeChanges,
                 wordsLimit);
         return new BOWExtractor<>(dict, extractors).extend(Changes::getChanges);
+    }
+
+    private static double getDiff(long baseTime) {
+        return (System.currentTimeMillis() - baseTime) / 1000.0;
+    }
+
+    private static Changes getChanges(boolean rename, Solution fromSolution, Solution toSolution) {
+        final ASTGenerator astGenerator =
+                new CachedASTGenerator(
+                        rename ? null : new NamesASTNormalizer()
+                );
+        final ChangeGenerator changeGenerator = new BasicChangeGenerator(astGenerator);
+        return changeGenerator.getChanges(fromSolution, toSolution);
     }
 }
