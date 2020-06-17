@@ -90,7 +90,7 @@ public class HintGenerator {
         final Unifier<Solution> unifier = new BasicUnifier<>(
                 CommonUtils.compose(treeGenerator::buildTree, ITree::getHash)::apply,
                 CommonUtils.checkEquals(treeGenerator::buildTree, ASTUtils::deepEquals),
-                new MinValuePicker<>(Comparator.comparingInt(Solution::getSolutionId)));
+                new MinValuePicker<>(Comparator.comparing(Solution::getSolutionId)));
         final var heuristicExtractor = new HeuristicASTRepresentationExtractor();
         final var selector = new HeuristicClosestPairSelector<>(
                 treeGenerator::buildTree,
@@ -140,7 +140,7 @@ public class HintGenerator {
 
     private Optional<Solution> asSolution(HintRequest request) {
         return validator.validate(request.getCode())
-                .map(code -> new Solution(code, request.getProblem(), -1, FAIL));
+                .map(code -> new Solution(code, ((Integer)request.getProblem()).toString(), "-1", FAIL));
     }
 
     public static void main(String[] args) throws IOException {

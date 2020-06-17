@@ -53,7 +53,7 @@ public class MarkerScript {
                     new BasicUnifier<>(
                             CommonUtils.compose(generator::buildTree, ITree::getHash)::apply,
                             CommonUtils.checkEquals(generator::buildTree, ASTUtils::deepEquals),
-                            new MinValuePicker<>(Comparator.comparingInt(Solution::getSolutionId)));
+                            new MinValuePicker<>(Comparator.comparing(Solution::getSolutionId)));
             final DistanceFunction<Solution> metric =
                     new HeuristicChangesBasedDistanceFunction(changesGenerator);
             final List<Solution> correct = dataset.getValues(s -> s.getVerdict() == OK);

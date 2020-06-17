@@ -5,15 +5,15 @@ import java.io.Serializable;
 
 public class Solution implements Serializable {
     private final String code;
-    private final int id;
-    private final int solutionId;
+    private final String id;
+    private final String solutionId;
     private final Verdict verdict;
 
     public Solution() {
-        this(null, 0, 0, null);
+        this(null, "0", "0", null);
     }
 
-    public Solution(String code, int id, int solutionId, Verdict verdict) {
+    public Solution(String code, String id, String solutionId, Verdict verdict) {
         this.code = code;
         this.id = id;
         this.solutionId = solutionId;
@@ -24,7 +24,7 @@ public class Solution implements Serializable {
         return code;
     }
 
-    public int getId() {
+    public String getId() {
         return id;
     }
 
@@ -32,7 +32,7 @@ public class Solution implements Serializable {
         return verdict;
     }
 
-    public int getSolutionId() {
+    public String getSolutionId() {
         return solutionId;
     }
 
@@ -65,8 +65,8 @@ public class Solution implements Serializable {
 
         Solution solution = (Solution) o;
 
-        if (id != solution.id) return false;
-        if (solutionId != solution.solutionId) return false;
+        if (!id.equals(solution.id)) return false;
+        if (!solutionId.equals(solution.solutionId)) return false;
         if (!code.equals(solution.code)) return false;
         return verdict == solution.verdict;
     }
@@ -74,8 +74,8 @@ public class Solution implements Serializable {
     @Override
     public int hashCode() {
         int result = code.hashCode();
-        result = 31 * result + id;
-        result = 31 * result + solutionId;
+        result = 31 * result + id.hashCode();
+        result = 31 * result + solutionId.hashCode();
         result = 31 * result + verdict.hashCode();
         return result;
     }

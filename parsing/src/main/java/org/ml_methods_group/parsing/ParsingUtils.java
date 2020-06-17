@@ -21,11 +21,11 @@ import static org.ml_methods_group.common.Solution.Verdict.OK;
 public class ParsingUtils {
     public static Dataset parse(InputStream stream) throws IOException {
         CSVParser<Column> parser = new CSVParser<>(stream, Column::byName, Column.class);
-        final Map<Integer, Solution> lastSolution = new HashMap<>();
+        final Map<String, Solution> lastSolution = new HashMap<>();
 
         while (parser.hasNextLine()) {
             parser.nextLine();
-            final int id = parser.getInt(Column.ID);
+            final String id = parser.getToken(Column.ID);
             String code = parser.getToken(Column.CODE);
             if (code.isEmpty()) {
                 continue;
@@ -34,7 +34,7 @@ public class ParsingUtils {
             String codeText = Files.readString(Paths.get(code));
 
             final Verdict verdict = parser.getBoolean(Column.VERDICT) ? OK : FAIL;
-            final int solutionId = (id << 1) | verdict.ordinal();
+            final String solutionId = id + verdict.ordinal();
 
             final Solution solution = new Solution(
                         codeText,

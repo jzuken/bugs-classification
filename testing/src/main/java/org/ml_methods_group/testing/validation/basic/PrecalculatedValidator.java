@@ -11,9 +11,9 @@ import java.util.*;
 
 public class PrecalculatedValidator implements Validator<Solution, String>, Serializable {
 
-    private final Map<Integer, Set<String>> validMarks;
+    private final Map<String, Set<String>> validMarks;
 
-    public PrecalculatedValidator(Map<Integer, Set<String>> validMarks) {
+    public PrecalculatedValidator(Map<String, Set<String>> validMarks) {
         this.validMarks = validMarks;
     }
 
@@ -36,7 +36,7 @@ public class PrecalculatedValidator implements Validator<Solution, String>, Seri
 
     public static PrecalculatedValidator create(List<Solution> solutions) {
         try (Scanner scanner = new Scanner(System.in)) {
-            final Map<Integer, Set<String>> result = new HashMap<>();
+            final Map<String, Set<String>> result = new HashMap<>();
             boolean addMode = true;
             for (Solution solution : solutions) {
                 final Set<String> marks = result.computeIfAbsent(solution.getSolutionId(), x -> new HashSet<>());

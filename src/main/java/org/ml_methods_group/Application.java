@@ -58,7 +58,7 @@ public class Application {
                     return;
                 }
                 createEditScript(
-                        Integer.parseInt(args[1]),
+                        args[1],
                         Paths.get(args[2]),
                         Paths.get(args[3]),
                         Paths.get(args[4]),
@@ -128,13 +128,13 @@ public class Application {
         }
     }
 
-    public static void createEditScript(int id, Path fromFile, Path toFile, Path outputFile, boolean rename) throws IOException {
+    public static void createEditScript(String id, Path fromFile, Path toFile, Path outputFile, boolean rename) throws IOException {
         final var fromCode = Files.readString(fromFile);
-        final int wrongSolutionId = (id << 1) | FAIL.ordinal();
+        final String wrongSolutionId = id + FAIL.ordinal();
         final var fromSolution = new Solution(fromCode, id, wrongSolutionId, FAIL);
 
         final var toCode = Files.readString(toFile);
-        final int rightSolutionId = (id << 1) | OK.ordinal();
+        final String rightSolutionId = id + OK.ordinal();
         final var toSolution = new Solution(toCode, id, rightSolutionId, OK);
 
         final Changes change = getChanges(rename, fromSolution, toSolution);
@@ -236,17 +236,14 @@ public class Application {
     }
 
     private static void saveClustersToReadableFormat(Clusters<Changes> clusters, Path storage) throws IOException {
-        Clusters<Integer> idClusters = clusters.map(x -> x.getOrigin().getId());
+        Clusters<String> idClusters = clusters.map(x -> x.getOrigin().getId());
 
         FileOutputStream fileStream = new FileOutputStream(storage.toFile(), false);
 
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fileStream));
 
         for (var cluster : idClusters.getClusters()) {
-            for (Integer id : cluster.getElements()) {
-                bw.write(id.toString());
-                bw.newLine();
-            }
+            bw.write(String.join(" ", cluster.getElements()));
             bw.newLine();
         }
 
@@ -302,7 +299,7 @@ public class Application {
         final Unifier<Solution> unifier = new BasicUnifier<>(
                 CommonUtils.compose(astGenerator::buildTree, ITree::getHash)::apply,
                 CommonUtils.checkEquals(astGenerator::buildTree, ASTUtils::deepEquals),
-                new MinValuePicker<>(Comparator.comparingInt(Solution::getSolutionId)));
+                new MinValuePicker<>(Comparator.comparing(Solution::getSolutionId)));
         final OptionSelector<Solution, Solution> selector = new ClosestPairSelector<>(
                 unifier.unify(dataset.getValues(CommonUtils.check(Solution::getVerdict, OK::equals))),
                 new HeuristicChangesBasedDistanceFunction(changeGenerator));

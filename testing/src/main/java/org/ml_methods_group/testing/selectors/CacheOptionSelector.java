@@ -11,23 +11,22 @@ import java.util.stream.Collectors;
 
 public class CacheOptionSelector<V, O> implements OptionSelector<V, O> {
 
-    private final Repository<Integer, Integer> repository;
+    private final Repository<String, String> repository;
 
-    private final Map<Integer, O> options;
+    private final Map<String, O> options;
     private final OptionSelector<V, O> oracle;
-    private final ToIntFunction<V> valueIdExtractor;
-    private final ToIntFunction<O> optionIdExtractor;
+    private final Function<V, String> valueIdExtractor;
+    private final Function<O, String> optionIdExtractor;
 
     public CacheOptionSelector(OptionSelector<V, O> oracle, Database database,
-                               ToIntFunction<V> valueIdExtractor, ToIntFunction<O> optionIdExtractor) throws Exception {
+                               Function<V, String> valueIdExtractor, Function<O, String> optionIdExtractor) throws Exception {
         this.options = oracle.getOptions().stream()
-                .collect(Collectors.toMap(optionIdExtractor::applyAsInt, Function.identity()));
+                .collect(Collectors.toMap(optionIdExtractor, Function.identity()));
         long hash = oracle.getOptions().stream()
-                .mapToInt(optionIdExtractor)
+                .map(optionIdExtractor)
                 .sorted()
-                .asLongStream()
-                .reduce(0, (h, x) -> h * 37 + x);
-        this.repository = database.repositoryForName("option_selector@" + hash, Integer.class, Integer.class);
+                .reduce("", (h, l) -> h +l).hashCode();
+        this.repository = database.repositoryForName("option_selector@" + hash, String.class, String.class);
         this.oracle = oracle;
         this.valueIdExtractor = valueIdExtractor;
         this.optionIdExtractor = optionIdExtractor;
@@ -41,8 +40,8 @@ public class CacheOptionSelector<V, O> implements OptionSelector<V, O> {
 
     @Override
     public Optional<O> selectOption(V value) {
-        final int valueId = valueIdExtractor.applyAsInt(value);
-        if (valueId < 0) {
+        final String valueId = valueIdExtractor.apply(value);
+        if (valueId.equals("-1")) {
             return oracle.selectOption(value);
         }
         final Optional<O> cache = repository.loadValue(valueId).map(options::get);
@@ -50,7 +49,7 @@ public class CacheOptionSelector<V, O> implements OptionSelector<V, O> {
             return cache;
         }
         final Optional<O> option = oracle.selectOption(value);
-        option.map(optionIdExtractor::applyAsInt)
+        option.map(optionIdExtractor::apply)
                 .ifPresent(id -> repository.storeValue(valueId, id));
         return option;
     }

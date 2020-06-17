@@ -55,7 +55,7 @@ public class PipelineEvaluation {
             final Unifier<Solution> unifier = new BasicUnifier<>(
                     CommonUtils.compose(astGenerator::buildTree, ITree::getHash)::apply,
                     CommonUtils.checkEquals(astGenerator::buildTree, ASTUtils::deepEquals),
-                    new MinValuePicker<>(Comparator.comparingInt(Solution::getSolutionId)));
+                    new MinValuePicker<>(Comparator.comparing(Solution::getSolutionId)));
             System.out.println("Start problem: " + problem);
             final DistanceFunction<Solution> metric =
                     new HeuristicChangesBasedDistanceFunction(changeGenerator);

@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class HeuristicChangesBasedDistanceFunction implements DistanceFunction<Solution> {
-    private final Map<Integer, SoftReference<int[]>> counters = new ConcurrentHashMap<>();
+    private final Map<String, SoftReference<int[]>> counters = new ConcurrentHashMap<>();
     private final Map<Integer, Integer> indexes = new ConcurrentHashMap<>();
     private final ChangeGenerator generator;
     private volatile int indexGenerator = 0;
@@ -52,7 +52,7 @@ public class HeuristicChangesBasedDistanceFunction implements DistanceFunction<S
                     .mapToInt(ITree::getType)
                     .map(type -> indexes.computeIfAbsent(type, x -> indexGenerator++))
                     .forEach(index -> result[index]++);
-            if (solution.getSolutionId() != -1) {
+            if (!solution.getSolutionId().equals("-1")) {
                 counters.put(solution.getSolutionId(), new SoftReference<>(result));
             }
             return result;

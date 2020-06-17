@@ -28,7 +28,7 @@ public class ParseAllDiffs {
         final Dataset dataset = ProtobufSerializationUtils.loadDataset(
                 Paths.get(".cache", "datasets", "train_dataset.tmp"));
         final List<Solution> incorrect = dataset.getValues(check(Solution::getVerdict, FAIL::equals));
-        final Map<Integer, Solution> correct = dataset.getValues(check(Solution::getVerdict, OK::equals))
+        final Map<String, Solution> correct = dataset.getValues(check(Solution::getVerdict, OK::equals))
                 .stream()
                 .collect(Collectors.toMap(Solution::getId, Function.identity()));
         System.out.println("Loaded");

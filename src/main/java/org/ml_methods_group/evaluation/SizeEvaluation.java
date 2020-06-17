@@ -62,7 +62,7 @@ public class SizeEvaluation {
                     final Unifier<Solution> unifier = new BasicUnifier<>(
                             CommonUtils.compose(astGenerator::buildTree, ITree::getHash)::apply,
                             CommonUtils.checkEquals(astGenerator::buildTree, ASTUtils::deepEquals),
-                            new MinValuePicker<>(Comparator.comparingInt(Solution::getSolutionId)));
+                            new MinValuePicker<>(Comparator.comparing(Solution::getSolutionId)));
                     System.out.println("Start problem: " + problem);
                     final DistanceFunction<Solution> metric =
                             new HeuristicChangesBasedDistanceFunction(changeGenerator);
@@ -74,9 +74,9 @@ public class SizeEvaluation {
                     final ClassificationTester<Solution, String> tester = new BasicClassificationTester<>(
                             test.getValues(x -> x.getVerdict() == FAIL),
                             (solution, mark) -> testHolder.getMarks(solution).filter(x -> x.contains(mark)).isPresent());
-                    final List<Integer> sessions = fairSortSessions(dataset, seed);
+                    final List<String> sessions = fairSortSessions(dataset, seed);
                     for (int size : sizes) {
-                        final Set<Integer> trainSessions = new HashSet<>(sessions.subList(0, Math.min(size, sessions.size())));
+                        final Set<String> trainSessions = new HashSet<>(sessions.subList(0, Math.min(size, sessions.size())));
                         final Dataset train = dataset.filter(x -> trainSessions.contains(x.getId()));
                         final List<Solution> correct = train.getValues(x -> x.getVerdict() == OK);
                         final List<Solution> incorrect = train.getValues(x -> x.getVerdict() == FAIL);
@@ -123,8 +123,8 @@ public class SizeEvaluation {
     }
 
 
-    public static List<Integer> fairSortSessions(Dataset dataset, long seed) {
-        final List<Integer> sessions = dataset.getValues()
+    public static List<String> fairSortSessions(Dataset dataset, long seed) {
+        final List<String> sessions = dataset.getValues()
                 .stream()
                 .map(Solution::getId)
                 .distinct()

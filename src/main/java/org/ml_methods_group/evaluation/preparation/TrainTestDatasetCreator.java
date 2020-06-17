@@ -24,14 +24,14 @@ public class TrainTestDatasetCreator {
         try (InputStream fis = TrainTestDatasetCreator.class.getResourceAsStream("/dataset2.csv")) {
             dataset = ParsingUtils.parse(fis);
         }
-        final var incorrectIds = new LinkedHashMap<Integer, Set<Integer>>();
-        final var correctIds = new LinkedHashMap<Integer, Set<Integer>>();
+        final var incorrectIds = new LinkedHashMap<String, Set<String>>();
+        final var correctIds = new LinkedHashMap<String, Set<String>>();
         for (Solution solution : dataset.getValues()) {
             final var tmp = solution.getVerdict() == FAIL ? incorrectIds : correctIds;
             tmp.computeIfAbsent(solution.getId(), x -> new LinkedHashSet<>())
                     .add(solution.getId());
         }
-        final var testSet = new HashSet<Integer>();
+        final var testSet = new HashSet<String>();
         for (var problemId : correctIds.keySet()) {
             final var tmp = correctIds.getOrDefault(problemId, Collections.emptySet());
             final var permutation = incorrectIds.get(problemId).stream()

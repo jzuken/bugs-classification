@@ -25,7 +25,7 @@ public class SolutionMarksHolder implements Iterable<Map.Entry<Solution, List<St
 
     public List<Solution> getSolutions() {
         return marks.keySet().stream()
-                .sorted(Comparator.comparingInt(Solution::getSolutionId))
+                .sorted(Comparator.comparing(Solution::getSolutionId))
                 .collect(Collectors.toList());
     }
 

@@ -38,7 +38,7 @@ public class DatasetBuilder {
     public TrainTestSplit createTrainTestSplit(int trainSize, int testSize) {
         final List<Solution> trainIncorrect = incorrect.subList(0, trainSize);
         final List<Solution> testIncorrect = incorrect.subList(trainSize, trainSize + testSize);
-        final Set<Integer> testSessions = testIncorrect.stream()
+        final Set<String> testSessions = testIncorrect.stream()
                 .map(Solution::getId)
                 .collect(Collectors.toSet());
         final List<Solution> trainCorrect = correct.stream()
@@ -48,11 +48,11 @@ public class DatasetBuilder {
     }
 
     private static void validate(List<Solution> correct, List<Solution> incorrect, long seed) {
-        final Set<Integer> sessions = correct.stream()
+        final Set<String> sessions = correct.stream()
                 .map(Solution::getId)
                 .collect(Collectors.toSet());
         incorrect.removeIf(x -> !sessions.contains(x.getId()));
-        incorrect.sort(Comparator.comparingInt(Solution::getSolutionId));
+        incorrect.sort(Comparator.comparing(Solution::getSolutionId));
         Collections.shuffle(incorrect, new Random(seed));
     }
 

@@ -76,7 +76,7 @@ public class ClassificationEvaluation {
             final Unifier<Solution> unifier = new BasicUnifier<>(
                     CommonUtils.compose(astGenerator::buildTree, ITree::getHash)::apply,
                     CommonUtils.checkEquals(astGenerator::buildTree, ASTUtils::deepEquals),
-                    new MinValuePicker<>(Comparator.comparingInt(Solution::getSolutionId)));
+                    new MinValuePicker<>(Comparator.comparing(Solution::getSolutionId)));
             for (String problem : problems) {
                 final DistanceFunction<Solution> metric =
                         new HeuristicChangesBasedDistanceFunction(changeGenerator);

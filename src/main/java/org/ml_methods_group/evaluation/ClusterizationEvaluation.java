@@ -71,7 +71,7 @@ public class ClusterizationEvaluation {
             final Unifier<Solution> unifier = new BasicUnifier<>(
                     CommonUtils.compose(astGenerator::buildTree, ITree::getHash)::apply,
                     CommonUtils.checkEquals(astGenerator::buildTree, ASTUtils::deepEquals),
-                    new MinValuePicker<>(Comparator.comparingInt(Solution::getSolutionId)));
+                    new MinValuePicker<>(Comparator.comparing(Solution::getSolutionId)));
             for (String problem : problems) {
                 System.out.println("Start problem: " + problem);
                 final DistanceFunction<Solution> metric =

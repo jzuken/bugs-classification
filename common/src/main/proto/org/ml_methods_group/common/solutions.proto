@@ -6,8 +6,8 @@ option java_multiple_files = true;
 
 message ProtoSolution {
     string code = 1;
-    int32 id = 2;
-    int32 solution_id = 3;
+    string id = 2;
+    string solution_id = 3;
     int32 verdict = 4;
 }
 

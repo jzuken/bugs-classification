@@ -85,7 +85,7 @@ public class SerializationTest {
 
     @Test
     public void testSolutionTransformation() throws Exception {
-        final Solution solution = new Solution("some code", 2, 3, OK);
+        final Solution solution = new Solution("some code", "2", "3", OK);
         final Solution parsedSolution = writeAndRead(solution,
                 EntityToProtoUtils::transform,
                 ProtoToEntityUtils::transform,
@@ -131,8 +131,8 @@ public class SerializationTest {
     @Test
     public void testChangesTransformation() throws Exception {
         final Changes changes = new Changes(
-                new Solution("code before", 1, 1, FAIL),
-                new Solution("code after", 1, 2, OK),
+                new Solution("code before", "1", "1", FAIL),
+                new Solution("code after", "1", "2", OK),
                 Collections.singletonList(CODE_CHANGE_EXAMPLE));
         final Changes parsedChanges = writeAndRead(changes,
                 EntityToProtoUtils::transform,
@@ -145,8 +145,8 @@ public class SerializationTest {
 
     @Test
     public void testMarkedChangesClusters() throws Exception {
-        final Solution before = new Solution("some code", 1, 1, FAIL);
-        final Solution after = new Solution("some another code", 1, 2, OK);
+        final Solution before = new Solution("some code", "1", "1", FAIL);
+        final Solution after = new Solution("some another code", "1", "2", OK);
         final Changes changes = new Changes(before, after, Collections.singletonList(CODE_CHANGE_EXAMPLE));
         final Cluster<Changes> cluster = new Cluster<>(Collections.singletonList(changes));
         final MarkedClusters<Changes, String> data = new MarkedClusters<>(Collections.singletonMap(cluster, "mark"));
@@ -171,8 +171,8 @@ public class SerializationTest {
 
     @Test
     public void testChangesClusters() throws Exception {
-        final Solution before = new Solution("some code", 1, 1, FAIL);
-        final Solution after = new Solution("some another code", 1, 2, OK);
+        final Solution before = new Solution("some code", "1", "1", FAIL);
+        final Solution after = new Solution("some another code", "1", "2", OK);
         final Changes changes = new Changes(before, after, Collections.singletonList(CODE_CHANGE_EXAMPLE));
         final Cluster<Changes> cluster = new Cluster<>(Collections.singletonList(changes));
         final Clusters<Changes> data = new Clusters<>(Collections.singletonList(cluster));
@@ -197,9 +197,9 @@ public class SerializationTest {
     @Test
     public void testSolutionClusterTransformation() throws Exception {
         final var cluster = new Cluster<>(Arrays.asList(
-                new Solution("some code", 1, 1, OK),
-                new Solution("some other code", 2, 4, OK),
-                new Solution("some another code", 3, 6, OK)
+                new Solution("some code", "1", "1", OK),
+                new Solution("some other code", "2", "4", OK),
+                new Solution("some another code", "3", "6", OK)
         ));
         final var parsedCluster = SerializationTest.writeAndRead(cluster,
                 EntityToProtoUtils::transformSolutionsCluster,
@@ -213,13 +213,13 @@ public class SerializationTest {
     public void testSolutionClustersTransformation() throws Exception {
         final var clusters = new Clusters<>(Arrays.asList(
                 new Cluster<>(Arrays.asList(
-                        new Solution("some code1", 1, 1, OK),
-                        new Solution("some code2", 2, 4, OK),
-                        new Solution("some code3", 3, 6, OK))),
+                        new Solution("some code1", "1", "1", OK),
+                        new Solution("some code2", "2", "4", OK),
+                        new Solution("some code3", "3", "6", OK))),
                 new Cluster<>(Arrays.asList(
-                        new Solution("some code4", 4, 8, OK),
-                        new Solution("some code5", 5, 10, OK),
-                        new Solution("some code6", 6, 12, OK)))));
+                        new Solution("some code4", "4", "8", OK),
+                        new Solution("some code5", "5", "10", OK),
+                        new Solution("some code6", "6", "12", OK)))));
         final var parsedClusters = SerializationTest.writeAndRead(clusters,
                 EntityToProtoUtils::transform,
                 ProtoToEntityUtils::transform,
@@ -240,12 +240,12 @@ public class SerializationTest {
     @Test
     public void testMarkedClustersTransformation() throws Exception {
         final List<Solution> solutions = Arrays.asList(
-                new Solution("some code1", 1, 1, OK),
-                new Solution("some code2", 2, 4, OK),
-                new Solution("some code3", 3, 6, OK),
-                new Solution("some code4", 4, 8, OK),
-                new Solution("some code5", 5, 10, OK),
-                new Solution("some code6", 6, 12, OK));
+                new Solution("some code1", "1", "1", OK),
+                new Solution("some code2", "2", "4", OK),
+                new Solution("some code3", "3", "6", OK),
+                new Solution("some code4", "4", "8", OK),
+                new Solution("some code5", "5", "10", OK),
+                new Solution("some code6", "6", "12", OK));
         final var clusters = new MarkedClusters<>(Map.of(
                 new Cluster<>(solutions.subList(0, 3)),
                 "mark1",
@@ -267,9 +267,9 @@ public class SerializationTest {
 
     @Test
     public void testSolutionMarksHolderTransformation() throws Exception {
-        final Solution solution1 = new Solution("", 1, 1, FAIL);
-        final Solution solution2 = new Solution("", 2, 4, FAIL);
-        final Solution solution3 = new Solution("", 3, 6, FAIL);
+        final Solution solution1 = new Solution("", "1", "1", FAIL);
+        final Solution solution2 = new Solution("", "2", "4", FAIL);
+        final Solution solution3 = new Solution("", "3", "6", FAIL);
 
         final var holder = new SolutionMarksHolder();
         holder.addMark(solution1, "mark11");
@@ -293,9 +293,9 @@ public class SerializationTest {
 
     @Test
     public void testDatasetTransformation() throws Exception {
-        final Solution solution1 = new Solution("", 1, 1, FAIL);
-        final Solution solution2 = new Solution("", 2, 4, FAIL);
-        final Solution solution3 = new Solution("", 3, 6, FAIL);
+        final Solution solution1 = new Solution("", "1", "1", FAIL);
+        final Solution solution2 = new Solution("", "2", "4", FAIL);
+        final Solution solution3 = new Solution("", "3", "6", FAIL);
         final Dataset dataset = new Dataset(Arrays.asList(solution1, solution2, solution3));
 
         final var parsedDataset = SerializationTest.writeAndRead(dataset,
