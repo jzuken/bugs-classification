@@ -139,11 +139,13 @@ public class Application {
 
         final Changes change = getChanges(rename, fromSolution, toSolution);
 
+        var start = System.currentTimeMillis();
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(
                 new FileOutputStream(outputFile.toString()));
 
         objectOutputStream.writeObject(change);
         objectOutputStream.close();
+        System.out.println("Saving changes took " + ((System.currentTimeMillis() - start) / 1000.0) + " ms");
     }
 
     public static void clusterFolder(Path sourceFolder, Path storage) throws IOException {
