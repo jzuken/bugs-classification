@@ -145,7 +145,7 @@ public class Application {
 
         objectOutputStream.writeObject(change);
         objectOutputStream.close();
-        System.out.println("Saving changes took " + ((System.currentTimeMillis() - start) / 1000.0) + " ms");
+        System.out.println("Saving changes took " + ((System.currentTimeMillis() - start) / 1000.0) + " s");
     }
 
     public static void clusterFolder(Path sourceFolder, Path storage) throws IOException {

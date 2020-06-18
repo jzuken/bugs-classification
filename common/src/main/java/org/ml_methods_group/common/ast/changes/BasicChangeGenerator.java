@@ -41,10 +41,10 @@ public class BasicChangeGenerator implements ChangeGenerator {
         var start = System.currentTimeMillis();
         final ITree beforeTree = generator.buildTree(before);
         var firstMark = System.currentTimeMillis();
-        System.out.println("First tree is built in " + ((firstMark - start) / 1000.0) + "ms");
+        System.out.println("First tree is built in " + ((firstMark - start) / 1000.0) + " s");
         final ITree afterTree = generator.buildTree(after);
         var secondMark = System.currentTimeMillis();
-        System.out.println("Second tree is built in " + ((secondMark - firstMark) / 1000.0) + "ms");
+        System.out.println("Second tree is built in " + ((secondMark - firstMark) / 1000.0) + " s");
         final ChangesGenerationResult result = factories.stream()
                 .map(factory -> generate(beforeTree.deepCopy(), afterTree.deepCopy(), factory))
                 .filter(Optional::isPresent)
@@ -55,7 +55,7 @@ public class BasicChangeGenerator implements ChangeGenerator {
                 .map(action -> CodeChange.fromAction(action, result.mappings))
                 .collect(Collectors.toList());
         var thirdMark = System.currentTimeMillis();
-        System.out.println("Changes are built in " + ((thirdMark - secondMark) / 1000.0) + "ms");
+        System.out.println("Changes are built in " + ((thirdMark - secondMark) / 1000.0) + " s");
         return new Changes(before, after, changes);
     }
 
