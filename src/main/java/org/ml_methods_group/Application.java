@@ -138,23 +138,23 @@ public class Application {
     }
 
     private static double getDistanceLimitFromArgs(String[] args) {
-        var param = Arrays.stream(args).filter(x->x.startsWith("--distanceLimit")).findFirst();
+        var param = Arrays.stream(args).filter(x->x.toLowerCase().startsWith("--distancelimit")).findFirst();
 
         if(param.isEmpty()){
             return DEFAULT_DISTANCE_LIMIT;
         }
 
-        return Double.parseDouble(param.get().replace("--distanceLimit=", ""));
+        return Double.parseDouble(param.get().toLowerCase().replace("--distancelimit=", ""));
     }
 
     private static int getMinClustersCountFromArgs(String[] args) {
-        var param = Arrays.stream(args).filter(x->x.startsWith("--minClustersCount")).findFirst();
+        var param = Arrays.stream(args).filter(x->x.toLowerCase().startsWith("--minclusterscount")).findFirst();
 
         if(param.isEmpty()){
             return DEFAULT_MIN_CLUSTERS_COUNT;
         }
 
-        return Integer.parseInt(param.get().replace("--minClustersCount=", ""));
+        return Integer.parseInt(param.get().toLowerCase().replace("--minclusterscount=", ""));
     }
 
     public static void parse(Path data, Path storage) throws IOException {
