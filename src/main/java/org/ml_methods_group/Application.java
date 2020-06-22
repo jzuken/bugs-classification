@@ -41,6 +41,10 @@ import static org.ml_methods_group.common.Solution.Verdict.OK;
 import static org.ml_methods_group.evaluation.approaches.BOWApproach.*;
 
 public class Application {
+
+    static final double DEFAULT_DISTANCE_LIMIT = 0.3;
+    static final int DEFAULT_MIN_CLUSTERS_COUNT = 1;
+
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             System.out.println("Command expected: parse, cluster or mark");
@@ -54,7 +58,7 @@ public class Application {
                             "    Path to code file before changes" + System.lineSeparator() +
                             "    Path to code file after changes" + System.lineSeparator() +
                             "    Path to file to store edit script" + System.lineSeparator() +
-                            "    [Optional] --rename to rename variable names to generic names" + System.lineSeparator());
+                            "    [Optional] --rename to rename variable names to generic names, default - false" + System.lineSeparator());
                     return;
                 }
                 createEditScript(
@@ -74,24 +78,36 @@ public class Application {
                 parse(Paths.get(args[1]), Paths.get(args[2]));
                 break;
             case "clusterFolder":
-                if (args.length != 3) {
+                if (args.length < 3 || args.length > 5) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
                             "    Path to folder with edit scripts" + System.lineSeparator() +
-                            "    Path to file to store clusters" + System.lineSeparator());
+                            "    Path to file to store clusters" + System.lineSeparator() +
+                            "    [Optional] --distanceLimit=X - Set clustering distance limit to X, default value 0.3" + System.lineSeparator() +
+                            "    [Optional] --minClustersCount=X - Set minimum amount of clusters to X, default value 1" + System.lineSeparator()
+                    );
                     return;
                 }
-                clusterFolder(Paths.get(args[1]), Paths.get(args[2]));
+                clusterFolder(
+                        Paths.get(args[1]),
+                        Paths.get(args[2]),
+                        getDistanceLimitFromArgs(args),
+                        getMinClustersCountFromArgs(args));
                 break;
             case "cluster":
-                if (args.length < 3 || args.length > 5) {
+                if (args.length < 3 || args.length > 7) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
                             "    Path to file which store parsed solutions" + System.lineSeparator() +
                             "    Path to file to store clusters" + System.lineSeparator() +
-                            "    [Optional] --parallel to execute changes generation in parallel" + System.lineSeparator() +
-                            "    [Optional] --rename to rename variable names to generic names" + System.lineSeparator());
+                            "    [Optional] --parallel to execute changes generation in parallel, default - false" + System.lineSeparator() +
+                            "    [Optional] --rename to rename variable names to generic names, default - false" + System.lineSeparator() +
+                            "    [Optional] --distanceLimit=X - Set clustering distance limit to X, default value 0.3" + System.lineSeparator() +
+                            "    [Optional] --minClustersCount=X - Set minimum amount of clusters to X, default value 1" + System.lineSeparator());
                     return;
                 }
+
                 cluster(Paths.get(args[1]), Paths.get(args[2]),
+                        getDistanceLimitFromArgs(args),
+                        getMinClustersCountFromArgs(args),
                         Arrays.asList(args).contains("--parallel"),
                         Arrays.asList(args).contains("--rename"));
                 break;
@@ -121,6 +137,26 @@ public class Application {
         }
     }
 
+    private static double getDistanceLimitFromArgs(String[] args) {
+        var param = Arrays.stream(args).filter(x->x.startsWith("--distanceLimit")).findFirst();
+
+        if(param.isEmpty()){
+            return DEFAULT_DISTANCE_LIMIT;
+        }
+
+        return Double.parseDouble(param.get().replace("--distanceLimit=", ""));
+    }
+
+    private static int getMinClustersCountFromArgs(String[] args) {
+        var param = Arrays.stream(args).filter(x->x.startsWith("--minClustersCount")).findFirst();
+
+        if(param.isEmpty()){
+            return DEFAULT_MIN_CLUSTERS_COUNT;
+        }
+
+        return Integer.parseInt(param.get().replace("--minClustersCount=", ""));
+    }
+
     public static void parse(Path data, Path storage) throws IOException {
         try (InputStream input = new FileInputStream(data.toFile())) {
             final Dataset dataset = ParsingUtils.parse(input);
@@ -148,7 +184,7 @@ public class Application {
         System.out.println("Saving changes took " + ((System.currentTimeMillis() - start) / 1000.0) + " s");
     }
 
-    public static void clusterFolder(Path sourceFolder, Path storage) throws IOException {
+    public static void clusterFolder(Path sourceFolder, Path storage, double distanceLimit, int minClustersCount) throws IOException {
         var baseTime = System.currentTimeMillis();
         var paths = Files.walk(sourceFolder);
 
@@ -169,10 +205,10 @@ public class Application {
                 .collect(Collectors.toList());
 
         System.out.println(getDiff(baseTime) + ": Changes folder processed, " + changes.size() + " edit scripts are loaded");
-        doClustering(storage, baseTime, changes);
+        doClustering(storage, baseTime, changes, distanceLimit, minClustersCount);
     }
 
-    public static void cluster(Path data, Path storage, boolean parallel, boolean rename) throws IOException {
+    public static void cluster(Path data, Path storage, double distanceLimit, int minClustersCount, boolean parallel, boolean rename) throws IOException {
         var baseTime = System.currentTimeMillis();
         final Dataset dataset = ProtobufSerializationUtils.loadDataset(data);
 
@@ -221,14 +257,16 @@ public class Application {
 
         System.out.println(getDiff(baseTime) + ": All changes are processed, starting clustering");
 
-        doClustering(storage, baseTime, changes);
+        doClustering(storage, baseTime, changes, distanceLimit, minClustersCount);
     }
 
-    private static void doClustering(Path storage, long baseTime, List<Changes> changes) throws IOException {
+    private static void doClustering(Path storage, long baseTime, List<Changes> changes,
+                                     double distanceLimit, int minClustersCount) throws IOException {
         final var bowExtractor = getBOWExtractor(20000, changes);
+
         final Clusterer<Changes> clusterer = new CompositeClusterer<>(bowExtractor, new HAC<>(
-                0.3,
-                1,
+                distanceLimit,
+                minClustersCount,
                 CommonUtils.metricFor(BOWExtractor::cosineDistance, Wrapper::getFeatures)));
         final var clusters = clusterer.buildClusters(changes);
 
