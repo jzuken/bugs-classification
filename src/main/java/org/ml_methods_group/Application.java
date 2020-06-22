@@ -66,7 +66,7 @@ public class Application {
                         Paths.get(args[2]),
                         Paths.get(args[3]),
                         Paths.get(args[4]),
-                        Arrays.asList(args).contains("--rename"));
+                        Arrays.stream(args).map(String::toLowerCase).collect(Collectors.toList()).contains("--rename"));
                 break;
             case "parse":
                 if (args.length != 3) {
@@ -108,8 +108,8 @@ public class Application {
                 cluster(Paths.get(args[1]), Paths.get(args[2]),
                         getDistanceLimitFromArgs(args),
                         getMinClustersCountFromArgs(args),
-                        Arrays.asList(args).contains("--parallel"),
-                        Arrays.asList(args).contains("--rename"));
+                        Arrays.stream(args).map(String::toLowerCase).collect(Collectors.toList()).contains("--parallel"),
+                        Arrays.stream(args).map(String::toLowerCase).collect(Collectors.toList()).contains("--rename"));
                 break;
             case "mark":
                 if (args.length != 5) {
