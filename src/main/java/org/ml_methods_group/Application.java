@@ -4,6 +4,12 @@ import com.github.gumtreediff.matchers.CompositeMatchers;
 import com.github.gumtreediff.matchers.MappingStore;
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.utils.Pair;
+import com.github.gumtreediff.actions.ActionGenerator;
+import com.github.gumtreediff.actions.model.Action;
+import com.github.gumtreediff.gen.Generators;
+import com.github.gumtreediff.matchers.Matcher;
+import com.github.gumtreediff.matchers.Matchers;
+import com.github.gumtreediff.tree.TreeContext;
 import org.ml_methods_group.clustering.clusterers.CompositeClusterer;
 import org.ml_methods_group.clustering.clusterers.HAC;
 import org.ml_methods_group.common.*;
@@ -27,6 +33,8 @@ import org.ml_methods_group.common.preparation.basic.MinValuePicker;
 import org.ml_methods_group.common.serialization.ProtobufSerializationUtils;
 import org.ml_methods_group.parsing.ParsingUtils;
 import org.ml_methods_group.testing.extractors.CachedFeaturesExtractor;
+import org.ml_methods_group.common.ast.generation.BasicASTGenerator;
+import org.ml_methods_group.common.ast.normalization.BasicASTNormalizer;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -47,7 +55,7 @@ public class Application {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            System.out.println("Command expected: parse, cluster or mark");
+            System.out.println("Command expected: create, parse, cluster, clusterFolder or mark");
             return;
         }
         switch (args[0]) {
@@ -68,6 +76,24 @@ public class Application {
                         Paths.get(args[4]),
                         Arrays.stream(args).map(String::toLowerCase).collect(Collectors.toList()).contains("--rename"));
                 break;
+
+            case "make.es":
+                if (args.length < 4 || args.length > 5 ) {
+                    System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
+                            "    Problem id" + System.lineSeparator() +
+                            "    Path to code file before changes" + System.lineSeparator() +
+                            "    Path to code file after changes" + System.lineSeparator() +
+                            "    Path to file to store edit script" + System.lineSeparator() );
+                    return;
+                }
+                makeEditScript(
+                        args[1],
+                        Paths.get(args[2]),
+                        Paths.get(args[3]),
+                        Paths.get(args[4])
+                    );
+                break;
+
             case "parse":
                 if (args.length != 3) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
@@ -175,14 +201,83 @@ public class Application {
 
         final Changes change = getChanges(rename, fromSolution, toSolution);
 
+
         var start = System.currentTimeMillis();
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(
                 new FileOutputStream(outputFile.toString()));
 
         objectOutputStream.writeObject(change);
         objectOutputStream.close();
+
         System.out.println("Saving changes took " + ((System.currentTimeMillis() - start) / 1000.0) + " s");
     }
+
+    private static ITree buildTree(Solution s) {
+        ITree tree = null;
+        //TreeContext context = null;
+        try {
+            final ASTGenerator generator = new BasicASTGenerator(new BasicASTNormalizer());
+            tree = generator.buildTree(s);
+            //tree = context.getRoot();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+        return tree;
+    }
+
+    public static List<Action> buildMethodActions(Solution FileBefore, Solution FileAfter)
+            throws IOException {
+                ITree src;
+                ITree dst;
+        try {
+            final ASTGenerator generator = new BasicASTGenerator(new BasicASTNormalizer());
+            src = generator.buildTree(FileBefore);
+            dst = generator.buildTree(FileAfter);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+        Matcher matcher = Matchers.getInstance().getMatcher(src, dst);
+        try {
+            matcher.match();
+        } catch (NullPointerException e) {
+            System.out.println("Cannot match: NullPointerException in m.match()");
+            return null;
+        }
+        ActionGenerator generator = new ActionGenerator(src, dst, matcher.getMappings());
+        generator.generate();
+
+        return generator.getActions();
+    }
+
+    public static void makeEditScript(String id, Path fromFile, Path toFile, Path outputFile) throws IOException {
+        final var fromCode = Files.readString(fromFile);
+        final String wrongSolutionId = id + FAIL.ordinal();
+        final var fromSolution = new Solution(fromCode, id, wrongSolutionId, FAIL);
+
+        final var toCode = Files.readString(toFile);
+        final String rightSolutionId = id + OK.ordinal();
+        final var toSolution = new Solution(toCode, id, rightSolutionId, OK);
+
+
+
+        final List<Action> actions = buildMethodActions(fromSolution,toSolution);
+
+        var start = System.currentTimeMillis();
+        
+
+        File actionsFile = new File(outputFile.toString());
+        BufferedWriter writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
+        for (Action action : actions) {
+                writer.write(action.toString() + " " + action.getNode().getParent().getType() + "@@\n");
+        }
+        
+        writer.close();
+
+        System.out.println("Saving actions took " + ((System.currentTimeMillis() - start) / 1000.0) + " s");
+    }
+
 
     public static void clusterFolder(Path sourceFolder, Path storage, double distanceLimit, int minClustersCount) throws IOException {
         var baseTime = System.currentTimeMillis();
