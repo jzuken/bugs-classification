@@ -18,6 +18,7 @@ import org.ml_methods_group.common.ast.changes.BasicChangeGenerator;
 import org.ml_methods_group.common.ast.changes.ChangeGenerator;
 import org.ml_methods_group.common.ast.changes.Changes;
 import org.ml_methods_group.common.ast.editactions.EditActions;
+import org.ml_methods_group.common.ast.editactions.EditActionStore;
 import org.ml_methods_group.common.ast.changes.CodeChange;
 import org.ml_methods_group.common.ast.generation.ASTGenerator;
 import org.ml_methods_group.common.ast.generation.CachedASTGenerator;
@@ -92,6 +93,19 @@ public class Application {
                         Paths.get(args[2]),
                         Paths.get(args[3]),
                         Paths.get(args[4])
+                    );
+                break;
+
+            case "prepare.es":
+                if (args.length < 2 || args.length > 2 ) {
+                    System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
+                            "    Path to code dataset" + System.lineSeparator() +
+                            "    Path to store representation" + System.lineSeparator() );
+                    return;
+                }
+                prepareESDataset (
+                        Paths.get(args[1]),
+                        Paths.get(args[2])
                     );
                 break;
 
@@ -376,21 +390,38 @@ public class Application {
     }
 
 
-    /* private static void doESClustering(Path storage, long baseTime, List<Action> changes,
-                                     double distanceLimit, int minClustersCount) throws IOException {
-        final var bowExtractor = getBOWExtractor(20000, changes);
+    private static void prepareESDataset(Path pathToDataset,  Path pathToSaveRepresentations) throws IOException {
 
-        final Clusterer<Action> clusterer = new CompositeClusterer<>(bowExtractor, new HAC<>(
-                distanceLimit,
-                minClustersCount,
-                CommonUtils.metricFor(BOWExtractor::cosineDistance, Wrapper::getFeatures)));
-        final var clusters = clusterer.buildClusters(changes);
 
-        System.out.println(getDiff(baseTime) + ": Clusters are formed, saving results");
-        saveClustersToReadableFormat(clusters, storage);
-        System.out.println(getDiff(baseTime) + ": Finished");
-    }
-    */
+            EditActionStore store = new EditActionStore();
+
+            File datasetDir = new File(pathToDataset.toString());
+            File[] elements = Arrays.stream(datasetDir.listFiles())
+            .toArray(File[]::new);
+
+            // Arrays.sort(elements, Comparator.comparingString(o -> o.getName()));
+            Integer id= 1;
+            for (File elementDir : elements) {
+           
+                Path methodBeforePath = pathToDataset.resolve(elementDir.getName()).resolve("before.txt");
+                Path methodAfterPath = pathToDataset.resolve(elementDir.getName()).resolve("after.txt");
+                var fromCode = Files.readString(methodBeforePath);
+                String wrongSolutionId = Integer.toString(id) + FAIL.ordinal();
+                var fromSolution = new Solution(fromCode, Integer.toString(id), wrongSolutionId, FAIL);
+
+                var toCode = Files.readString(methodAfterPath);
+                String rightSolutionId = Integer.toString(id) + OK.ordinal();
+                var toSolution = new Solution(toCode, Integer.toString(id), rightSolutionId, OK);
+                List<Action> actions = buildMethodActions(fromSolution, toSolution);
+                Pair<List<String>, List<String>> actionsStrings = store.convertToStrings(actions);
+
+                store.addActions(elementDir.getName(), actionsStrings.getSecond());
+                id++;
+            
+            }
+
+            store.saveRepresentationsBitset(pathToSaveRepresentations.toString(), null);
+}
 
     private static void saveClustersToReadableFormat(Clusters<Changes> clusters, Path storage) throws IOException {
         Clusters<String> idClusters = clusters.map(x -> x.getOrigin().getId());
