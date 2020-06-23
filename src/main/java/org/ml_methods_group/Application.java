@@ -17,6 +17,7 @@ import org.ml_methods_group.common.ast.ASTUtils;
 import org.ml_methods_group.common.ast.changes.BasicChangeGenerator;
 import org.ml_methods_group.common.ast.changes.ChangeGenerator;
 import org.ml_methods_group.common.ast.changes.Changes;
+import org.ml_methods_group.common.ast.editactions.EditActions;
 import org.ml_methods_group.common.ast.changes.CodeChange;
 import org.ml_methods_group.common.ast.generation.ASTGenerator;
 import org.ml_methods_group.common.ast.generation.CachedASTGenerator;
@@ -260,20 +261,24 @@ public class Application {
         final String rightSolutionId = id + OK.ordinal();
         final var toSolution = new Solution(toCode, id, rightSolutionId, OK);
 
-
-
-        final List<Action> actions = buildMethodActions(fromSolution,toSolution);
+        final EditActions ea = new EditActions(fromSolution,toSolution,buildMethodActions(fromSolution,toSolution));
 
         var start = System.currentTimeMillis();
         
+        /* ObjectOutputStream objectOutputStream = new ObjectOutputStream(
+            new FileOutputStream(outputFile.toString()));
+
+        objectOutputStream.writeObject(ea);
+        objectOutputStream.close();
+        */
 
         File actionsFile = new File(outputFile.toString());
         BufferedWriter writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
-        for (Action action : actions) {
-                writer.write(action.toString() + " " + action.getNode().getParent().getType() + "@@\n");
+        for (Action action : ea.getEditActions()) {
+                writer.write(ea.getActionName(action)+ "\n");
         }
-        
         writer.close();
+        
 
         System.out.println("Saving actions took " + ((System.currentTimeMillis() - start) / 1000.0) + " s");
     }
@@ -369,6 +374,23 @@ public class Application {
         saveClustersToReadableFormat(clusters, storage);
         System.out.println(getDiff(baseTime) + ": Finished");
     }
+
+
+    /* private static void doESClustering(Path storage, long baseTime, List<Action> changes,
+                                     double distanceLimit, int minClustersCount) throws IOException {
+        final var bowExtractor = getBOWExtractor(20000, changes);
+
+        final Clusterer<Action> clusterer = new CompositeClusterer<>(bowExtractor, new HAC<>(
+                distanceLimit,
+                minClustersCount,
+                CommonUtils.metricFor(BOWExtractor::cosineDistance, Wrapper::getFeatures)));
+        final var clusters = clusterer.buildClusters(changes);
+
+        System.out.println(getDiff(baseTime) + ": Clusters are formed, saving results");
+        saveClustersToReadableFormat(clusters, storage);
+        System.out.println(getDiff(baseTime) + ": Finished");
+    }
+    */
 
     private static void saveClustersToReadableFormat(Clusters<Changes> clusters, Path storage) throws IOException {
         Clusters<String> idClusters = clusters.map(x -> x.getOrigin().getId());
