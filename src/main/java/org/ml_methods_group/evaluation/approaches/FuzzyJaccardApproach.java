@@ -22,4 +22,11 @@ public class FuzzyJaccardApproach {
                         new FuzzyJaccardDistanceFunction<>(new CodeChangeSimilarityMetric()),
                         (Function<Changes, List<CodeChange>> & Serializable) Changes::getChanges), "fuz_jac");
     }
+
+    public static ChangesApproach<Changes> getDefaultApproach() {
+        return new ChangesApproach<>(x -> x,
+                CommonUtils.metricFor(
+                        new FuzzyJaccardDistanceFunction<>(new CodeChangeSimilarityMetric()),
+                        (Function<Changes, List<CodeChange>> & Serializable) Changes::getChanges), "fuz_jac");
+    }
 }

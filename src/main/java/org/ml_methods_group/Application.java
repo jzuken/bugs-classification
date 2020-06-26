@@ -23,16 +23,14 @@ import org.ml_methods_group.common.ast.changes.CodeChange;
 import org.ml_methods_group.common.ast.generation.ASTGenerator;
 import org.ml_methods_group.common.ast.generation.CachedASTGenerator;
 import org.ml_methods_group.common.ast.normalization.NamesASTNormalizer;
-import org.ml_methods_group.common.extractors.BOWExtractor;
-import org.ml_methods_group.common.extractors.BOWExtractor.BOWVector;
 import org.ml_methods_group.common.extractors.ChangesExtractor;
-import org.ml_methods_group.common.extractors.HashExtractor;
 import org.ml_methods_group.common.metrics.functions.HeuristicChangesBasedDistanceFunction;
 import org.ml_methods_group.common.metrics.selectors.ClosestPairSelector;
 import org.ml_methods_group.common.preparation.Unifier;
 import org.ml_methods_group.common.preparation.basic.BasicUnifier;
 import org.ml_methods_group.common.preparation.basic.MinValuePicker;
 import org.ml_methods_group.common.serialization.ProtobufSerializationUtils;
+import org.ml_methods_group.evaluation.approaches.clustering.ClusteringAlgorithm;
 import org.ml_methods_group.parsing.ParsingUtils;
 import org.ml_methods_group.testing.extractors.CachedFeaturesExtractor;
 import org.ml_methods_group.common.ast.generation.BasicASTGenerator;
@@ -48,12 +46,13 @@ import java.util.stream.Collectors;
 
 import static org.ml_methods_group.common.Solution.Verdict.FAIL;
 import static org.ml_methods_group.common.Solution.Verdict.OK;
-import static org.ml_methods_group.evaluation.approaches.BOWApproach.*;
+
 
 public class Application {
 
     static final double DEFAULT_DISTANCE_LIMIT = 0.3;
     static final int DEFAULT_MIN_CLUSTERS_COUNT = 1;
+    static final ClusteringAlgorithm DEFAULT_ALGORITHM = ClusteringAlgorithm.BagOfWords;
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
@@ -119,34 +118,39 @@ public class Application {
                 parse(Paths.get(args[1]), Paths.get(args[2]));
                 break;
             case "clusterFolder":
-                if (args.length < 3 || args.length > 5) {
+                if (args.length < 3 || args.length > 6) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
                             "    Path to folder with edit scripts" + System.lineSeparator() +
                             "    Path to file to store clusters" + System.lineSeparator() +
+                            "    [Optional] --algorithm=X - Set clusterization algorithm (bow, vec, jac, ext_jac, full_jac, fuz_jac), default value bow" + System.lineSeparator() +
                             "    [Optional] --distanceLimit=X - Set clustering distance limit to X, default value 0.3" + System.lineSeparator() +
                             "    [Optional] --minClustersCount=X - Set minimum amount of clusters to X, default value 1" + System.lineSeparator()
+
                     );
                     return;
                 }
                 clusterFolder(
                         Paths.get(args[1]),
                         Paths.get(args[2]),
+                        getAlgorithmFromArgs(args),
                         getDistanceLimitFromArgs(args),
                         getMinClustersCountFromArgs(args));
                 break;
             case "cluster":
-                if (args.length < 3 || args.length > 7) {
+                if (args.length < 3 || args.length > 8) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
                             "    Path to file which store parsed solutions" + System.lineSeparator() +
                             "    Path to file to store clusters" + System.lineSeparator() +
                             "    [Optional] --parallel to execute changes generation in parallel, default - false" + System.lineSeparator() +
                             "    [Optional] --rename to rename variable names to generic names, default - false" + System.lineSeparator() +
+                            "    [Optional] --algorithm=X - Set clusterization algorithm (bow, vec, jac, ext_jac, full_jac, fuz_jac), default value bow" + System.lineSeparator() +
                             "    [Optional] --distanceLimit=X - Set clustering distance limit to X, default value 0.3" + System.lineSeparator() +
                             "    [Optional] --minClustersCount=X - Set minimum amount of clusters to X, default value 1" + System.lineSeparator());
                     return;
                 }
 
                 cluster(Paths.get(args[1]), Paths.get(args[2]),
+                        getAlgorithmFromArgs(args),
                         getDistanceLimitFromArgs(args),
                         getMinClustersCountFromArgs(args),
                         Arrays.stream(args).map(String::toLowerCase).collect(Collectors.toList()).contains("--parallel"),
@@ -179,9 +183,9 @@ public class Application {
     }
 
     private static double getDistanceLimitFromArgs(String[] args) {
-        var param = Arrays.stream(args).filter(x->x.toLowerCase().startsWith("--distancelimit")).findFirst();
+        var param = Arrays.stream(args).filter(x -> x.toLowerCase().startsWith("--distancelimit")).findFirst();
 
-        if(param.isEmpty()){
+        if (param.isEmpty()) {
             return DEFAULT_DISTANCE_LIMIT;
         }
 
@@ -189,13 +193,24 @@ public class Application {
     }
 
     private static int getMinClustersCountFromArgs(String[] args) {
-        var param = Arrays.stream(args).filter(x->x.toLowerCase().startsWith("--minclusterscount")).findFirst();
+        var param = Arrays.stream(args).filter(x -> x.toLowerCase().startsWith("--minclusterscount")).findFirst();
 
-        if(param.isEmpty()){
+        if (param.isEmpty()) {
             return DEFAULT_MIN_CLUSTERS_COUNT;
         }
 
         return Integer.parseInt(param.get().toLowerCase().replace("--minclusterscount=", ""));
+    }
+
+    private static ClusteringAlgorithm getAlgorithmFromArgs(String[] args) {
+        var param = Arrays.stream(args).filter(x -> x.toLowerCase().startsWith("--algorithm")).findFirst();
+
+        if (param.isEmpty()) {
+            return DEFAULT_ALGORITHM;
+        }
+
+        return ClusteringAlgorithm.getAlgorithmByCode(
+                param.get().toLowerCase().replace("--algorithm=", ""));
     }
 
     public static void parse(Path data, Path storage) throws IOException {
@@ -278,7 +293,7 @@ public class Application {
         final EditActions ea = new EditActions(fromSolution,toSolution,buildMethodActions(fromSolution,toSolution));
 
         var start = System.currentTimeMillis();
-        
+
         /* ObjectOutputStream objectOutputStream = new ObjectOutputStream(
             new FileOutputStream(outputFile.toString()));
 
@@ -297,8 +312,9 @@ public class Application {
         System.out.println("Saving actions took " + ((System.currentTimeMillis() - start) / 1000.0) + " s");
     }
 
-
-    public static void clusterFolder(Path sourceFolder, Path storage, double distanceLimit, int minClustersCount) throws IOException {
+    public static void clusterFolder(Path sourceFolder, Path storage,
+                                     ClusteringAlgorithm algorithm,
+                                     double distanceLimit, int minClustersCount) throws IOException {
         var baseTime = System.currentTimeMillis();
         var paths = Files.walk(sourceFolder);
 
@@ -319,10 +335,13 @@ public class Application {
                 .collect(Collectors.toList());
 
         System.out.println(getDiff(baseTime) + ": Changes folder processed, " + changes.size() + " edit scripts are loaded");
-        doClustering(storage, baseTime, changes, distanceLimit, minClustersCount);
+        doClustering(storage, baseTime, changes, algorithm, distanceLimit, minClustersCount);
     }
 
-    public static void cluster(Path data, Path storage, double distanceLimit, int minClustersCount, boolean parallel, boolean rename) throws IOException {
+    public static void cluster(Path data, Path storage,
+                               ClusteringAlgorithm algorithm,
+                               double distanceLimit, int minClustersCount,
+                               boolean parallel, boolean rename) throws IOException {
         var baseTime = System.currentTimeMillis();
         final Dataset dataset = ProtobufSerializationUtils.loadDataset(data);
 
@@ -371,17 +390,15 @@ public class Application {
 
         System.out.println(getDiff(baseTime) + ": All changes are processed, starting clustering");
 
-        doClustering(storage, baseTime, changes, distanceLimit, minClustersCount);
+        doClustering(storage, baseTime, changes, algorithm, distanceLimit, minClustersCount);
     }
 
     private static void doClustering(Path storage, long baseTime, List<Changes> changes,
+                                     ClusteringAlgorithm algorithm,
                                      double distanceLimit, int minClustersCount) throws IOException {
-        final var bowExtractor = getBOWExtractor(20000, changes);
 
-        final Clusterer<Changes> clusterer = new CompositeClusterer<>(bowExtractor, new HAC<>(
-                distanceLimit,
-                minClustersCount,
-                CommonUtils.metricFor(BOWExtractor::cosineDistance, Wrapper::getFeatures)));
+        Clusterer<Changes> clusterer = algorithm.getClusterer(changes, distanceLimit, minClustersCount);
+
         final var clusters = clusterer.buildClusters(changes);
 
         System.out.println(getDiff(baseTime) + ": Clusters are formed, saving results");
@@ -526,57 +543,6 @@ public class Application {
 //        System.out.println(code);
 //        System.out.println("Result: " + result.getKey() + " (" + result.getValue() + ")");
         throw new UnsupportedOperationException();
-    }
-
-    public static FeaturesExtractor<Changes, BOWVector> getBOWExtractor(int wordsLimit, List<Changes> data) {
-        final var weak = HashExtractor.<CodeChange.NodeContext>builder()
-                .append("TOC")
-                .hashComponent(CodeChange.NodeContext::getNode, TYPE_ONLY_NODE_STATE_HASH)
-                .hashComponent(CodeChange.NodeContext::getParent, TYPE_ONLY_NODE_STATE_HASH)
-                .hashComponent(CodeChange.NodeContext::getParentOfParent, TYPE_ONLY_NODE_STATE_HASH)
-                .build();
-        final var javaTypes = HashExtractor.<CodeChange.NodeContext>builder()
-                .append("JTC")
-                .hashComponent(CodeChange.NodeContext::getNode, JAVA_TYPE_NODE_STATE_HASH)
-                .hashComponent(CodeChange.NodeContext::getParent, TYPE_ONLY_NODE_STATE_HASH)
-                .hashComponent(CodeChange.NodeContext::getParentOfParent, TYPE_ONLY_NODE_STATE_HASH)
-                .build();
-        final var full = HashExtractor.<CodeChange.NodeContext>builder()
-                .append("FCC")
-                .hashComponent(CodeChange.NodeContext::getNode, FULL_NODE_STATE_HASH)
-                .hashComponent(CodeChange.NodeContext::getParent, TYPE_ONLY_NODE_STATE_HASH)
-                .hashComponent(CodeChange.NodeContext::getParentOfParent, TYPE_ONLY_NODE_STATE_HASH)
-                .build();
-        final var extended = HashExtractor.<CodeChange.NodeContext>builder()
-                .append("ECC")
-                .hashComponent(CodeChange.NodeContext::getNode, JAVA_TYPE_NODE_STATE_HASH)
-                .hashComponent(CodeChange.NodeContext::getParent, LABEL_NODE_STATE_HASH)
-                .hashComponent(CodeChange.NodeContext::getParentOfParent, TYPE_ONLY_NODE_STATE_HASH)
-                .build();
-        final var fullExtended = HashExtractor.<CodeChange.NodeContext>builder()
-                .append("FEC")
-                .hashComponent(CodeChange.NodeContext::getNode, FULL_NODE_STATE_HASH)
-                .hashComponent(CodeChange.NodeContext::getParent, LABEL_NODE_STATE_HASH)
-                .hashComponent(CodeChange.NodeContext::getParentOfParent, TYPE_ONLY_NODE_STATE_HASH)
-                .build();
-        final var deepExtended = HashExtractor.<CodeChange.NodeContext>builder()
-                .append("DEC")
-                .hashComponent(CodeChange.NodeContext::getNode, JAVA_TYPE_NODE_STATE_HASH)
-                .hashComponent(CodeChange.NodeContext::getParent, LABEL_NODE_STATE_HASH)
-                .hashComponent(CodeChange.NodeContext::getParentOfParent, LABEL_NODE_STATE_HASH)
-                .build();
-        final var codeChanges = data.stream()
-                .map(Changes::getChanges)
-                .flatMap(List::stream)
-                .collect(Collectors.toList());
-        final var extractors = Arrays.asList(getCodeChangeHasher(weak),
-                getCodeChangeHasher(javaTypes), getCodeChangeHasher(full), getCodeChangeHasher(extended),
-                getCodeChangeHasher(fullExtended), getCodeChangeHasher(deepExtended));
-        final HashMap<String, Integer> dict = BOWExtractor.mostCommon(
-                extractors,
-                codeChanges,
-                wordsLimit);
-        return new BOWExtractor<>(dict, extractors).extend(Changes::getChanges);
     }
 
     private static double getDiff(long baseTime) {

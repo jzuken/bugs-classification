@@ -51,6 +51,27 @@ public class VectorizationApproach {
         }
     }
 
+    public static ChangesApproach<List<double[]>> getDefaultApproach(List<Changes> train) {
+        try {
+            final Map<String, Integer> wordsDict = SerializationUtils.readMap(".cache/dicts/words_dict.txt");
+            final Map<String, Integer> javaTypesDict = SerializationUtils.readMap(".cache/dicts/java_types_dict.txt");
+            final EmbeddingExtractor<CodeChange> extractor = createCodeChangeExtractor(
+                    ".cache/embeddings/", wordsDict, javaTypesDict);
+            final List<CodeChange> changes = train
+                    .stream()
+                    .map(Changes::getChanges)
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList());
+            final NormalizedVectorExtractor<CodeChange> normalizedExtractor = NormalizedVectorExtractor.normalization(
+                    changes, extractor);
+            return new ChangesApproach<>(((FeaturesExtractor<Changes, Changes>) x -> x).compose(Changes::getChanges)
+                    .compose(new PointwiseExtractor<>(normalizedExtractor)),
+                    new FuzzyJaccardDistanceFunction<>(FunctionsUtils::cosineSimilarity), "def_vec");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static Approach<double[]> getSumApproach(Dataset train,
                                                     FeaturesExtractor<Solution, Changes> generator) {
         try {
