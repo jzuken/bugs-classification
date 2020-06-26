@@ -14,6 +14,9 @@ import java.util.List;
 import static org.ml_methods_group.evaluation.approaches.BOWApproach.*;
 
 public class JaccardApproach {
+    private static final FeaturesExtractor<Changes, Changes> identityExtractor =
+            (FeaturesExtractor<Changes, Changes>) value -> value;
+
     public static Approach<List<String>> getDefaultApproach(FeaturesExtractor<Solution, Changes> generator) {
         final HashExtractor<NodeContext> hasher = HashExtractor.<NodeContext>builder()
                 .append("FTCC")
@@ -23,6 +26,20 @@ public class JaccardApproach {
                 .build();
         final HashExtractor<CodeChange> extractor = getCodeChangeHasher(hasher);
         return new Approach<>(generator.compose(Changes::getChanges)
+                .compose(new PointwiseExtractor<>(extractor)),
+                new JaccardDistanceFunction<>(), "def_jac");
+    }
+
+    public static ChangesApproach<List<String>> getDefaultApproach() {
+        final HashExtractor<NodeContext> hasher = HashExtractor.<NodeContext>builder()
+                .append("FTCC")
+                .hashComponent(NodeContext::getNode, FULL_NODE_STATE_HASH)
+                .hashComponent(NodeContext::getParent, TYPE_ONLY_NODE_STATE_HASH)
+                .hashComponent(NodeContext::getParentOfParent, TYPE_ONLY_NODE_STATE_HASH)
+                .build();
+        final HashExtractor<CodeChange> extractor = getCodeChangeHasher(hasher);
+
+        return new ChangesApproach<>(identityExtractor.compose(Changes::getChanges)
                 .compose(new PointwiseExtractor<>(extractor)),
                 new JaccardDistanceFunction<>(), "def_jac");
     }
@@ -40,6 +57,19 @@ public class JaccardApproach {
                 new JaccardDistanceFunction<>(), "ext_jac");
     }
 
+    public static ChangesApproach<List<String>> getExtendedApproach() {
+        final HashExtractor<NodeContext> hasher = HashExtractor.<NodeContext>builder()
+                .append("FECC")
+                .hashComponent(NodeContext::getNode, FULL_NODE_STATE_HASH)
+                .hashComponent(NodeContext::getParent, FULL_NODE_STATE_HASH)
+                .hashComponent(NodeContext::getParentOfParent, TYPE_ONLY_NODE_STATE_HASH)
+                .build();
+        final HashExtractor<CodeChange> extractor = getCodeChangeHasher(hasher);
+        return new ChangesApproach<>(identityExtractor.compose(Changes::getChanges)
+                .compose(new PointwiseExtractor<>(extractor)),
+                new JaccardDistanceFunction<>(), "ext_jac");
+    }
+
     public static Approach<List<String>> getFullApproach(FeaturesExtractor<Solution, Changes> generator) {
         final HashExtractor<NodeContext> hasher = HashExtractor.<NodeContext>builder()
                 .append("FFCC")
@@ -49,6 +79,19 @@ public class JaccardApproach {
                 .build();
         final HashExtractor<CodeChange> extractor = getCodeChangeHasher(hasher);
         return new Approach<>(generator.compose(Changes::getChanges)
+                .compose(new PointwiseExtractor<>(extractor)),
+                new JaccardDistanceFunction<>(), "ful_jac");
+    }
+
+    public static ChangesApproach<List<String>> getFullApproach() {
+        final HashExtractor<NodeContext> hasher = HashExtractor.<NodeContext>builder()
+                .append("FFCC")
+                .hashComponent(NodeContext::getNode, FULL_NODE_STATE_HASH)
+                .hashComponent(NodeContext::getParent, FULL_NODE_STATE_HASH)
+                .hashComponent(NodeContext::getParentOfParent, FULL_NODE_STATE_HASH)
+                .build();
+        final HashExtractor<CodeChange> extractor = getCodeChangeHasher(hasher);
+        return new ChangesApproach<>(identityExtractor.compose(Changes::getChanges)
                 .compose(new PointwiseExtractor<>(extractor)),
                 new JaccardDistanceFunction<>(), "ful_jac");
     }
