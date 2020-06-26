@@ -97,7 +97,7 @@ public class Application {
                 break;
 
             case "prepare.es":
-                if (args.length < 2 || args.length > 2 ) {
+                if (args.length < 3 || args.length > 3 ) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
                             "    Path to code dataset" + System.lineSeparator() +
                             "    Path to store representation" + System.lineSeparator() );
@@ -419,7 +419,7 @@ public class Application {
                 id++;
             
             }
-
+            System.out.println("Saving representation");
             store.saveRepresentationsBitset(pathToSaveRepresentations.toString(), null);
 }
 
