@@ -35,6 +35,8 @@ import org.ml_methods_group.parsing.ParsingUtils;
 import org.ml_methods_group.testing.extractors.CachedFeaturesExtractor;
 import org.ml_methods_group.common.ast.generation.BasicASTGenerator;
 import org.ml_methods_group.common.ast.normalization.BasicASTNormalizer;
+import com.github.gumtreediff.matchers.Mapping;
+import com.github.gumtreediff.matchers.MappingStore;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -96,15 +98,22 @@ public class Application {
                 break;
 
             case "prepare.es":
-                if (args.length < 3 || args.length > 3 ) {
+                if (args.length < 3 || args.length > 6 ) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
                             "    Path to code dataset" + System.lineSeparator() +
-                            "    Path to store representation" + System.lineSeparator() );
+                            "    Path to store representation" + System.lineSeparator()+
+                            "    [Optional] --algorithm=X - Set clusterization algorithm (bow, vec, jac, ext_jac, full_jac, fuz_jac), default value bow" + System.lineSeparator() +
+                            "    [Optional] --distanceLimit=X - Set clustering distance limit to X, default value 0.3" + System.lineSeparator() +
+                            "    [Optional] --minClustersCount=X - Set minimum amount of clusters to X, default value 1" + System.lineSeparator() );
                     return;
                 }
                 prepareESDataset (
                         Paths.get(args[1]),
-                        Paths.get(args[2])
+                        Paths.get(args[2]),
+                        getAlgorithmFromArgs(args),
+                        getDistanceLimitFromArgs(args),
+                        getMinClustersCountFromArgs(args)
+                        
                     );
                 break;
 
@@ -407,38 +416,72 @@ public class Application {
     }
 
 
-    private static void prepareESDataset(Path pathToDataset,  Path pathToSaveRepresentations) throws IOException {
+  
 
+    private static void prepareESDataset(Path pathToDataset,  Path pathToSaveRepresentations, ClusteringAlgorithm algorithm,
+    double distanceLimit, int minClustersCount) throws IOException {
 
-            EditActionStore store = new EditActionStore();
+        List<Changes> AllChanges = new ArrayList();
 
-            File datasetDir = new File(pathToDataset.toString());
-            File[] elements = Arrays.stream(datasetDir.listFiles())
-            .toArray(File[]::new);
+        EditActionStore store = new EditActionStore();
+        File datasetDir = new File(pathToDataset.toString());
+        File[] elements = Arrays.stream(datasetDir.listFiles())
+        .toArray(File[]::new);
 
-            // Arrays.sort(elements, Comparator.comparingString(o -> o.getName()));
-            Integer id= 1;
-            for (File elementDir : elements) {
-           
-                Path methodBeforePath = pathToDataset.resolve(elementDir.getName()).resolve("before.txt");
-                Path methodAfterPath = pathToDataset.resolve(elementDir.getName()).resolve("after.txt");
-                var fromCode = Files.readString(methodBeforePath);
-                String wrongSolutionId = Integer.toString(id) + FAIL.ordinal();
-                var fromSolution = new Solution(fromCode, Integer.toString(id), wrongSolutionId, FAIL);
+        Path clusterPath = Paths.get(pathToSaveRepresentations.toString() +"/cluster.txt");
 
-                var toCode = Files.readString(methodAfterPath);
-                String rightSolutionId = Integer.toString(id) + OK.ordinal();
-                var toSolution = new Solution(toCode, Integer.toString(id), rightSolutionId, OK);
-                List<Action> actions = buildMethodActions(fromSolution, toSolution);
-                Pair<List<String>, List<String>> actionsStrings = store.convertToStrings(actions);
+        var baseTime = System.currentTimeMillis();
 
-                store.addActions(elementDir.getName(), actionsStrings.getSecond());
-                id++;
-            
+      
+        for (File elementDir : elements) {
+            //System.out.println("Processing folder:" + elementDir.getName() );
+            Path methodBeforePath = pathToDataset.resolve(elementDir.getName()).resolve("before.txt");
+            Path methodAfterPath = pathToDataset.resolve(elementDir.getName()).resolve("after.txt");
+            var fromCode = Files.readString(methodBeforePath);
+            String wrongSolutionId = elementDir.getName() +"_" + FAIL.ordinal();
+            var fromSolution = new Solution(fromCode, elementDir.getName(), wrongSolutionId, FAIL);
+
+            var toCode = Files.readString(methodAfterPath);
+            String rightSolutionId = elementDir.getName() +"_"  + OK.ordinal();
+            var toSolution = new Solution(toCode, elementDir.getName(), rightSolutionId, OK);
+            List<Action> actions = buildMethodActions(fromSolution, toSolution);
+
+            Pair<List<String>, List<String>> actionsStrings = store.convertToStrings(actions);
+
+            store.addActions(elementDir.getName(), actionsStrings.getSecond());
+
+            List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(),5);
+            //System.out.println("NGarms: " +NGrams.toString());
+
+            String emuCode="";
+
+            for (BitSet bs : NGrams) {
+                String tmp =  bs.toString();
+                if(tmp != "{}")  
+                    emuCode += tmp +"\n";
             }
-            System.out.println("Saving representation");
+            //System.out.println("emuCode: " +emuCode);
+            
+            var fromSolutionNG = new Solution("", elementDir.getName(), wrongSolutionId, FAIL);
+            var toSolutionNG = new Solution(emuCode, elementDir.getName(), rightSolutionId, OK);
+            Changes change = getChanges(false, fromSolutionNG, toSolutionNG);
+
+            AllChanges.add(change);
+          
+       
+        }
+            //System.out.println("Saving representation");
             store.saveRepresentationsBitset(pathToSaveRepresentations.toString(), null);
-}
+            
+            
+            System.out.println(getDiff(baseTime) + ": All changes are processed, starting clustering");
+
+            
+            doClustering(clusterPath, baseTime, AllChanges, algorithm, distanceLimit, minClustersCount);
+
+          
+           
+    }
 
     private static void saveClustersToReadableFormat(Clusters<Changes> clusters, Path storage) throws IOException {
         Clusters<String> idClusters = clusters.map(x -> x.getOrigin().getId());

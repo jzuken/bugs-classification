@@ -24,8 +24,8 @@ public class EditActionStore{
     //private Parameters parameters;
     private List<String> allChangeNamesList = new ArrayList<>();
 
-    private Map<String, Integer> ngramStats = new HashMap<>();
-    private Map<String, Map<String, Integer>> fromChangeToHist = new HashMap<>();
+    //private Map<String, Integer> ngramStats = new HashMap<>();
+    //private Map<String, Map<String, Integer>> fromChangeToHist = new HashMap<>();
 
     private Map<BitSet, Integer> ngramStatsBitset = new HashMap<>();
     private Map<String, Map<BitSet, Integer>> fromChangeToHistBitset = new HashMap<>();
@@ -39,6 +39,15 @@ public class EditActionStore{
         return true;
     }
 
+    public List<Pair<String, Map<BitSet, Integer>>> Representation(){
+        List<Pair<String, Map<BitSet, Integer>>> r = new ArrayList();
+        for (Map.Entry<String, Map<BitSet, Integer>> entry : fromChangeToHistBitset.entrySet()) {
+            String name = entry.getKey();
+            Map<BitSet, Integer> value = entry.getValue();
+            r.add(new Pair<>(name, value));
+        }  
+        return r;
+    }
     
     public EditActionStore() {
         encoder = new Encoder(true);
@@ -49,6 +58,7 @@ public class EditActionStore{
     }
 
     public static String clean(String action) {
+        //System.out.println("clean.start");
         String[] tokens = action.split(" ");
         int n = tokens.length;
 
@@ -83,7 +93,7 @@ public class EditActionStore{
                 }
             }
         }
-
+        //System.out.println("clean.end");
         return String.join(" ", result);
     }
 
@@ -91,34 +101,69 @@ public class EditActionStore{
       Returns actions converted to list of strings: raw and processed.
      */
     public Pair<List<String>, List<String>> convertToStrings(List<Action> actions) {
+       // System.out.println("convertToStrings.start");
         List<String> actionsRawStrings = new ArrayList<>();
         List<String> actionsStrings = new ArrayList<>();
 
         for (Action action : actions) {
             // if (parameters.getUseContext() && needsContext(action)) {
+                //System.out.println("convertToStrings.1");
                 actionsRawStrings.add(action.toString() + " " + action.getNode().getParent().getType() + "@@");
+                //System.out.println("convertToStrings.2");
                 actionsStrings.add(clean(action.toString()) + " " + action.getNode().getParent().getType() + "@@");
+               // System.out.println("convertToStrings.3");
             /*} else {
                 actionsRawStrings.add(action.toString());
                 actionsStrings.add(clean(action.toString()));
             }*/
         }
+       // System.out.println("convertToStrings.end");
 
         return new Pair<>(actionsRawStrings, actionsStrings);
     }
 
+    
+    
+    public List<BitSet> calcActionsNgram( List<String> actions, int n) {
+
+        BitSet actionsBS = encoder.encode(actions);
+        List<BitSet> ngrams = new ArrayList();
+        int numActions =actions.size();
+       
+        if (numActions < n) {
+            
+            BitSet seq = encoder.getActionsSublist(actionsBS, 0, numActions);
+            ngrams.add( seq);
+        } else {
+            int i = 0;
+
+            while (i + n <= numActions) {
+                BitSet seq = encoder.getActionsSublist(actionsBS, i, i + n);
+                ngrams.add( seq);
+                i++;
+            }
+
+        }
+        return ngrams;
+             
+    }
+
     private void addActions(String name, BitSet actions, int numActions) {
+
+        //System.out.println("addActions: " + name);
         int n = 5; //parameters.getN();
 
         //switch (parameters.getRepresentationType()) {
         //    case SHORT_AS_NGRAM:
                 if (numActions < n) {
+                    //System.out.println("addActions: " + name + "[0.." + numActions +"]");
                     BitSet seq = encoder.getActionsSublist(actions, 0, numActions);
                     addNgramOfChange(name, seq);
                 } else {
                     int i = 0;
 
                     while (i + n <= numActions) {
+                       // System.out.println("addActions: " + name + "[" +i +".." + (i+n) +"]");
                         BitSet seq = encoder.getActionsSublist(actions, i, i + n);
                         addNgramOfChange(name, seq);
 
@@ -158,7 +203,9 @@ public class EditActionStore{
         if (USE_BITSET) {
             BitSet actionsBitset = encoder.encode(actions);
             addActions(name, actionsBitset, numActions);
-        } else {
+        } 
+        
+        /*else {
             int n = 5; //parameters.getN();
 
            // switch (parameters.getRepresentationType()) {
@@ -177,6 +224,7 @@ public class EditActionStore{
                         }
 
                     }
+                    */
          /*           break;
                 case CONCAT:
                     int k = 1;
@@ -194,10 +242,11 @@ public class EditActionStore{
                         k++;
                     }
             } */
-        }
+       // }
     }
 
-    private void addNgramOfChange(String name, String ngram) {
+   /* private void addNgramOfChange(String name, String ngram) {
+        System.out.println("addNgramOfChange->" + name +" : " + ngram);
         if (!ngramStats.containsKey(ngram)) {
             ngramStats.put(ngram, 0);
         }
@@ -209,7 +258,9 @@ public class EditActionStore{
         fromChangeToHist.put(name, histOfSample);
     }
 
+    */
     private void addNgramOfChange(String name, BitSet ngram) {
+       // System.out.println("addNgramOfChange2->" + name +" ng=" + ngram.toString());
         if (!ngramStatsBitset.containsKey(ngram)) {
             ngramStatsBitset.put(ngram, 0);
         }
@@ -221,7 +272,7 @@ public class EditActionStore{
         fromChangeToHistBitset.put(name, histOfSample);
     }
 
-    public void saveRepresentations(String pathToSave, TreeContext treeContext) throws IOException {
+   /* public void saveRepresentations(String pathToSave, TreeContext treeContext) throws IOException {
         if (USE_BITSET) {
             saveRepresentationsBitset(pathToSave, treeContext);
             return;
@@ -305,7 +356,7 @@ public class EditActionStore{
         }
 
     }
-
+*/
 
     public void saveRepresentationsBitset(String pathToSave, TreeContext treeContext) throws IOException {
         LinkedHashMap<BitSet, Integer> sorted = ngramStatsBitset
@@ -333,7 +384,7 @@ public class EditActionStore{
             String keyStr = encoder.decode(key);
 
             Integer value = entry.getValue();
-            editScriptsWriterUnmapped.write(num + ") " + keyStr + " = " + value + "\n");
+            editScriptsWriterUnmapped.write(num + ") " +"[" + key.toString() + "] -> "+ keyStr + " = " + value + "\n");
             num++;
         }
         editScriptsWriterUnmapped.close();
@@ -359,11 +410,11 @@ public class EditActionStore{
 
         int processed = 0;
         for (Map.Entry<String, Map<BitSet, Integer>> entry : fromChangeToHistBitset.entrySet()) {
-            System.out.println("Saving: " + processed + "/" + fromChangeToHistBitset.entrySet().size());
+            //System.out.println("Saving: " + processed + "/" + fromChangeToHistBitset.entrySet().size());
             processed++;
 
             String name = entry.getKey();
-
+            //System.out.println("Saving hist: " + name );
             File histFile = new File(Paths.get(pathToSave).resolve(name).resolve("sparse_hist.txt").toString());
 
             histFile.getParentFile().mkdirs();
