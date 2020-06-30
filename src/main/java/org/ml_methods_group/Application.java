@@ -102,7 +102,7 @@ public class Application {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
                             "    Path to code dataset" + System.lineSeparator() +
                             "    Path to store representation" + System.lineSeparator()+
-                            "    ES variant (code,  bitset, ngram)" + System.lineSeparator()+
+                            "    ES variant (code,  bitset, ngram, textngram)" + System.lineSeparator()+
                             "    [Optional] --algorithm=X - Set clusterization algorithm (bow, vec, jac, ext_jac, full_jac, fuz_jac), default value bow" + System.lineSeparator() +
                             "    [Optional] --distanceLimit=X - Set clustering distance limit to X, default value 0.3" + System.lineSeparator() +
                             "    [Optional] --minClustersCount=X - Set minimum amount of clusters to X, default value 1" + System.lineSeparator() );
@@ -430,7 +430,7 @@ public class Application {
         File[] elements = Arrays.stream(datasetDir.listFiles())
         .toArray(File[]::new);
 
-        Path clusterPath = Paths.get(pathToSaveRepresentations.toString() +"/cluster.txt");
+        Path clusterPath = Paths.get(pathToSaveRepresentations.toString() +"/cluster_" + version + "_" + algorithm.getCode() + ".txt");
 
         var baseTime = System.currentTimeMillis();
 
@@ -457,13 +457,29 @@ public class Application {
             // store NGRAMS
             switch(version.toLowerCase()) {
                 case "ngram":
-                List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(),5);
-                //System.out.println("NGarms: " +NGrams.toString());
-                for (BitSet bs : NGrams) {
-                    String tmp =  bs.toString();
-                    if(tmp != "{}") { 
-                        Cnt++;
-                        emuCode += "int x"+ Cnt +"[] =" + tmp +";\n";
+                {
+                    List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(),5);
+                    //System.out.println("NGarms: " +NGrams.toString());
+                    for (BitSet bs : NGrams) {
+                        String tmp =  bs.toString();
+                        if(tmp != "{}") { 
+                            Cnt++;
+                            emuCode += "int x"+ Cnt +"[] =" + tmp +";\n";
+                        }
+                    }
+                }
+                break;
+
+
+                case "textngram":
+                {
+                    List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(),5);
+                 
+                    for (BitSet bs : NGrams) {
+                        String tmp =  store.NgramToText( bs );
+                            Cnt++;
+                            emuCode += "char* x"+ Cnt +"[] =\"" + tmp +"\";\n";
+                       
                     }
                 }
                 break;
@@ -485,10 +501,9 @@ public class Application {
                 break;
 
             }
-            
+
+            emuCode ="void block(){\n" + emuCode + "}\n";
             System.out.println("emuCode: " +emuCode);
-
-
             
             var fromSolutionNG = new Solution("", elementDir.getName(), wrongSolutionId, FAIL);
             var toSolutionNG = new Solution(emuCode, elementDir.getName(), rightSolutionId, OK);

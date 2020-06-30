@@ -499,4 +499,8 @@ public class EditActionStore{
         result.add(")");
         return String.join(" ", result);
     }
+
+    public String NgramToText(BitSet key){
+        return encoder.decode(key);
+    }
 }
