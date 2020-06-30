@@ -98,10 +98,11 @@ public class Application {
                 break;
 
             case "prepare.es":
-                if (args.length < 3 || args.length > 6 ) {
+                if (args.length < 4 || args.length > 7 ) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
                             "    Path to code dataset" + System.lineSeparator() +
                             "    Path to store representation" + System.lineSeparator()+
+                            "    ES variant (code,  bitset, ngram)" + System.lineSeparator()+
                             "    [Optional] --algorithm=X - Set clusterization algorithm (bow, vec, jac, ext_jac, full_jac, fuz_jac), default value bow" + System.lineSeparator() +
                             "    [Optional] --distanceLimit=X - Set clustering distance limit to X, default value 0.3" + System.lineSeparator() +
                             "    [Optional] --minClustersCount=X - Set minimum amount of clusters to X, default value 1" + System.lineSeparator() );
@@ -110,6 +111,7 @@ public class Application {
                 prepareESDataset (
                         Paths.get(args[1]),
                         Paths.get(args[2]),
+                        args[3],
                         getAlgorithmFromArgs(args),
                         getDistanceLimitFromArgs(args),
                         getMinClustersCountFromArgs(args)
@@ -418,7 +420,7 @@ public class Application {
 
   
 
-    private static void prepareESDataset(Path pathToDataset,  Path pathToSaveRepresentations, ClusteringAlgorithm algorithm,
+    private static void prepareESDataset(Path pathToDataset,  Path pathToSaveRepresentations, String version ,ClusteringAlgorithm algorithm,
     double distanceLimit, int minClustersCount) throws IOException {
 
         List<Changes> AllChanges = new ArrayList();
@@ -450,17 +452,43 @@ public class Application {
 
             store.addActions(elementDir.getName(), actionsStrings.getSecond());
 
-            List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(),5);
-            //System.out.println("NGarms: " +NGrams.toString());
-
             String emuCode="";
+            int Cnt=0;
+            // store NGRAMS
+            switch(version.toLowerCase()) {
+                case "ngram":
+                List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(),5);
+                //System.out.println("NGarms: " +NGrams.toString());
+                for (BitSet bs : NGrams) {
+                    String tmp =  bs.toString();
+                    if(tmp != "{}") { 
+                        Cnt++;
+                        emuCode += "int x"+ Cnt +"[] =" + tmp +";\n";
+                    }
+                }
+                break;
 
-            for (BitSet bs : NGrams) {
-                String tmp =  bs.toString();
-                if(tmp != "{}")  
-                    emuCode += tmp +"\n";
+                case "code":
+                for(String s: actionsStrings.getSecond() ){
+                    emuCode += EditActionStore.actionToC(s) +";\n";
+                }
+                break;
+
+                case "bitset":
+                
+                for(String s: actionsStrings.getSecond() ){
+                    if(s != ""){
+                        Cnt++;
+                        emuCode +=  "int x"+ Cnt +"[] =" + store.calcActionsBitSet(s) +";\n";
+                    }
+                }
+                break;
+
             }
-            //System.out.println("emuCode: " +emuCode);
+            
+            System.out.println("emuCode: " +emuCode);
+
+
             
             var fromSolutionNG = new Solution("", elementDir.getName(), wrongSolutionId, FAIL);
             var toSolutionNG = new Solution(emuCode, elementDir.getName(), rightSolutionId, OK);
@@ -471,7 +499,7 @@ public class Application {
        
         }
             //System.out.println("Saving representation");
-            store.saveRepresentationsBitset(pathToSaveRepresentations.toString(), null);
+            //store.saveRepresentationsBitset(pathToSaveRepresentations.toString(), null);
             
             
             System.out.println(getDiff(baseTime) + ": All changes are processed, starting clustering");

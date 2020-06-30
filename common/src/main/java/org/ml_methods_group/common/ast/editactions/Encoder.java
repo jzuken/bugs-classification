@@ -88,9 +88,9 @@ public class Encoder {
             }
         }
         //System.out.println("Actions:");
-        System.out.println(actions);
+        //System.out.println(actions);
         //System.out.println("Bitset result:");
-        System.out.println(result.toString());
+        //System.out.println(result.toString());
 
 
 

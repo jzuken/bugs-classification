@@ -124,7 +124,7 @@ public class EditActionStore{
 
     
     
-    public List<BitSet> calcActionsNgram( List<String> actions, int n) {
+    public  List<BitSet> calcActionsNgram( List<String> actions, int n) {
 
         BitSet actionsBS = encoder.encode(actions);
         List<BitSet> ngrams = new ArrayList();
@@ -146,6 +146,15 @@ public class EditActionStore{
         }
         return ngrams;
              
+    }
+
+
+    public  BitSet calcActionsBitSet( String action) {
+
+        List<String> actions = new ArrayList();
+        actions.add(action);
+        BitSet actionsBS = encoder.encode(actions);
+        return actionsBS;
     }
 
     private void addActions(String name, BitSet actions, int numActions) {
@@ -464,6 +473,30 @@ public class EditActionStore{
             }
         }
 
+        return String.join(" ", result);
+    }
+
+    public static String actionToC(String action) {
+        String[] tokens = action.split(" ");
+        int n = tokens.length;
+        List<String> result = new ArrayList<>();
+        result.add(tokens[0]) ;
+        result.add("(");
+        String nodeTypeTag = "@@";
+
+        for (int i = 1; i < n; i++) {
+            String token = tokens[i];
+            if (isNumeric(token)) {
+                result.add(  token );
+            }else{
+                result.add("\"" +  token +"\"");
+            }
+            if(i < n-1){
+                result.add(",");
+            }
+            
+        }
+        result.add(")");
         return String.join(" ", result);
     }
 }
