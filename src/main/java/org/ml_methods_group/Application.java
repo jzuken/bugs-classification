@@ -47,6 +47,7 @@ public class Application {
 
     static final double DEFAULT_DISTANCE_LIMIT = 0.3;
     static final int DEFAULT_MIN_CLUSTERS_COUNT = 1;
+    static final int DEFAULT_NGRAM_SIZE = 5;
     static final ClusteringAlgorithm DEFAULT_ALGORITHM = ClusteringAlgorithm.BagOfWords;
 
     public static void main(String[] args) throws Exception {
@@ -91,14 +92,15 @@ public class Application {
                 break;
 
             case "prepare.es":
-                if (args.length < 4 || args.length > 7) {
+                if (args.length < 4 || args.length > 8) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
                             "    Path to code dataset" + System.lineSeparator() +
                             "    Path to store representation" + System.lineSeparator() +
                             "    ES variant (code,  bitset, ngram, textngram)" + System.lineSeparator() +
                             "    [Optional] --algorithm=X - Set clusterization algorithm (bow, vec, jac, ext_jac, full_jac, fuz_jac), default value bow" + System.lineSeparator() +
                             "    [Optional] --distanceLimit=X - Set clustering distance limit to X, default value 0.3" + System.lineSeparator() +
-                            "    [Optional] --minClustersCount=X - Set minimum amount of clusters to X, default value 1" + System.lineSeparator());
+                            "    [Optional] --minClustersCount=X - Set minimum amount of clusters to X, default value 1" + System.lineSeparator()
+                            "    [Optional] --ngramsize=X - Set size of ngram to X, default value 5" + System.lineSeparator()););
                     return;
                 }
                 prepareESDataset(
@@ -107,7 +109,8 @@ public class Application {
                         args[3],
                         getAlgorithmFromArgs(args),
                         getDistanceLimitFromArgs(args),
-                        getMinClustersCountFromArgs(args)
+                        getMinClustersCountFromArgs(args),
+                        getNgramSizeFromArgs(args)
 
                 );
                 break;
@@ -206,6 +209,16 @@ public class Application {
         return Integer.parseInt(param.get().toLowerCase().replace("--minclusterscount=", ""));
     }
 
+    private static int getNgramSizeFromArgs(String[] args) {
+        var param = Arrays.stream(args).filter(x -> x.toLowerCase().startsWith("--ngramsize")).findFirst();
+
+        if (param.isEmpty()) {
+            return DEFAULT_NGRAM_SIZE;
+        }
+
+        return Integer.parseInt(param.get().toLowerCase().replace("--ngramsize=", ""));
+    }
+    
     private static ClusteringAlgorithm getAlgorithmFromArgs(String[] args) {
         var param = Arrays.stream(args).filter(x -> x.toLowerCase().startsWith("--algorithm")).findFirst();
 
@@ -412,7 +425,7 @@ public class Application {
 
 
     private static void prepareESDataset(Path pathToDataset, Path pathToSaveRepresentations, String version, ClusteringAlgorithm algorithm,
-                                         double distanceLimit, int minClustersCount) throws IOException {
+                                         double distanceLimit, int minClustersCount, int NgramSize) throws IOException {
 
         List<Changes> AllChanges = new ArrayList();
 
@@ -441,14 +454,14 @@ public class Application {
 
             Pair<List<String>, List<String>> actionsStrings = store.convertToStrings(actions);
 
-            store.addActions(elementDir.getName(), actionsStrings.getSecond());
+            // store.addActions(elementDir.getName(), actionsStrings.getSecond());
 
             String emuCode = "";
             int Cnt = 0;
             // store NGRAMS
             switch (version.toLowerCase()) {
                 case "ngram": {
-                    List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(), 5);
+                    List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(), NgramSize);
                     //System.out.println("NGarms: " +NGrams.toString());
                     for (BitSet bs : NGrams) {
                         String tmp = bs.toString();
@@ -462,7 +475,7 @@ public class Application {
 
 
                 case "textngram": {
-                    List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(), 5);
+                    List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(), NgramSize);
 
                     for (BitSet bs : NGrams) {
                         String tmp = store.NgramToText(bs);
