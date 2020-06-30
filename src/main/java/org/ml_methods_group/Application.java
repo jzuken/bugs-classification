@@ -1,27 +1,24 @@
 package org.ml_methods_group;
 
-import com.github.gumtreediff.matchers.CompositeMatchers;
-import com.github.gumtreediff.matchers.MappingStore;
-import com.github.gumtreediff.tree.ITree;
-import com.github.gumtreediff.utils.Pair;
 import com.github.gumtreediff.actions.ActionGenerator;
 import com.github.gumtreediff.actions.model.Action;
-import com.github.gumtreediff.gen.Generators;
+import com.github.gumtreediff.matchers.CompositeMatchers;
+import com.github.gumtreediff.matchers.MappingStore;
 import com.github.gumtreediff.matchers.Matcher;
 import com.github.gumtreediff.matchers.Matchers;
-import com.github.gumtreediff.tree.TreeContext;
-import org.ml_methods_group.clustering.clusterers.CompositeClusterer;
-import org.ml_methods_group.clustering.clusterers.HAC;
+import com.github.gumtreediff.tree.ITree;
+import com.github.gumtreediff.utils.Pair;
 import org.ml_methods_group.common.*;
 import org.ml_methods_group.common.ast.ASTUtils;
 import org.ml_methods_group.common.ast.changes.BasicChangeGenerator;
 import org.ml_methods_group.common.ast.changes.ChangeGenerator;
 import org.ml_methods_group.common.ast.changes.Changes;
-import org.ml_methods_group.common.ast.editactions.EditActions;
 import org.ml_methods_group.common.ast.editactions.EditActionStore;
-import org.ml_methods_group.common.ast.changes.CodeChange;
+import org.ml_methods_group.common.ast.editactions.EditActions;
 import org.ml_methods_group.common.ast.generation.ASTGenerator;
+import org.ml_methods_group.common.ast.generation.BasicASTGenerator;
 import org.ml_methods_group.common.ast.generation.CachedASTGenerator;
+import org.ml_methods_group.common.ast.normalization.BasicASTNormalizer;
 import org.ml_methods_group.common.ast.normalization.NamesASTNormalizer;
 import org.ml_methods_group.common.extractors.ChangesExtractor;
 import org.ml_methods_group.common.metrics.functions.HeuristicChangesBasedDistanceFunction;
@@ -33,10 +30,6 @@ import org.ml_methods_group.common.serialization.ProtobufSerializationUtils;
 import org.ml_methods_group.evaluation.approaches.clustering.ClusteringAlgorithm;
 import org.ml_methods_group.parsing.ParsingUtils;
 import org.ml_methods_group.testing.extractors.CachedFeaturesExtractor;
-import org.ml_methods_group.common.ast.generation.BasicASTGenerator;
-import org.ml_methods_group.common.ast.normalization.BasicASTNormalizer;
-import com.github.gumtreediff.matchers.Mapping;
-import com.github.gumtreediff.matchers.MappingStore;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -81,12 +74,12 @@ public class Application {
                 break;
 
             case "make.es":
-                if (args.length < 4 || args.length > 5 ) {
+                if (args.length < 4 || args.length > 5) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
                             "    Problem id" + System.lineSeparator() +
                             "    Path to code file before changes" + System.lineSeparator() +
                             "    Path to code file after changes" + System.lineSeparator() +
-                            "    Path to file to store edit script" + System.lineSeparator() );
+                            "    Path to file to store edit script" + System.lineSeparator());
                     return;
                 }
                 makeEditScript(
@@ -94,29 +87,29 @@ public class Application {
                         Paths.get(args[2]),
                         Paths.get(args[3]),
                         Paths.get(args[4])
-                    );
+                );
                 break;
 
             case "prepare.es":
-                if (args.length < 4 || args.length > 7 ) {
+                if (args.length < 4 || args.length > 7) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
                             "    Path to code dataset" + System.lineSeparator() +
-                            "    Path to store representation" + System.lineSeparator()+
-                            "    ES variant (code,  bitset, ngram, textngram)" + System.lineSeparator()+
+                            "    Path to store representation" + System.lineSeparator() +
+                            "    ES variant (code,  bitset, ngram, textngram)" + System.lineSeparator() +
                             "    [Optional] --algorithm=X - Set clusterization algorithm (bow, vec, jac, ext_jac, full_jac, fuz_jac), default value bow" + System.lineSeparator() +
                             "    [Optional] --distanceLimit=X - Set clustering distance limit to X, default value 0.3" + System.lineSeparator() +
-                            "    [Optional] --minClustersCount=X - Set minimum amount of clusters to X, default value 1" + System.lineSeparator() );
+                            "    [Optional] --minClustersCount=X - Set minimum amount of clusters to X, default value 1" + System.lineSeparator());
                     return;
                 }
-                prepareESDataset (
+                prepareESDataset(
                         Paths.get(args[1]),
                         Paths.get(args[2]),
                         args[3],
                         getAlgorithmFromArgs(args),
                         getDistanceLimitFromArgs(args),
                         getMinClustersCountFromArgs(args)
-                        
-                    );
+
+                );
                 break;
 
             case "parse":
@@ -269,8 +262,8 @@ public class Application {
 
     public static List<Action> buildMethodActions(Solution FileBefore, Solution FileAfter)
             throws IOException {
-                ITree src;
-                ITree dst;
+        ITree src;
+        ITree dst;
         try {
             final ASTGenerator generator = new BasicASTGenerator(new BasicASTNormalizer());
             src = generator.buildTree(FileBefore);
@@ -301,7 +294,7 @@ public class Application {
         final String rightSolutionId = id + OK.ordinal();
         final var toSolution = new Solution(toCode, id, rightSolutionId, OK);
 
-        final EditActions ea = new EditActions(fromSolution,toSolution,buildMethodActions(fromSolution,toSolution));
+        final EditActions ea = new EditActions(fromSolution, toSolution, buildMethodActions(fromSolution, toSolution));
 
         var start = System.currentTimeMillis();
 
@@ -315,10 +308,10 @@ public class Application {
         File actionsFile = new File(outputFile.toString());
         BufferedWriter writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
         for (Action action : ea.getEditActions()) {
-                writer.write(ea.getActionName(action)+ "\n");
+            writer.write(ea.getActionName(action) + "\n");
         }
         writer.close();
-        
+
 
         System.out.println("Saving actions took " + ((System.currentTimeMillis() - start) / 1000.0) + " s");
     }
@@ -418,33 +411,31 @@ public class Application {
     }
 
 
-  
-
-    private static void prepareESDataset(Path pathToDataset,  Path pathToSaveRepresentations, String version ,ClusteringAlgorithm algorithm,
-    double distanceLimit, int minClustersCount) throws IOException {
+    private static void prepareESDataset(Path pathToDataset, Path pathToSaveRepresentations, String version, ClusteringAlgorithm algorithm,
+                                         double distanceLimit, int minClustersCount) throws IOException {
 
         List<Changes> AllChanges = new ArrayList();
 
         EditActionStore store = new EditActionStore();
         File datasetDir = new File(pathToDataset.toString());
         File[] elements = Arrays.stream(datasetDir.listFiles())
-        .toArray(File[]::new);
+                .toArray(File[]::new);
 
-        Path clusterPath = Paths.get(pathToSaveRepresentations.toString() +"/cluster_" + version + "_" + algorithm.getCode() + ".txt");
+        Path clusterPath = Paths.get(pathToSaveRepresentations.toString() + "/cluster_" + version + "_" + algorithm.getCode() + ".txt");
 
         var baseTime = System.currentTimeMillis();
 
-      
+
         for (File elementDir : elements) {
             //System.out.println("Processing folder:" + elementDir.getName() );
             Path methodBeforePath = pathToDataset.resolve(elementDir.getName()).resolve("before.txt");
             Path methodAfterPath = pathToDataset.resolve(elementDir.getName()).resolve("after.txt");
             var fromCode = Files.readString(methodBeforePath);
-            String wrongSolutionId = elementDir.getName() +"_" + FAIL.ordinal();
+            String wrongSolutionId = elementDir.getName() + "_" + FAIL.ordinal();
             var fromSolution = new Solution(fromCode, elementDir.getName(), wrongSolutionId, FAIL);
 
             var toCode = Files.readString(methodAfterPath);
-            String rightSolutionId = elementDir.getName() +"_"  + OK.ordinal();
+            String rightSolutionId = elementDir.getName() + "_" + OK.ordinal();
             var toSolution = new Solution(toCode, elementDir.getName(), rightSolutionId, OK);
             List<Action> actions = buildMethodActions(fromSolution, toSolution);
 
@@ -452,78 +443,75 @@ public class Application {
 
             store.addActions(elementDir.getName(), actionsStrings.getSecond());
 
-            String emuCode="";
-            int Cnt=0;
+            String emuCode = "";
+            int Cnt = 0;
             // store NGRAMS
-            switch(version.toLowerCase()) {
-                case "ngram":
-                {
-                    List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(),5);
+            switch (version.toLowerCase()) {
+                case "ngram": {
+                    List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(), 5);
                     //System.out.println("NGarms: " +NGrams.toString());
                     for (BitSet bs : NGrams) {
-                        String tmp =  bs.toString();
-                        if(tmp != "{}") { 
+                        String tmp = bs.toString();
+                        if (!tmp.equals("{}")) {
                             Cnt++;
-                            emuCode += "int x"+ Cnt +"[] =" + tmp +";\n";
+                            emuCode += "int x" + Cnt + "[] =" + tmp + ";\n";
                         }
                     }
                 }
                 break;
 
 
-                case "textngram":
-                {
-                    List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(),5);
-                 
+                case "textngram": {
+                    List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(), 5);
+
                     for (BitSet bs : NGrams) {
-                        String tmp =  store.NgramToText( bs );
-                            Cnt++;
-                            emuCode += "char* x"+ Cnt +"[] =\"" + tmp +"\";\n";
-                       
+                        String tmp = store.NgramToText(bs);
+                        Cnt++;
+                        emuCode += "char* x" + Cnt + "[] =\"" + tmp + "\";\n";
+
                     }
                 }
                 break;
 
                 case "code":
-                for(String s: actionsStrings.getSecond() ){
-                    emuCode += EditActionStore.actionToC(s) +";\n";
-                }
-                break;
+                    for (String s : actionsStrings.getSecond()) {
+                        emuCode += EditActionStore.actionToC(s) + ";\n";
+                    }
+                    break;
 
                 case "bitset":
-                
-                for(String s: actionsStrings.getSecond() ){
-                    if(s != ""){
-                        Cnt++;
-                        emuCode +=  "int x"+ Cnt +"[] =" + store.calcActionsBitSet(s) +";\n";
+
+                    for (String s : actionsStrings.getSecond()) {
+                        if (!s.equals("")) {
+                            Cnt++;
+                            emuCode += "int x" + Cnt + "[] =" + store.calcActionsBitSet(s) + ";\n";
+                        }
                     }
-                }
-                break;
+                    break;
 
             }
 
-            emuCode ="void block(){\n" + emuCode + "}\n";
-            System.out.println("emuCode: " +emuCode);
-            
+            emuCode = "void block(){\n" + emuCode + "}\n";
+            System.out.println("emuCode: " + emuCode);
+
             var fromSolutionNG = new Solution("", elementDir.getName(), wrongSolutionId, FAIL);
             var toSolutionNG = new Solution(emuCode, elementDir.getName(), rightSolutionId, OK);
             Changes change = getChanges(false, fromSolutionNG, toSolutionNG);
 
             AllChanges.add(change);
-          
-       
+
+
         }
-            //System.out.println("Saving representation");
-            //store.saveRepresentationsBitset(pathToSaveRepresentations.toString(), null);
-            
-            
-            System.out.println(getDiff(baseTime) + ": All changes are processed, starting clustering");
+        //System.out.println("Saving representation");
+        //store.saveRepresentationsBitset(pathToSaveRepresentations.toString(), null);
 
-            
-            doClustering(clusterPath, baseTime, AllChanges, algorithm, distanceLimit, minClustersCount);
 
-          
-           
+        System.out.println(getDiff(baseTime) + ": All changes are processed, starting clustering");
+
+
+        doClustering(clusterPath, baseTime, AllChanges, algorithm, distanceLimit, minClustersCount);
+
+
     }
 
     private static void saveClustersToReadableFormat(Clusters<Changes> clusters, Path storage) throws IOException {
