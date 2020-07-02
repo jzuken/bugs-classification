@@ -38,6 +38,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static org.ml_methods_group.common.Solution.Verdict.FAIL;
 import static org.ml_methods_group.common.Solution.Verdict.OK;
@@ -99,8 +100,8 @@ public class Application {
                             "    ES variant (code,  bitset, ngram, textngram)" + System.lineSeparator() +
                             "    [Optional] --algorithm=X - Set clusterization algorithm (bow, vec, jac, ext_jac, full_jac, fuz_jac), default value bow" + System.lineSeparator() +
                             "    [Optional] --distanceLimit=X - Set clustering distance limit to X, default value 0.3" + System.lineSeparator() +
-                            "    [Optional] --minClustersCount=X - Set minimum amount of clusters to X, default value 1" + System.lineSeparator()
-                            "    [Optional] --ngramsize=X - Set size of ngram to X, default value 5" + System.lineSeparator()););
+                            "    [Optional] --minClustersCount=X - Set minimum amount of clusters to X, default value 1" + System.lineSeparator() +
+                            "    [Optional] --ngramsize=X - Set size of ngram to X, default value 5" + System.lineSeparator());
                     return;
                 }
                 prepareESDataset(
@@ -424,32 +425,49 @@ public class Application {
     }
 
 
+    public static String[] splitPath(String pathString) {
+        Path path = Paths.get(pathString);
+        return StreamSupport.stream(path.spliterator(), false).map(Path::toString)
+                            .toArray(String[]::new);
+    }
+
     private static void prepareESDataset(Path pathToDataset, Path pathToSaveRepresentations, String version, ClusteringAlgorithm algorithm,
                                          double distanceLimit, int minClustersCount, int NgramSize) throws IOException {
 
         List<Changes> AllChanges = new ArrayList();
 
-        EditActionStore store = new EditActionStore();
-        File datasetDir = new File(pathToDataset.toString());
-        File[] elements = Arrays.stream(datasetDir.listFiles())
-                .toArray(File[]::new);
+        String badFolderName =  pathToDataset.toString() + "\\bad";                          
+        String goodFolderName =  pathToDataset.toString() + "\\good";                          
+        try  {
 
+            List<String> result = Files.walk(Paths.get(badFolderName)).filter(Files::isRegularFile)
+                    .map(x -> x.toString()).collect(Collectors.toList());
+        
+            //result.forEach(System.out::println);
+
+        EditActionStore store = new EditActionStore();
         Path clusterPath = Paths.get(pathToSaveRepresentations.toString() + "/cluster_" + version + "_" + algorithm.getCode() + ".txt");
 
         var baseTime = System.currentTimeMillis();
 
 
-        for (File elementDir : elements) {
+        for (String fName : result) {
+            try{
             //System.out.println("Processing folder:" + elementDir.getName() );
-            Path methodBeforePath = pathToDataset.resolve(elementDir.getName()).resolve("before.txt");
-            Path methodAfterPath = pathToDataset.resolve(elementDir.getName()).resolve("after.txt");
+            Path methodBeforePath = Paths.get(fName);
+            Path methodAfterPath = Paths.get(fName.replace(badFolderName, goodFolderName));
+            String[] paths = splitPath(fName.replace(badFolderName, ""));
+             
+            String defectId = paths[0]  +"::" + paths[paths.length-1];
+            System.out.println("Defect id: " +  defectId +" Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
+
             var fromCode = Files.readString(methodBeforePath);
-            String wrongSolutionId = elementDir.getName() + "_" + FAIL.ordinal();
-            var fromSolution = new Solution(fromCode, elementDir.getName(), wrongSolutionId, FAIL);
+            String wrongSolutionId = defectId + "_" + FAIL.ordinal();
+            var fromSolution = new Solution(fromCode, defectId, wrongSolutionId, FAIL);
 
             var toCode = Files.readString(methodAfterPath);
-            String rightSolutionId = elementDir.getName() + "_" + OK.ordinal();
-            var toSolution = new Solution(toCode, elementDir.getName(), rightSolutionId, OK);
+            String rightSolutionId = paths[1] + "_" + OK.ordinal();
+            var toSolution = new Solution(toCode, defectId, rightSolutionId, OK);
             List<Action> actions = buildMethodActions(fromSolution, toSolution);
 
             Pair<List<String>, List<String>> actionsStrings = store.convertToStrings(actions);
@@ -505,14 +523,17 @@ public class Application {
             }
 
             emuCode = "void block(){\n" + emuCode + "}\n";
-            System.out.println("emuCode: " + emuCode);
+            //System.out.println("emuCode: " + emuCode);
 
-            var fromSolutionNG = new Solution("", elementDir.getName(), wrongSolutionId, FAIL);
-            var toSolutionNG = new Solution(emuCode, elementDir.getName(), rightSolutionId, OK);
+            var fromSolutionNG = new Solution("", defectId, wrongSolutionId, FAIL);
+            var toSolutionNG = new Solution(emuCode, defectId, rightSolutionId, OK);
             Changes change = getChanges(false, fromSolutionNG, toSolutionNG);
 
             AllChanges.add(change);
-
+            }catch(Exception any)
+            {
+                any.printStackTrace();
+            }
 
         }
         //System.out.println("Saving representation");
@@ -521,11 +542,18 @@ public class Application {
 
         System.out.println(getDiff(baseTime) + ": All changes are processed, starting clustering");
 
-
         doClustering(clusterPath, baseTime, AllChanges, algorithm, distanceLimit, minClustersCount);
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
 
 
     }
+
+
+
+
+  
 
     private static void saveClustersToReadableFormat(Clusters<Changes> clusters, Path storage) throws IOException {
         Clusters<String> idClusters = clusters.map(x -> x.getOrigin().getId());
