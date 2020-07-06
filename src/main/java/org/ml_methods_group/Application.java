@@ -445,107 +445,136 @@ public class Application {
         
             //result.forEach(System.out::println);
 
-        EditActionStore store = new EditActionStore();
-        Path clusterPath = Paths.get(pathToSaveRepresentations.toString() + "/cluster_" + version + "_" + algorithm.getCode() + ".txt");
+            EditActionStore store = new EditActionStore();
+            Path clusterPath = Paths.get(pathToSaveRepresentations.toString() + "/cluster_" + version + "_" + algorithm.getCode() + ".txt");
 
-        var baseTime = System.currentTimeMillis();
+            var baseTime = System.currentTimeMillis();
 
 
-        for (String fName : result) {
-            try{
-            //System.out.println("Processing folder:" + elementDir.getName() );
-            Path methodBeforePath = Paths.get(fName);
-            Path methodAfterPath = Paths.get(fName.replace(badFolderName, goodFolderName));
-            String[] paths = splitPath(fName.replace(badFolderName, ""));
-             
-            String defectId = paths[0]  +"::" + paths[paths.length-1];
-            System.out.println("Defect id: " +  defectId +" Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
+            for (String fName : result) {
+                try{
+                //System.out.println("Processing folder:" + elementDir.getName() );
+                Path methodBeforePath = Paths.get(fName);
+                Path methodAfterPath = Paths.get(fName.replace(badFolderName, goodFolderName));
+                String[] paths = splitPath(fName.replace(badFolderName, ""));
+                
+                String defectId = paths[0]  +"::" + paths[paths.length-1];
+            
 
-            var fromCode = Files.readString(methodBeforePath);
-            String wrongSolutionId = defectId + "_" + FAIL.ordinal();
-            var fromSolution = new Solution(fromCode, defectId, wrongSolutionId, FAIL);
+                Flie fromFile = new File(methodBeforePath);
+                Flie toFile = new File(methodAfterPath);
+                if(fromFile.length() >0 && toFile.length() >0 ){
+                    double rate = ((double) fromFile.length()) / ((double) toFile.length());
+                    if(rate >= 0.95 || rate <= 1.05){
 
-            var toCode = Files.readString(methodAfterPath);
-            String rightSolutionId = paths[1] + "_" + OK.ordinal();
-            var toSolution = new Solution(toCode, defectId, rightSolutionId, OK);
-            List<Action> actions = buildMethodActions(fromSolution, toSolution);
 
-            Pair<List<String>, List<String>> actionsStrings = store.convertToStrings(actions);
+                            System.out.println("Defect id: " +  defectId ); //+" Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
 
-            // store.addActions(elementDir.getName(), actionsStrings.getSecond());
+                            var fromCode = Files.readString(methodBeforePath);
+                            String wrongSolutionId = defectId + "_" + FAIL.ordinal();
+                            
+                            var toCode = Files.readString(methodAfterPath);
+                            String rightSolutionId = paths[1] + "_" + OK.ordinal();
+                            
+                            var fromSolution = new Solution(fromCode, defectId, wrongSolutionId, FAIL);
+                            var toSolution = new Solution(toCode, defectId, rightSolutionId, OK);
+                            List<Action> actions = buildMethodActions(fromSolution, toSolution);
 
-            String emuCode = "";
-            int Cnt = 0;
-            // store NGRAMS
-            switch (version.toLowerCase()) {
-                case "ngram": {
-                    List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(), NgramSize);
-                    //System.out.println("NGarms: " +NGrams.toString());
-                    for (BitSet bs : NGrams) {
-                        String tmp = bs.toString();
-                        if (!tmp.equals("{}")) {
-                            Cnt++;
-                            emuCode += "int x" + Cnt + "[] =" + tmp + ";\n";
+                            Pair<List<String>, List<String>> actionsStrings = store.convertToStrings(actions);
+
+                            // store.addActions(elementDir.getName(), actionsStrings.getSecond());
+
+                            fromSolution = null;
+                            toSolution = null;
+                            actions= null;
+
+                            String emuCode = "";
+                            int Cnt = 0;
+                            // store NGRAMS
+                            switch (version.toLowerCase()) {
+                                case "ngram": {
+                                    List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(), NgramSize);
+                                    //System.out.println("NGarms: " +NGrams.toString());
+                                    for (BitSet bs : NGrams) {
+                                        String tmp = bs.toString();
+                                        if (!tmp.equals("{}")) {
+                                            Cnt++;
+                                            emuCode += "int x" + Cnt + "[] =" + tmp + ";\n";
+                                        }
+                                    }
+                                }
+                                break;
+
+
+                                case "textngram": {
+                                    List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(), NgramSize);
+
+                                    for (BitSet bs : NGrams) {
+                                        String tmp = store.NgramToText(bs);
+                                        Cnt++;
+                                        emuCode += "char* x" + Cnt + "[] =\"" + tmp + "\";\n";
+
+                                    }
+                                }
+                                break;
+
+                                case "code":
+                                    for (String s : actionsStrings.getSecond()) {
+                                        emuCode += EditActionStore.actionToC(s) + ";\n";
+                                    }
+                                    break;
+
+                                case "bitset":
+
+                                    for (String s : actionsStrings.getSecond()) {
+                                        if (!s.equals("")) {
+                                            Cnt++;
+                                            emuCode += "int x" + Cnt + "[] =" + store.calcActionsBitSet(s) + ";\n";
+                                        }
+                                    }
+                                    break;
+
+                            }
+
+                            actionsStrings = null;
+
+                            emuCode = "void block(){\n" + emuCode + "}\n";
+                            //System.out.println("emuCode: " + emuCode);
+
+                            var fromSolutionNG = new Solution("", defectId, wrongSolutionId, FAIL);
+                            var toSolutionNG = new Solution(emuCode, defectId, rightSolutionId, OK);
+                            Changes change = getChanges(false, fromSolutionNG, toSolutionNG);
+
+                            AllChanges.add(change);
+
+                            fromSolutionNG =null;
+                            toSolutionNG = null;
+                            change = null;
+                        }else{
+                            System.out.println("Skip Defect id: " +  defectId +" Very large file difference."); // Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
                         }
+
                     }
+                    
+                    toFile = null;
+                    fromFile = null;
+
+                }catch(Exception any)
+                {
+                    any.printStackTrace();
                 }
-                break;
-
-
-                case "textngram": {
-                    List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(), NgramSize);
-
-                    for (BitSet bs : NGrams) {
-                        String tmp = store.NgramToText(bs);
-                        Cnt++;
-                        emuCode += "char* x" + Cnt + "[] =\"" + tmp + "\";\n";
-
-                    }
-                }
-                break;
-
-                case "code":
-                    for (String s : actionsStrings.getSecond()) {
-                        emuCode += EditActionStore.actionToC(s) + ";\n";
-                    }
-                    break;
-
-                case "bitset":
-
-                    for (String s : actionsStrings.getSecond()) {
-                        if (!s.equals("")) {
-                            Cnt++;
-                            emuCode += "int x" + Cnt + "[] =" + store.calcActionsBitSet(s) + ";\n";
-                        }
-                    }
-                    break;
 
             }
+            //System.out.println("Saving representation");
+            //store.saveRepresentationsBitset(pathToSaveRepresentations.toString(), null);
 
-            emuCode = "void block(){\n" + emuCode + "}\n";
-            //System.out.println("emuCode: " + emuCode);
 
-            var fromSolutionNG = new Solution("", defectId, wrongSolutionId, FAIL);
-            var toSolutionNG = new Solution(emuCode, defectId, rightSolutionId, OK);
-            Changes change = getChanges(false, fromSolutionNG, toSolutionNG);
+            System.out.println(getDiff(baseTime) + ": All changes are processed, starting clustering");
 
-            AllChanges.add(change);
-            }catch(Exception any)
-            {
-                any.printStackTrace();
-            }
-
+            doClustering(clusterPath, baseTime, AllChanges, algorithm, distanceLimit, minClustersCount);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        //System.out.println("Saving representation");
-        //store.saveRepresentationsBitset(pathToSaveRepresentations.toString(), null);
-
-
-        System.out.println(getDiff(baseTime) + ": All changes are processed, starting clustering");
-
-        doClustering(clusterPath, baseTime, AllChanges, algorithm, distanceLimit, minClustersCount);
-    } catch (IOException e) {
-        e.printStackTrace();
-    }
 
 
     }
