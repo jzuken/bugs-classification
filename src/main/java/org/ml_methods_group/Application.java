@@ -490,12 +490,16 @@ public class Application {
                             if(actionsFile.exists()){
                                 System.out.println(getDiff(baseTime) + ": read prepared");
                                 emuCode = Files.readString(actionsFile.toPath());
-                                var fromSolutionNG = new Solution("", defectId, wrongSolutionId, FAIL);
-                                var toSolutionNG = new Solution(emuCode, defectId, rightSolutionId, OK);
-                                System.out.println(getDiff(baseTime) + ": Creating es changes");
-                                Changes change = getChanges(false, fromSolutionNG, toSolutionNG);
-                                System.out.println(getDiff(baseTime) + ": Collect es changes");
-                                AllChanges.add(change);
+                                if(! emuCode.equals("{}") ){
+                                    var fromSolutionNG = new Solution("", defectId, wrongSolutionId, FAIL);
+                                    var toSolutionNG = new Solution(emuCode, defectId, rightSolutionId, OK);
+                                    System.out.println(getDiff(baseTime) + ": Creating es changes");
+                                    Changes change = getChanges(false, fromSolutionNG, toSolutionNG);
+                                    System.out.println(getDiff(baseTime) + ": Collect es changes");
+                                    AllChanges.add(change);
+                                }else{
+                                    System.out.println(getDiff(baseTime) + ": Skip no-action file");
+                                }
 
                             }else{
                                 var fromCode = Files.readString(methodBeforePath);
@@ -510,7 +514,7 @@ public class Application {
                                 List<Action> actions = buildMethodActions(fromSolution, toSolution);
                                 System.out.println(getDiff(baseTime) + ": Buit source actions");
 
-                                if(actions != null){
+                                if(actions != null  && actions.size() > 0 ){
                                     System.out.println(getDiff(baseTime) + ": Creating es solutions");
                                     Pair<List<String>, List<String>> actionsStrings = store.convertToStrings(actions);
 
