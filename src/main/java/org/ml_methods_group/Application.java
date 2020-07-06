@@ -465,10 +465,10 @@ public class Application {
                 File toFile = methodAfterPath.toFile();
                 if(fromFile.length() >0 && toFile.length() >0 ){
                     double rate = ((double) fromFile.length()) / ((double) toFile.length());
-                    if(rate >= 0.95 || rate <= 1.05){
+                    if(rate >= 0.85 && rate <= 1.15){
 
 
-                            System.out.println("Defect id: " +  defectId ); //+" Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
+                            System.out.println("Defect id: " +  defectId+ " rate: " + rate ); //+" Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
 
                             var fromCode = Files.readString(methodBeforePath);
                             String wrongSolutionId = defectId + "_" + FAIL.ordinal();
@@ -551,7 +551,7 @@ public class Application {
                             toSolutionNG = null;
                             change = null;
                         }else{
-                            System.out.println("Skip Defect id: " +  defectId +" Very large file difference."); // Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
+                            System.out.println("Skip Defect id: " +  defectId +" Very large file difference. Rate: " +rate); // Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
                         }
 
                     }
