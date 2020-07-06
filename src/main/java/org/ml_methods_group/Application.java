@@ -283,18 +283,22 @@ public class Application {
             src = generator.buildTree(FileBefore);
             dst = generator.buildTree(FileAfter);
         } catch (Exception e) {
-            e.printStackTrace();
+            // e.printStackTrace();
             return null;
         }
         Matcher matcher = Matchers.getInstance().getMatcher(src, dst);
         try {
             matcher.match();
         } catch (NullPointerException e) {
-            System.out.println("Cannot match: NullPointerException in m.match()");
+            //System.out.println("Cannot match: NullPointerException in m.match()");
             return null;
         }
         ActionGenerator generator = new ActionGenerator(src, dst, matcher.getMappings());
+        try{
         generator.generate();
+        } catch (Exception e){
+            return null;
+        }
 
         return generator.getActions();
     }
@@ -448,110 +452,153 @@ public class Application {
             EditActionStore store = new EditActionStore();
             Path clusterPath = Paths.get(pathToSaveRepresentations.toString() + "/cluster_" + version + "_" + algorithm.getCode() + ".txt");
 
+            
             var baseTime = System.currentTimeMillis();
 
-
             for (String fName : result) {
+                
                 try{
-                //System.out.println("Processing folder:" + elementDir.getName() );
+                
+                baseTime = System.currentTimeMillis();
+                System.out.println("*******************");
+
                 Path methodBeforePath = Paths.get(fName);
                 Path methodAfterPath = Paths.get(fName.replace(badFolderName, goodFolderName));
                 String[] paths = splitPath(fName.replace(badFolderName, ""));
                 
-                String defectId = paths[0]  +"::" + paths[paths.length-1];
-            
+                String defectId = paths[0]  +"_"+ version +"_" + paths[paths.length-1];
+
+                System.out.println(getDiff(baseTime) + ": Defect id: " +  defectId  );
 
                 File fromFile = methodBeforePath.toFile();
                 File toFile = methodAfterPath.toFile();
+
+                File actionsFile = new File(pathToSaveRepresentations.toString()+"\\" + defectId);
+                
+                String rightSolutionId = defectId + "_" + OK.ordinal();
+                String wrongSolutionId = defectId + "_" + FAIL.ordinal();
+
+
                 if(fromFile.length() >0 && toFile.length() >0 ){
                     double rate = ((double) fromFile.length()) / ((double) toFile.length());
+                    System.out.println(getDiff(baseTime) + ": Checking size");
                     if(rate >= 0.85 && rate <= 1.15){
 
-
-                            System.out.println("Defect id: " +  defectId+ " rate: " + rate ); //+" Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
-
-                            var fromCode = Files.readString(methodBeforePath);
-                            String wrongSolutionId = defectId + "_" + FAIL.ordinal();
-                            
-                            var toCode = Files.readString(methodAfterPath);
-                            String rightSolutionId = paths[1] + "_" + OK.ordinal();
-                            
-                            var fromSolution = new Solution(fromCode, defectId, wrongSolutionId, FAIL);
-                            var toSolution = new Solution(toCode, defectId, rightSolutionId, OK);
-                            List<Action> actions = buildMethodActions(fromSolution, toSolution);
-
-                            Pair<List<String>, List<String>> actionsStrings = store.convertToStrings(actions);
-
-                            // store.addActions(elementDir.getName(), actionsStrings.getSecond());
-
-                            fromSolution = null;
-                            toSolution = null;
-                            actions= null;
-
+                            System.out.println(getDiff(baseTime) + ": Rate: " + rate ); //+" Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
                             String emuCode = "";
-                            int Cnt = 0;
-                            // store NGRAMS
-                            switch (version.toLowerCase()) {
-                                case "ngram": {
-                                    List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(), NgramSize);
-                                    //System.out.println("NGarms: " +NGrams.toString());
-                                    for (BitSet bs : NGrams) {
-                                        String tmp = bs.toString();
-                                        if (!tmp.equals("{}")) {
-                                            Cnt++;
-                                            emuCode += "int x" + Cnt + "[] =" + tmp + ";\n";
+
+                            if(actionsFile.exists()){
+                                System.out.println(getDiff(baseTime) + ": read prepared");
+                                emuCode = Files.readString(actionsFile.toPath());
+                                var fromSolutionNG = new Solution("", defectId, wrongSolutionId, FAIL);
+                                var toSolutionNG = new Solution(emuCode, defectId, rightSolutionId, OK);
+                                System.out.println(getDiff(baseTime) + ": Creating es changes");
+                                Changes change = getChanges(false, fromSolutionNG, toSolutionNG);
+                                System.out.println(getDiff(baseTime) + ": Collect es changes");
+                                AllChanges.add(change);
+
+                            }else{
+                                var fromCode = Files.readString(methodBeforePath);
+                                var toCode = Files.readString(methodAfterPath);
+                               
+                                
+                                System.out.println(getDiff(baseTime) + ": Files loaded");
+                                var fromSolution = new Solution(fromCode, defectId, wrongSolutionId, FAIL);
+                                var toSolution = new Solution(toCode, defectId, rightSolutionId, OK);
+
+                                System.out.println(getDiff(baseTime) + ": Building source actions");
+                                List<Action> actions = buildMethodActions(fromSolution, toSolution);
+                                System.out.println(getDiff(baseTime) + ": Buit source actions");
+
+                                if(actions != null){
+                                    System.out.println(getDiff(baseTime) + ": Creating es solutions");
+                                    Pair<List<String>, List<String>> actionsStrings = store.convertToStrings(actions);
+
+                                    fromSolution = null;
+                                    toSolution = null;
+                                    actions= null;
+
+                                    emuCode = "";
+                                    int Cnt = 0;
+                                    // store NGRAMS
+                                    switch (version.toLowerCase()) {
+                                        case "ngram": {
+                                            List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(), NgramSize);
+                                            //System.out.println("NGarms: " +NGrams.toString());
+                                            for (BitSet bs : NGrams) {
+                                                String tmp = bs.toString();
+                                                if (!tmp.equals("{}")) {
+                                                    Cnt++;
+                                                    emuCode += "int x" + Cnt + "[] =" + tmp + ";\n";
+                                                }
+                                            }
+                                            NGrams = null;
                                         }
-                                    }
-                                }
-                                break;
+                                        break;
 
 
-                                case "textngram": {
-                                    List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(), NgramSize);
+                                        case "textngram": {
+                                            List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(), NgramSize);
 
-                                    for (BitSet bs : NGrams) {
-                                        String tmp = store.NgramToText(bs);
-                                        Cnt++;
-                                        emuCode += "char* x" + Cnt + "[] =\"" + tmp + "\";\n";
+                                            for (BitSet bs : NGrams) {
+                                                String tmp = store.NgramToText(bs);
+                                                Cnt++;
+                                                emuCode += "char* x" + Cnt + "[] =\"" + tmp + "\";\n";
 
-                                    }
-                                }
-                                break;
+                                            }
 
-                                case "code":
-                                    for (String s : actionsStrings.getSecond()) {
-                                        emuCode += EditActionStore.actionToC(s) + ";\n";
-                                    }
-                                    break;
-
-                                case "bitset":
-
-                                    for (String s : actionsStrings.getSecond()) {
-                                        if (!s.equals("")) {
-                                            Cnt++;
-                                            emuCode += "int x" + Cnt + "[] =" + store.calcActionsBitSet(s) + ";\n";
+                                            NGrams = null;
                                         }
-                                    }
-                                    break;
+                                        break;
 
+                                        case "code":
+                                            for (String s : actionsStrings.getSecond()) {
+                                                emuCode += EditActionStore.actionToC(s) + ";\n";
+                                            }
+                                            break;
+
+                                        case "bitset":
+
+                                            for (String s : actionsStrings.getSecond()) {
+                                                if (!s.equals("")) {
+                                                    Cnt++;
+                                                    emuCode += "int x" + Cnt + "[] =" + store.calcActionsBitSet(s) + ";\n";
+                                                }
+                                            }
+                                            break;
+
+                                    }
+
+                                    actionsStrings = null;
+
+                                    emuCode = "void block(){\n" + emuCode + "}\n";
+                                    //System.out.println("emuCode: " + emuCode);
+
+                                    var fromSolutionNG = new Solution("", defectId, wrongSolutionId, FAIL);
+                                    var toSolutionNG = new Solution(emuCode, defectId, rightSolutionId, OK);
+                                    System.out.println(getDiff(baseTime) + ": Creating es changes");
+                                    Changes change = getChanges(false, fromSolutionNG, toSolutionNG);
+                                    System.out.println(getDiff(baseTime) + ": Collect es changes");
+                                    AllChanges.add(change);
+
+                                    BufferedWriter writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
+                                    writer.write(emuCode);
+                                    writer.close();
+
+                                    fromSolutionNG =null;
+                                    toSolutionNG = null;
+                                    change = null;
+                                
+                                }else{
+                                    BufferedWriter writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
+                                    writer.write("{}");
+                                    writer.close();
+                                    System.out.println(getDiff(baseTime) + ": No actions detected");    
+                                }
                             }
-
-                            actionsStrings = null;
-
-                            emuCode = "void block(){\n" + emuCode + "}\n";
-                            //System.out.println("emuCode: " + emuCode);
-
-                            var fromSolutionNG = new Solution("", defectId, wrongSolutionId, FAIL);
-                            var toSolutionNG = new Solution(emuCode, defectId, rightSolutionId, OK);
-                            Changes change = getChanges(false, fromSolutionNG, toSolutionNG);
-
-                            AllChanges.add(change);
-
-                            fromSolutionNG =null;
-                            toSolutionNG = null;
-                            change = null;
+                            System.out.println(getDiff(baseTime) + ": Done");
                         }else{
-                            System.out.println("Skip Defect id: " +  defectId +" Very large file difference. Rate: " +rate); // Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
+                            System.out.println(getDiff(baseTime) + ": Skip Defect id: " +  defectId +" Very large file difference. Rate: " + rate); // Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
                         }
 
                     }
