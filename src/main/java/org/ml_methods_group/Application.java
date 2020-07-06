@@ -461,8 +461,8 @@ public class Application {
                 String defectId = paths[0]  +"::" + paths[paths.length-1];
             
 
-                Flie fromFile = new File(methodBeforePath);
-                Flie toFile = new File(methodAfterPath);
+                File fromFile = methodBeforePath.toFile();
+                File toFile = methodAfterPath.toFile();
                 if(fromFile.length() >0 && toFile.length() >0 ){
                     double rate = ((double) fromFile.length()) / ((double) toFile.length());
                     if(rate >= 0.95 || rate <= 1.05){
