@@ -93,14 +93,11 @@ public class Application {
                 break;
 
             case "prepare.es":
-                if (args.length < 4 || args.length > 8) {
+                if (args.length < 3 || args.length > 5) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
                             "    Path to code dataset" + System.lineSeparator() +
                             "    Path to store representation" + System.lineSeparator() +
                             "    ES variant (code,  bitset, ngram, textngram)" + System.lineSeparator() +
-                            "    [Optional] --algorithm=X - Set clusterization algorithm (bow, vec, jac, ext_jac, full_jac, fuz_jac), default value bow" + System.lineSeparator() +
-                            "    [Optional] --distanceLimit=X - Set clustering distance limit to X, default value 0.3" + System.lineSeparator() +
-                            "    [Optional] --minClustersCount=X - Set minimum amount of clusters to X, default value 1" + System.lineSeparator() +
                             "    [Optional] --ngramsize=X - Set size of ngram to X, default value 5" + System.lineSeparator());
                     return;
                 }
@@ -108,10 +105,29 @@ public class Application {
                         Paths.get(args[1]),
                         Paths.get(args[2]),
                         args[3],
+                        getNgramSizeFromArgs(args)
+
+                );
+                break;
+
+                case "cluster.es":
+                if (args.length < 3 || args.length > 6) {
+                    System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
+                            "    Path to code prepared set" + System.lineSeparator() +
+                            "    Path to store clustering" + System.lineSeparator() +
+                            "    [Optional] --algorithm=X - Set clusterization algorithm (bow, vec, jac, ext_jac, full_jac, fuz_jac), default value bow" + System.lineSeparator() +
+                            "    [Optional] --distanceLimit=X - Set clustering distance limit to X, default value 0.3" + System.lineSeparator() +
+                            "    [Optional] --minClustersCount=X - Set minimum amount of clusters to X, default value 1" + System.lineSeparator() 
+                           );
+                    return;
+                }
+                clusterESDataset(
+                        Paths.get(args[1]),
+                        Paths.get(args[2]),
+                        args[3],
                         getAlgorithmFromArgs(args),
                         getDistanceLimitFromArgs(args),
-                        getMinClustersCountFromArgs(args),
-                        getNgramSizeFromArgs(args)
+                        getMinClustersCountFromArgs(args)
 
                 );
                 break;
@@ -435,10 +451,12 @@ public class Application {
                             .toArray(String[]::new);
     }
 
-    private static void prepareESDataset(Path pathToDataset, Path pathToSaveRepresentations, String version, ClusteringAlgorithm algorithm,
-                                         double distanceLimit, int minClustersCount, int NgramSize) throws IOException {
+    private static void prepareESDataset(Path pathToDataset, Path pathToSaveRepresentations, String version, int NgramSize) throws IOException {
 
-        List<Changes> AllChanges = new ArrayList();
+        
+        int processed=0;
+        int skipped=0;
+
 
         String badFolderName =  pathToDataset.toString() + "\\bad";                          
         String goodFolderName =  pathToDataset.toString() + "\\good";                          
@@ -450,9 +468,6 @@ public class Application {
             //result.forEach(System.out::println);
 
             EditActionStore store = new EditActionStore();
-            Path clusterPath = Paths.get(pathToSaveRepresentations.toString() + "/cluster_" + version + "_" + algorithm.getCode() + ".txt");
-
-            
             var baseTime = System.currentTimeMillis();
 
             for (String fName : result) {
@@ -460,7 +475,8 @@ public class Application {
                 try{
                 
                 baseTime = System.currentTimeMillis();
-                System.out.println("*******************");
+                processed++;
+                System.out.println("******************* found: " + processed + ", skipped: " + skipped);
 
                 Path methodBeforePath = Paths.get(fName);
                 Path methodAfterPath = Paths.get(fName.replace(badFolderName, goodFolderName));
@@ -488,20 +504,14 @@ public class Application {
                             String emuCode = "";
 
                             if(actionsFile.exists()){
-                                System.out.println(getDiff(baseTime) + ": read prepared");
-                                emuCode = Files.readString(actionsFile.toPath());
-                                if(! emuCode.equals("{}") ){
-                                    var fromSolutionNG = new Solution("", defectId, wrongSolutionId, FAIL);
-                                    var toSolutionNG = new Solution(emuCode, defectId, rightSolutionId, OK);
-                                    System.out.println(getDiff(baseTime) + ": Creating es changes");
-                                    Changes change = getChanges(false, fromSolutionNG, toSolutionNG);
-                                    System.out.println(getDiff(baseTime) + ": Collect es changes");
-                                    AllChanges.add(change);
-                                }else{
-                                    System.out.println(getDiff(baseTime) + ": Skip no-action file");
-                                }
-
+                                System.out.println(getDiff(baseTime) + ": repared file exists");
                             }else{
+
+                                // write empty file for skip crash at next pass
+                                BufferedWriter writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
+                                writer.write("{}");
+                                writer.close();
+
                                 var fromCode = Files.readString(methodBeforePath);
                                 var toCode = Files.readString(methodAfterPath);
                                
@@ -514,12 +524,14 @@ public class Application {
                                 List<Action> actions = buildMethodActions(fromSolution, toSolution);
                                 System.out.println(getDiff(baseTime) + ": Buit source actions");
 
+                                fromSolution = null;
+                                toSolution = null;
+
                                 if(actions != null  && actions.size() > 0 ){
-                                    System.out.println(getDiff(baseTime) + ": Creating es solutions");
+                                    System.out.println(getDiff(baseTime) + ": Prepare es");
                                     Pair<List<String>, List<String>> actionsStrings = store.convertToStrings(actions);
 
-                                    fromSolution = null;
-                                    toSolution = null;
+                                   
                                     actions= null;
 
                                     emuCode = "";
@@ -578,30 +590,19 @@ public class Application {
                                     emuCode = "void block(){\n" + emuCode + "}\n";
                                     //System.out.println("emuCode: " + emuCode);
 
-                                    var fromSolutionNG = new Solution("", defectId, wrongSolutionId, FAIL);
-                                    var toSolutionNG = new Solution(emuCode, defectId, rightSolutionId, OK);
-                                    System.out.println(getDiff(baseTime) + ": Creating es changes");
-                                    Changes change = getChanges(false, fromSolutionNG, toSolutionNG);
-                                    System.out.println(getDiff(baseTime) + ": Collect es changes");
-                                    AllChanges.add(change);
-
-                                    BufferedWriter writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
+                                    writer =null;
+                                    writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
                                     writer.write(emuCode);
                                     writer.close();
 
-                                    fromSolutionNG =null;
-                                    toSolutionNG = null;
-                                    change = null;
-                                
                                 }else{
-                                    BufferedWriter writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
-                                    writer.write("{}");
-                                    writer.close();
+                                    writer =null;
                                     System.out.println(getDiff(baseTime) + ": No actions detected");    
                                 }
                             }
                             System.out.println(getDiff(baseTime) + ": Done");
                         }else{
+                            skipped++;
                             System.out.println(getDiff(baseTime) + ": Skip Defect id: " +  defectId +" Very large file difference. Rate: " + rate); // Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
                         }
 
@@ -616,9 +617,60 @@ public class Application {
                 }
 
             }
-            //System.out.println("Saving representation");
-            //store.saveRepresentationsBitset(pathToSaveRepresentations.toString(), null);
 
+            System.out.println(getDiff(baseTime) + ": All files are prepared");
+
+            
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
+
+
+    private static void clusterESDataset(Path pathToPrepared, Path pathToSaveCluster, String version,  ClusteringAlgorithm algorithm,
+                                         double distanceLimit, int minClustersCount) throws IOException {
+
+        List<Changes> AllChanges = new ArrayList();
+
+                                
+        try  {
+            var baseTime = System.currentTimeMillis();
+            Path clusterPath = Paths.get(pathToSaveCluster.toString() + "/cluster_" + version + "_" + algorithm.getCode() + ".txt");
+            List<String> result = Files.walk(Paths.get(pathToPrepared.toString())).filter(Files::isRegularFile)
+                    .map(x -> x.toString()).collect(Collectors.toList());
+            for (String fName : result) {
+                
+                try{
+                    String[] paths = splitPath(fName.replace(pathToPrepared.toString(), ""));
+                
+                    String defectId =  paths[paths.length-1];
+                    baseTime = System.currentTimeMillis();
+                    System.out.println("*******************");
+                    String emuCode = "";
+                    System.out.println(getDiff(baseTime) + ": read prepared " + defectId);
+                    emuCode = Files.readString(Paths.get(fName));
+                    if(! emuCode.equals("{}") ){
+                        var fromSolutionNG = new Solution("", defectId, defectId+"_EMPTY", FAIL);
+                        var toSolutionNG = new Solution(emuCode, defectId, defectId+"_ES", OK);
+                        System.out.println(getDiff(baseTime) + ": Creating es changes");
+                        Changes change = getChanges(false, fromSolutionNG, toSolutionNG);
+                        System.out.println(getDiff(baseTime) + ": Collect es changes");
+                        AllChanges.add(change);
+                    }else{
+                        System.out.println(getDiff(baseTime) + ": Skip no-action file");
+                    }
+  
+
+                }catch(Exception any)
+                {
+                    any.printStackTrace();
+                }
+
+            }
+            
 
             System.out.println(getDiff(baseTime) + ": All changes are processed, starting clustering");
 
@@ -629,9 +681,6 @@ public class Application {
 
 
     }
-
-
-
 
   
 
