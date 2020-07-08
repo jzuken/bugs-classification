@@ -503,4 +503,109 @@ public class EditActionStore{
     public String NgramToText(BitSet key){
         return encoder.decode(key);
     }
+
+
+    public static int indexOfFirstDifference(CharSequence cs1, CharSequence cs2) {
+        
+        if (cs1 == null || cs2 == null) {
+            return 0;
+        }
+        int minLen = cs1.length();
+        if(minLen > cs2.length()) minLen = cs2.length();
+
+        if(minLen ==0)
+            return 0;
+        if (cs1 == cs2) {
+            return minLen-1;
+        }
+
+        int i;
+        for (i = 0; i < minLen; ++i) {
+            if (cs1.charAt(i) != cs2.charAt(i)) {
+                break;
+            }
+        }
+        if (i >= 0  && i < minLen) {
+            return i;
+        }
+        return cs1.length()-1;
+    }
+
+    public static int indexOfLastDifference(CharSequence cs1, CharSequence cs2) {
+        
+
+        if (cs1 == null || cs2 == null) {
+            return 0;
+        }
+       
+        int minLen = cs1.length();
+        if(minLen > cs2.length()) minLen = cs2.length();
+        if(minLen ==0)
+        return 0;
+        if (cs1 == cs2) {
+            return minLen-1;
+        }
+
+        int i;
+        for (i = minLen-1; i >=0; --i) {
+            if (cs1.charAt(i) != cs2.charAt(i)) {
+                break;
+            }
+        }
+        if (i > 0 ) {
+            return i;
+        }
+        return minLen-1;
+    }
+
+    public static int stopBeforeIndex(CharSequence cs1, int index) {
+        int i;
+        for (i = index; i >0 ; i--) {
+            if ( cs1.charAt(i) == '}' || cs1.charAt(i) == ';') {
+                return i;
+            }
+        }
+      
+        return 0;
+      
+      
+    }
+
+    public static int stopAfterIndex(CharSequence cs1, int index) {
+        int i;
+        for (i = index; i < cs1.length() ; i++) {
+            if ( cs1.charAt(i) == '}' || cs1.charAt(i) == ';') {
+                return i;
+            }
+        }
+      
+        return cs1.length()-1;
+    }
+
+    public static String GetDifference( String S1, String S2){
+        System.out.println("s1=" + S1.length());
+        int sIdx = indexOfFirstDifference(S1,S2);
+        System.out.println("sIdx=" + sIdx);
+        if(sIdx >0){
+            sIdx =stopBeforeIndex(S1, sIdx);
+        }else{
+            sIdx=0;
+        }
+        System.out.println("stop before =" + sIdx);
+
+        int eIdx = indexOfLastDifference(S1,S2);
+        System.out.println("eIdx=" + eIdx);
+        if(eIdx >0){
+            eIdx =stopAfterIndex(S1, eIdx);
+        }else{
+            eIdx = S1.length()-1;
+        }
+        System.out.println("stop after =" + eIdx);
+        System.out.println("sub.s1=" + S1.substring(sIdx,eIdx).length());
+        return S1.substring(sIdx,eIdx);
+
+    }
+
+
+
 }

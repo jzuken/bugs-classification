@@ -517,9 +517,21 @@ public class Application {
                                
                                 
                                 System.out.println(getDiff(baseTime) + ": Files loaded");
+
+                                if(fromCode.length() >1000 || toCode.length() > 1000){
+                                     String s1=EditActionStore.GetDifference(fromCode, toCode);
+                                     String s2=EditActionStore.GetDifference(toCode, fromCode);
+                                     //System.out.println("s1:" +s1);
+                                     //System.out.println("s2:" +s2);
+                                     fromCode =s1;
+                                     toCode =s2;
+                                }
+
+
                                 var fromSolution = new Solution(fromCode, defectId, wrongSolutionId, FAIL);
                                 var toSolution = new Solution(toCode, defectId, rightSolutionId, OK);
 
+                                
                                 System.out.println(getDiff(baseTime) + ": Building source actions");
                                 List<Action> actions = buildMethodActions(fromSolution, toSolution);
                                 System.out.println(getDiff(baseTime) + ": Buit source actions");
