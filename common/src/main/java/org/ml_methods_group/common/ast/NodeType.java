@@ -170,7 +170,9 @@ public enum NodeType {
     C_UNION(111433423),
     C_FUNCTION_DECL(2053171377),
     C_ELIF(3116036),
-    C_EMPTY(96634189);
+    C_EMPTY(96634189),
+    C_NAMESPACE(1252218203),
+    C_ERROR(96784904);
 
     private int id = 0;
 
