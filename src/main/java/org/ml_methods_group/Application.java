@@ -278,11 +278,11 @@ public class Application {
 
     private static ITree buildTree(Solution s) {
         ITree tree = null;
-        //TreeContext context = null;
         try {
-            final ASTGenerator generator = new BasicASTGenerator(new BasicASTNormalizer());
+            final ASTGenerator generator =  // new BasicASTGenerator(new BasicASTNormalizer());
+            new CachedASTGenerator(  new NamesASTNormalizer() );
             tree = generator.buildTree(s);
-            //tree = context.getRoot();
+
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -331,13 +331,6 @@ public class Application {
         final EditActions ea = new EditActions(fromSolution, toSolution, buildMethodActions(fromSolution, toSolution));
 
         var start = System.currentTimeMillis();
-
-        /* ObjectOutputStream objectOutputStream = new ObjectOutputStream(
-            new FileOutputStream(outputFile.toString()));
-
-        objectOutputStream.writeObject(ea);
-        objectOutputStream.close();
-        */
 
         File actionsFile = new File(outputFile.toString());
         BufferedWriter writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
