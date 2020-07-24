@@ -34,212 +34,318 @@ public abstract class ASTProcessor {
         if (type == null) {
             throw new IllegalStateException();
         }
+        String ps = node.toPrettyString(context);
+        
+        ITree newTree;
         switch (type) {
             case NONE:
-                return visitNone(node);
-            case ANONYMOUS_CLASS_DECLARATION:
-                return visitAnonymousClassDeclaration(node);
-            case ARRAY_ACCESS:
-                return visitArrayAccess(node);
-            case ARRAY_CREATION:
-                return visitArrayCreation(node);
-            case ARRAY_INITIALIZER:
-                return visitArrayInitializer(node);
-            case ARRAY_TYPE:
-                return visitArrayType(node);
-            case ASSERT_STATEMENT:
-                return visitAssertStatement(node);
-            case ASSIGNMENT:
-                return visitAssignment(node);
-            case BLOCK:
-                return visitBlock(node);
-            case BOOLEAN_LITERAL:
-                return visitBooleanLiteral(node);
-            case BREAK_STATEMENT:
-                return visitBreakStatement(node);
-            case CAST_EXPRESSION:
-                return visitCastExpression(node);
-            case CATCH_CLAUSE:
-                return visitCatchClause(node);
-            case CHARACTER_LITERAL:
-                return visitCharacterLiteral(node);
-            case CLASS_INSTANCE_CREATION:
-                return visitClassInstanceCreation(node);
-            case COMPILATION_UNIT:
-                return visitCompilationUnit(node);
-            case CONDITIONAL_EXPRESSION:
-                return visitConditionalExpression(node);
-            case CONSTRUCTOR_INVOCATION:
-                return visitConstructorInvocation(node);
-            case CONTINUE_STATEMENT:
-                return visitContinueStatement(node);
-            case DO_STATEMENT:
-                return visitDoStatement(node);
-            case EMPTY_STATEMENT:
-                return visitEmptyStatement(node);
-            case EXPRESSION_STATEMENT:
-                return visitExpressionStatement(node);
-            case FIELD_ACCESS:
-                return visitFieldAccess(node);
-            case FIELD_DECLARATION:
-                return visitFieldDeclaration(node);
-            case FOR_STATEMENT:
-                return visitForStatement(node);
-            case IF_STATEMENT:
-                return visitIfStatement(node);
-            case IMPORT_DECLARATION:
-                return visitImportDeclaration(node);
-            case INFIX_EXPRESSION:
-                return visitInfixExpression(node);
-            case INITIALIZER:
-                return visitInitializer(node);
-            case JAVADOC:
-                return visitJavadoc(node);
-            case LABELED_STATEMENT:
-                return visitLabeledStatement(node);
-            case METHOD_DECLARATION:
-                return visitMethodDeclaration(node);
-            case METHOD_INVOCATION:
-                return visitMethodInvocation(node);
-            case NULL_LITERAL:
-                return visitNullLiteral(node);
-            case NUMBER_LITERAL:
-                return visitNumberLiteral(node);
-            case PACKAGE_DECLARATION:
-                return visitPackageDeclaration(node);
-            case PARENTHESIZED_EXPRESSION:
-                return visitParenthesizedExpression(node);
-            case POSTFIX_EXPRESSION:
-                return visitPostfixExpression(node);
-            case PREFIX_EXPRESSION:
-                return visitPrefixExpression(node);
-            case PRIMITIVE_TYPE:
-                return visitPrimitiveType(node);
-            case QUALIFIED_NAME:
-                return visitQualifiedName(node);
-            case RETURN_STATEMENT:
-                return visitReturnStatement(node);
-            case SIMPLE_NAME:
-                return visitSimpleName(node);
-            case SIMPLE_TYPE:
-                return visitSimpleType(node);
-            case SINGLE_VARIABLE_DECLARATION:
-                return visitSingleVariableDeclaration(node);
-            case STRING_LITERAL:
-                return visitStringLiteral(node);
-            case SUPER_CONSTRUCTOR_INVOCATION:
-                return visitSuperConstructorInvocation(node);
-            case SUPER_FIELD_ACCESS:
-                return visitSuperFieldAccess(node);
-            case SUPER_METHOD_INVOCATION:
-                return visitSuperMethodInvocation(node);
-            case SWITCH_CASE:
-                return visitSwitchCase(node);
-            case SWITCH_STATEMENT:
-                return visitSwitchStatement(node);
-            case SYNCHRONIZED_STATEMENT:
-                return visitSynchronizedStatement(node);
-            case THIS_EXPRESSION:
-                return visitThisExpression(node);
-            case THROW_STATEMENT:
-                return visitThrowStatement(node);
-            case TRY_STATEMENT:
-                return visitTryStatement(node);
-            case TYPE_DECLARATION:
-                return visitTypeDeclaration(node);
-            case TYPE_DECLARATION_STATEMENT:
-                return visitTypeDeclarationStatement(node);
-            case TYPE_LITERAL:
-                return visitTypeLiteral(node);
-            case VARIABLE_DECLARATION_EXPRESSION:
-                return visitVariableDeclarationExpression(node);
-            case VARIABLE_DECLARATION_FRAGMENT:
-                return visitVariableDeclarationFragment(node);
-            case VARIABLE_DECLARATION_STATEMENT:
-                return visitVariableDeclarationStatement(node);
-            case WHILE_STATEMENT:
-                return visitWhileStatement(node);
-            case INSTANCEOF_EXPRESSION:
-                return visitInstanceofExpression(node);
-            case LINE_COMMENT:
-                return visitLineComment(node);
-            case BLOCK_COMMENT:
-                return visitBlockComment(node);
-            case TAG_ELEMENT:
-                return visitTagElement(node);
-            case TEXT_ELEMENT:
-                return visitTextElement(node);
-            case MEMBER_REF:
-                return visitMemberRef(node);
-            case METHOD_REF:
-                return visitMethodRef(node);
-            case METHOD_REF_PARAMETER:
-                return visitMethodRefParameter(node);
-            case ENHANCED_FOR_STATEMENT:
-                return visitEnhancedForStatement(node);
-            case ENUM_DECLARATION:
-                return visitEnumDeclaration(node);
-            case ENUM_CONSTANT_DECLARATION:
-                return visitEnumConstantDeclaration(node);
-            case TYPE_PARAMETER:
-                return visitTypeParameter(node);
-            case PARAMETERIZED_TYPE:
-                return visitParameterizedType(node);
-            case QUALIFIED_TYPE:
-                return visitQualifiedType(node);
-            case WILDCARD_TYPE:
-                return visitWildcardType(node);
-            case NORMAL_ANNOTATION:
-                return visitNormalAnnotation(node);
-            case MARKER_ANNOTATION:
-                return visitMarkerAnnotation(node);
-            case SINGLE_MEMBER_ANNOTATION:
-                return visitSingleMemberAnnotation(node);
-            case MEMBER_VALUE_PAIR:
-                return visitMemberValuePair(node);
-            case ANNOTATION_TYPE_DECLARATION:
-                return visitAnnotationTypeDeclaration(node);
-            case ANNOTATION_TYPE_MEMBER_DECLARATION:
-                return visitAnnotationTypeMemberDeclaration(node);
-            case MODIFIER:
-                return visitModifier(node);
-            case UNION_TYPE:
-                return visitUnionType(node);
-            case DIMENSION:
-                return visitDimension(node);
-            case LAMBDA_EXPRESSION:
-                return visitLambdaExpression(node);
-            case INTERSECTION_TYPE:
-                return visitIntersectionType(node);
-            case NAME_QUALIFIED_TYPE:
-                return visitNameQualifiedType(node);
-            case CREATION_REFERENCE:
-                return visitCreationReference(node);
-            case EXPRESSION_METHOD_REFERENCE:
-                return visitExpressionMethodReference(node);
-            case SUPER_METHOD_REFERENCE:
-                return visitSuperMethodReference(node);
-            case TYPE_METHOD_REFERENCE:
-                return visitTypeMethodReference(node);
+                newTree = visitNone(node);
+             break; 
+ 			case ANONYMOUS_CLASS_DECLARATION:
+                newTree = visitAnonymousClassDeclaration(node);
+             break; 
+ 			case ARRAY_ACCESS:
+                newTree = visitArrayAccess(node);
+             break; 
+ 			case ARRAY_CREATION:
+                newTree = visitArrayCreation(node);
+             break; 
+ 			case ARRAY_INITIALIZER:
+                newTree = visitArrayInitializer(node);
+             break; 
+ 			case ARRAY_TYPE:
+                newTree = visitArrayType(node);
+             break; 
+ 			case ASSERT_STATEMENT:
+                newTree = visitAssertStatement(node);
+             break; 
+ 			case ASSIGNMENT:
+                newTree = visitAssignment(node);
+             break; 
+ 			case BLOCK:
+                newTree = visitBlock(node);
+             break; 
+ 			case BOOLEAN_LITERAL:
+                newTree = visitBooleanLiteral(node);
+             break; 
+ 			case BREAK_STATEMENT:
+                newTree = visitBreakStatement(node);
+             break; 
+ 			case CAST_EXPRESSION:
+                newTree = visitCastExpression(node);
+             break; 
+ 			case CATCH_CLAUSE:
+                newTree = visitCatchClause(node);
+             break; 
+ 			case CHARACTER_LITERAL:
+                newTree = visitCharacterLiteral(node);
+             break; 
+ 			case CLASS_INSTANCE_CREATION:
+                newTree = visitClassInstanceCreation(node);
+             break; 
+ 			case COMPILATION_UNIT:
+                newTree = visitCompilationUnit(node);
+             break; 
+ 			case CONDITIONAL_EXPRESSION:
+                newTree = visitConditionalExpression(node);
+             break; 
+ 			case CONSTRUCTOR_INVOCATION:
+                newTree = visitConstructorInvocation(node);
+             break; 
+ 			case CONTINUE_STATEMENT:
+                newTree = visitContinueStatement(node);
+             break; 
+ 			case DO_STATEMENT:
+                newTree = visitDoStatement(node);
+             break; 
+ 			case EMPTY_STATEMENT:
+                newTree = visitEmptyStatement(node);
+             break; 
+ 			case EXPRESSION_STATEMENT:
+                newTree = visitExpressionStatement(node);
+             break; 
+ 			case FIELD_ACCESS:
+                newTree = visitFieldAccess(node);
+             break; 
+ 			case FIELD_DECLARATION:
+                newTree = visitFieldDeclaration(node);
+             break; 
+ 			case FOR_STATEMENT:
+                newTree = visitForStatement(node);
+             break; 
+ 			case IF_STATEMENT:
+                newTree = visitIfStatement(node);
+             break; 
+ 			case IMPORT_DECLARATION:
+                newTree = visitImportDeclaration(node);
+             break; 
+ 			case INFIX_EXPRESSION:
+                newTree = visitInfixExpression(node);
+             break; 
+ 			case INITIALIZER:
+                newTree = visitInitializer(node);
+             break; 
+ 			case JAVADOC:
+                newTree = visitJavadoc(node);
+             break; 
+ 			case LABELED_STATEMENT:
+                newTree = visitLabeledStatement(node);
+             break; 
+ 			case METHOD_DECLARATION:
+                newTree = visitMethodDeclaration(node);
+             break; 
+ 			case METHOD_INVOCATION:
+                newTree = visitMethodInvocation(node);
+             break; 
+ 			case NULL_LITERAL:
+                newTree = visitNullLiteral(node);
+             break; 
+ 			case NUMBER_LITERAL:
+                newTree = visitNumberLiteral(node);
+             break; 
+ 			case PACKAGE_DECLARATION:
+                newTree = visitPackageDeclaration(node);
+             break; 
+ 			case PARENTHESIZED_EXPRESSION:
+                newTree = visitParenthesizedExpression(node);
+             break; 
+ 			case POSTFIX_EXPRESSION:
+                newTree = visitPostfixExpression(node);
+             break; 
+ 			case PREFIX_EXPRESSION:
+                newTree = visitPrefixExpression(node);
+             break; 
+ 			case PRIMITIVE_TYPE:
+                newTree = visitPrimitiveType(node);
+             break; 
+ 			case QUALIFIED_NAME:
+                newTree = visitQualifiedName(node);
+             break; 
+ 			case RETURN_STATEMENT:
+                newTree = visitReturnStatement(node);
+             break; 
+ 			case SIMPLE_NAME:
+                newTree = visitSimpleName(node);
+             break; 
+ 			case SIMPLE_TYPE:
+                newTree = visitSimpleType(node);
+             break; 
+ 			case SINGLE_VARIABLE_DECLARATION:
+                newTree = visitSingleVariableDeclaration(node);
+             break; 
+ 			case STRING_LITERAL:
+                newTree = visitStringLiteral(node);
+             break; 
+ 			case SUPER_CONSTRUCTOR_INVOCATION:
+                newTree = visitSuperConstructorInvocation(node);
+             break; 
+ 			case SUPER_FIELD_ACCESS:
+                newTree = visitSuperFieldAccess(node);
+             break; 
+ 			case SUPER_METHOD_INVOCATION:
+                newTree = visitSuperMethodInvocation(node);
+             break; 
+ 			case SWITCH_CASE:
+                newTree = visitSwitchCase(node);
+             break; 
+ 			case SWITCH_STATEMENT:
+                newTree = visitSwitchStatement(node);
+             break; 
+ 			case SYNCHRONIZED_STATEMENT:
+                newTree = visitSynchronizedStatement(node);
+             break; 
+ 			case THIS_EXPRESSION:
+                newTree = visitThisExpression(node);
+             break; 
+ 			case THROW_STATEMENT:
+                newTree = visitThrowStatement(node);
+             break; 
+ 			case TRY_STATEMENT:
+                newTree = visitTryStatement(node);
+             break; 
+ 			case TYPE_DECLARATION:
+                newTree = visitTypeDeclaration(node);
+             break; 
+ 			case TYPE_DECLARATION_STATEMENT:
+                newTree = visitTypeDeclarationStatement(node);
+             break; 
+ 			case TYPE_LITERAL:
+                newTree = visitTypeLiteral(node);
+             break; 
+ 			case VARIABLE_DECLARATION_EXPRESSION:
+                newTree = visitVariableDeclarationExpression(node);
+             break; 
+ 			case VARIABLE_DECLARATION_FRAGMENT:
+                newTree = visitVariableDeclarationFragment(node);
+             break; 
+ 			case VARIABLE_DECLARATION_STATEMENT:
+                newTree = visitVariableDeclarationStatement(node);
+             break; 
+ 			case WHILE_STATEMENT:
+                newTree = visitWhileStatement(node);
+             break; 
+ 			case INSTANCEOF_EXPRESSION:
+                newTree = visitInstanceofExpression(node);
+             break; 
+ 			case LINE_COMMENT:
+                newTree = visitLineComment(node);
+             break; 
+ 			case BLOCK_COMMENT:
+                newTree = visitBlockComment(node);
+             break; 
+ 			case TAG_ELEMENT:
+                newTree = visitTagElement(node);
+             break; 
+ 			case TEXT_ELEMENT:
+                newTree = visitTextElement(node);
+             break; 
+ 			case MEMBER_REF:
+                newTree = visitMemberRef(node);
+             break; 
+ 			case METHOD_REF:
+                newTree = visitMethodRef(node);
+             break; 
+ 			case METHOD_REF_PARAMETER:
+                newTree = visitMethodRefParameter(node);
+             break; 
+ 			case ENHANCED_FOR_STATEMENT:
+                newTree = visitEnhancedForStatement(node);
+             break; 
+ 			case ENUM_DECLARATION:
+                newTree = visitEnumDeclaration(node);
+             break; 
+ 			case ENUM_CONSTANT_DECLARATION:
+                newTree = visitEnumConstantDeclaration(node);
+             break; 
+ 			case TYPE_PARAMETER:
+                newTree = visitTypeParameter(node);
+             break; 
+ 			case PARAMETERIZED_TYPE:
+                newTree = visitParameterizedType(node);
+             break; 
+ 			case QUALIFIED_TYPE:
+                newTree = visitQualifiedType(node);
+             break; 
+ 			case WILDCARD_TYPE:
+                newTree = visitWildcardType(node);
+             break; 
+ 			case NORMAL_ANNOTATION:
+                newTree = visitNormalAnnotation(node);
+             break; 
+ 			case MARKER_ANNOTATION:
+                newTree = visitMarkerAnnotation(node);
+             break; 
+ 			case SINGLE_MEMBER_ANNOTATION:
+                newTree = visitSingleMemberAnnotation(node);
+             break; 
+ 			case MEMBER_VALUE_PAIR:
+                newTree = visitMemberValuePair(node);
+             break; 
+ 			case ANNOTATION_TYPE_DECLARATION:
+                newTree = visitAnnotationTypeDeclaration(node);
+             break; 
+ 			case ANNOTATION_TYPE_MEMBER_DECLARATION:
+                newTree = visitAnnotationTypeMemberDeclaration(node);
+             break; 
+ 			case MODIFIER:
+                newTree = visitModifier(node);
+             break; 
+ 			case UNION_TYPE:
+                newTree = visitUnionType(node);
+             break; 
+ 			case DIMENSION:
+                newTree = visitDimension(node);
+             break; 
+ 			case LAMBDA_EXPRESSION:
+                newTree = visitLambdaExpression(node);
+             break; 
+ 			case INTERSECTION_TYPE:
+                newTree = visitIntersectionType(node);
+             break; 
+ 			case NAME_QUALIFIED_TYPE:
+                newTree = visitNameQualifiedType(node);
+             break; 
+ 			case CREATION_REFERENCE:
+                newTree = visitCreationReference(node);
+             break; 
+ 			case EXPRESSION_METHOD_REFERENCE:
+                newTree = visitExpressionMethodReference(node);
+             break; 
+ 			case SUPER_METHOD_REFERENCE:
+                newTree = visitSuperMethodReference(node);
+             break; 
+ 			case TYPE_METHOD_REFERENCE:
+                newTree = visitTypeMethodReference(node);
 
-            case MY_MEMBER_NAME:
-                return visitMyMemberName(node);
-            case MY_ALL_CLASSES:
-                return visitMyAllClasses(node);
-            case MY_PATH_NAME:
-                return visitMyPathName(node);
-            case MY_METHOD_INVOCATION_ARGUMENTS:
-                return visitMyMethodInvocationArguments(node);
-            case MY_VARIABLE_NAME:
-                return visitMyVariableName(node);
+             break; 
+ 			case MY_MEMBER_NAME:
+                newTree = visitMyMemberName(node);
+             break; 
+ 			case MY_ALL_CLASSES:
+                newTree = visitMyAllClasses(node);
+             break; 
+ 			case MY_PATH_NAME:
+                newTree = visitMyPathName(node);
+             break; 
+ 			case MY_METHOD_INVOCATION_ARGUMENTS:
+                newTree = visitMyMethodInvocationArguments(node);
+             break; 
+ 			case MY_VARIABLE_NAME:
+                newTree = visitMyVariableName(node);
 
-            case C_BLOCK:
-                return visitCBlock(node);
-            case C_NAME:
-                return visitCName(node);
+             break; 
+ 			case C_BLOCK:
+                newTree = visitCBlock(node);
+             break; 
+ 			case C_NAME:
+                newTree = visitCName(node);
+            break;
             default:
-                return defaultVisit(node);
+                newTree = defaultVisit(node);
         }
+       // if(! ps.equals(newTree.toPrettyString(context)))
+       //     System.out.println( "id=" + node.getId() +" [" +  ps +"] --> [" + newTree.toPrettyString(context) +"]"  );
+        return newTree;
     }
 
     protected ITree visitNone(ITree node) {

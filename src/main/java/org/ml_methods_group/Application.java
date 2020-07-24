@@ -8,7 +8,11 @@ import com.github.gumtreediff.matchers.Matcher;
 import com.github.gumtreediff.matchers.Matchers;
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.utils.Pair;
+import com.github.gumtreediff.gen.TreeGenerator;
+import com.github.gumtreediff.gen.srcml.SrcmlCTreeGenerator;
+import com.github.gumtreediff.tree.TreeContext;
 import org.ml_methods_group.common.*;
+import org.ml_methods_group.common.ast.NodeType;
 import org.ml_methods_group.common.ast.ASTUtils;
 import org.ml_methods_group.common.ast.changes.BasicChangeGenerator;
 import org.ml_methods_group.common.ast.changes.ChangeGenerator;
@@ -30,6 +34,7 @@ import org.ml_methods_group.common.serialization.ProtobufSerializationUtils;
 import org.ml_methods_group.evaluation.approaches.clustering.ClusteringAlgorithm;
 import org.ml_methods_group.parsing.ParsingUtils;
 import org.ml_methods_group.testing.extractors.CachedFeaturesExtractor;
+
 
 import java.io.*;
 import java.nio.file.Files;
@@ -107,6 +112,22 @@ public class Application {
                         args[3],
                         getNgramSizeFromArgs(args)
 
+                );
+                break;
+
+                case "prepare.lase":
+                if (args.length != 4 ) {
+                    System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
+                            "    Path to code dataset" + System.lineSeparator() +
+                            "    Path to store representation" + System.lineSeparator() +
+                            "    LASE variant (conctrete,  abstract)" + System.lineSeparator() 
+                            );
+                    return;
+                }
+                prepareLASEDataset(
+                        Paths.get(args[1]),
+                        Paths.get(args[2]),
+                        args[3]
                 );
                 break;
 
@@ -295,8 +316,10 @@ public class Application {
         ITree src;
         ITree dst;
         try {
-            final ASTGenerator generator = new BasicASTGenerator(new BasicASTNormalizer());
+            final ASTGenerator generator = // new BasicASTGenerator(new BasicASTNormalizer());
+            new CachedASTGenerator(  new NamesASTNormalizer() );
             src = generator.buildTree(FileBefore);
+
             dst = generator.buildTree(FileAfter);
         } catch (Exception e) {
             // e.printStackTrace();
@@ -311,7 +334,7 @@ public class Application {
         }
         ActionGenerator generator = new ActionGenerator(src, dst, matcher.getMappings());
         try{
-        generator.generate();
+            generator.generate();
         } catch (Exception e){
             return null;
         }
@@ -328,19 +351,65 @@ public class Application {
         final String rightSolutionId = id + OK.ordinal();
         final var toSolution = new Solution(toCode, id, rightSolutionId, OK);
 
-        final EditActions ea = new EditActions(fromSolution, toSolution, buildMethodActions(fromSolution, toSolution));
+        TreeContext src;
+        TreeContext dst;
+        try {
+            final ASTGenerator generator =
+            new CachedASTGenerator(  new NamesASTNormalizer() );
+            src = generator.buildTreeContext(fromSolution);
+            dst = generator.buildTreeContext(toSolution);
+        } catch (Exception e) {
+            // e.printStackTrace();
+            return ;
+        }
+        Matcher matcher = Matchers.getInstance().getMatcher(src.getRoot(), dst.getRoot());
+        try {
+            matcher.match();
+        } catch (NullPointerException e) {
+            //System.out.println("Cannot match: NullPointerException in m.match()");
+            return ;
+        }
+        ActionGenerator generator = new ActionGenerator(src.getRoot(), dst.getRoot(), matcher.getMappings());
+        try{
+        generator.generate();
+        } catch (Exception e){
+            return ;
+        }
 
-        var start = System.currentTimeMillis();
+       
+        final List<Action> aList = generator.getActions();
+        // final EditActions ea = new EditActions(fromSolution, toSolution, aList);
+
+
+        for (Action action : aList) { 
+            ITree actNode =action.getNode();
+            ITree parent = actNode.getParent();
+            // System.out.println(action.format(src) +" [#"+ actNode.getId() + " at "  + parent.toPrettyString(src) + " #"  + parent.getId() + "." + actNode.positionInParent() +"]");
+            //System.out.println(action.getName() + " " + actNode.toPrettyString(src) + " to " + parent.toPrettyString(src)  +" [#"+ actNode.getId() + " at "  + " #"  + parent.getId() + "." + actNode.positionInParent() +"]");
+            System.out.println(action.getName() + " " 
+            + NodeType.valueOf( actNode.getType()).name() + (actNode.hasLabel()? " " + actNode.getLabel() :"")
+            + " to " + NodeType.valueOf( parent.getType()).name()  
+            + " at "  + " "  + parent.getId() + "." + actNode.positionInParent() );
+        }
+
+
+/*        var start = System.currentTimeMillis();
+
+
 
         File actionsFile = new File(outputFile.toString());
         BufferedWriter writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
         for (Action action : ea.getEditActions()) {
-            writer.write(ea.getActionName(action) + "\n");
+            ITree actNode =action.getNode();
+            System.out.println(action.format(src) +" [node:"+ actNode.getId() +" parent:" + actNode.getParent().getId() + " " + actNode.getParent().toPrettyString(src) +"]");
+           // System.out.println( "2:" + action.format(dst) +" [node: "+ actNode.getId() +" parent:"  + actNode.getParent().toPrettyString(dst) +"]");
+             writer.write(ea.getActionName(action) + "\n");
         }
         writer.close();
 
 
         System.out.println("Saving actions took " + ((System.currentTimeMillis() - start) / 1000.0) + " s");
+        */
     }
 
     public static void clusterFolder(Path sourceFolder, Path storage,
@@ -443,6 +512,191 @@ public class Application {
         return StreamSupport.stream(path.spliterator(), false).map(Path::toString)
                             .toArray(String[]::new);
     }
+
+
+
+    private static void prepareLASEDataset(Path pathToDataset, Path pathToSaveRepresentations, String version) throws IOException {
+
+        int processed=0;
+        int skipped=0;
+
+
+        String badFolderName =  pathToDataset.toString() + "\\bad";                          
+        String goodFolderName =  pathToDataset.toString() + "\\good";                          
+        try  {
+
+            List<String> result = Files.walk(Paths.get(badFolderName)).filter(Files::isRegularFile)
+                    .map(x -> x.toString()).collect(Collectors.toList());
+        
+       
+            var baseTime = System.currentTimeMillis();
+
+            for (String fName : result) {
+                
+                try{
+                
+                baseTime = System.currentTimeMillis();
+                processed++;
+                System.out.println("******************* found: " + processed + ", skipped: " + skipped);
+
+                Path methodBeforePath = Paths.get(fName);
+                Path methodAfterPath = Paths.get(fName.replace(badFolderName, goodFolderName));
+                String[] paths = splitPath(fName.replace(badFolderName, ""));
+                
+                String defectId = paths[0]  +"_"+ version +"_" + paths[paths.length-1];
+
+                System.out.println(getDiff(baseTime) + ": Defect id: " +  defectId  );
+
+                File fromFile = methodBeforePath.toFile();
+                File toFile = methodAfterPath.toFile();
+
+                File actionsFile = new File(pathToSaveRepresentations.toString()+"\\" + defectId);
+                
+                String rightSolutionId = defectId + "_" + OK.ordinal();
+                String wrongSolutionId = defectId + "_" + FAIL.ordinal();
+
+
+                if(fromFile.length() >0 && toFile.length() >0 ){
+                    double rate = ((double) fromFile.length()) / ((double) toFile.length());
+                    System.out.println(getDiff(baseTime) + ": Checking size");
+                    if(rate >= 0.85 && rate <= 1.15){
+
+                            System.out.println(getDiff(baseTime) + ": Rate: " + rate ); //+" Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
+                            String emuCode = "";
+
+                            if(actionsFile.exists()){
+                                System.out.println(getDiff(baseTime) + ": repared file exists");
+                            }else{
+
+                                // write empty file for skip crash at next pass
+                                BufferedWriter writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
+                                writer.write("{}");
+                                writer.close();
+
+                                var fromCode = Files.readString(methodBeforePath);
+                                var toCode = Files.readString(methodAfterPath);
+                               
+
+
+                                
+                                System.out.println(getDiff(baseTime) + ": Files loaded");
+                               
+                                var fromSolution = new Solution(fromCode, defectId, wrongSolutionId, FAIL);
+                                var toSolution = new Solution(toCode, defectId, rightSolutionId, OK);
+
+                                System.out.println(getDiff(baseTime) + ": Building source actions");
+
+                                TreeContext src;
+                                TreeContext dst;
+                               
+
+
+
+                                ASTGenerator generator = null;
+
+                                if (version.toLowerCase().equals("abstract")) {
+                                    generator = new CachedASTGenerator(  new NamesASTNormalizer() );
+                                }else{
+                                    generator = new CachedASTGenerator(  null );
+                                }
+
+                                src = generator.buildTreeContext(fromSolution);
+                                dst = generator.buildTreeContext(toSolution);
+                               
+                                Matcher matcher = Matchers.getInstance().getMatcher(src.getRoot(), dst.getRoot());
+                                try {
+                                    matcher.match();
+                                } catch (NullPointerException e) {
+                                    System.out.println("Cannot match: NullPointerException in m.match()");
+                                    
+                                }
+                                ActionGenerator actionGenerator = new ActionGenerator(src.getRoot(), dst.getRoot(), matcher.getMappings());
+                                try{
+                                    actionGenerator.generate();
+                                } catch (Exception e){
+                                    e.printStackTrace();
+                                    
+                                }
+                        
+                               
+                                final List<Action> actions = actionGenerator.getActions();
+                                fromSolution = null;
+                                toSolution = null;
+
+                                if(actions != null  && actions.size() > 0 ){
+                                    System.out.println(getDiff(baseTime) + ": Prepare es");
+                                    
+
+                                    emuCode = "";
+
+                                    // store Actions
+                                    switch (version.toLowerCase()) {
+                                       
+
+                                        case "concrete":
+                                        for (Action action : actions) { 
+                                            ITree actNode =action.getNode();
+                                            ITree parent = actNode.getParent();
+                                                emuCode += action.getName() + " " 
+                                                + NodeType.valueOf( actNode.getType()).name() + (actNode.hasLabel()? " " + actNode.getLabel() :"")
+                                                + " to " + NodeType.valueOf( parent.getType()).name()  + ";\n";
+                                            }
+                                            break;
+
+                                        case "abstract":
+
+                                        for (Action action : actions) { 
+                                            ITree actNode =action.getNode();
+                                            ITree parent = actNode.getParent();
+                                                emuCode += action.getName() + " " 
+                                                + NodeType.valueOf( actNode.getType()).name() 
+                                                + " to " + NodeType.valueOf( parent.getType()).name()  + ";\n";
+                                            }
+                                            break;
+
+                                    }
+
+                                   
+
+                                   
+
+                                    writer =null;
+                                    writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
+                                    writer.write(emuCode);
+                                    writer.close();
+
+                                }else{
+                                    writer =null;
+                                    System.out.println(getDiff(baseTime) + ": No actions detected");    
+                                }
+                            }
+                            System.out.println(getDiff(baseTime) + ": Done");
+                        }else{
+                            skipped++;
+                            System.out.println(getDiff(baseTime) + ": Skip Defect id: " +  defectId +" Very large file difference. Rate: " + rate); // Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
+                        }
+
+                    }
+                    
+                    toFile = null;
+                    fromFile = null;
+
+                }catch(Exception any)
+                {
+                    any.printStackTrace();
+                }
+
+            }
+
+            System.out.println(getDiff(baseTime) + ": All files are prepared");
+
+            
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
 
     private static void prepareESDataset(Path pathToDataset, Path pathToSaveRepresentations, String version, int NgramSize) throws IOException {
 

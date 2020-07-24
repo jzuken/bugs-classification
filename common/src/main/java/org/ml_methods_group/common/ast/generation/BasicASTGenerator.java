@@ -27,8 +27,9 @@ public class BasicASTGenerator implements ASTGenerator {
 
     public static Map<Integer, String> nodeTypes = new HashMap<>();
 
+
     @Override
-    public ITree buildTree(Solution solution) {
+    public TreeContext buildTreeContext(Solution solution) {
         try {
             final String code = solution.getCode();
             final TreeContext context;
@@ -56,8 +57,20 @@ public class BasicASTGenerator implements ASTGenerator {
             if (normalizer != null) {
                 normalizer.normalize(context, code);
             }
-            return context.getRoot();
+            return context;
         } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public ITree buildTree(Solution solution) {
+        try {
+            
+            final TreeContext context;
+            context = buildTreeContext(solution);
+            return context.getRoot();
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
