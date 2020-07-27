@@ -1037,43 +1037,27 @@ public class Application {
     }
 
     private static List<String> BuildCommonActions(List<String> A, List<String> B){
-        int cnt =0;
         int maxCnt=0;
         int posMaxA =-1;
-        int k=0;
-        int l=0;
         for (int i=0; i< A.size(); i++) {
-            k=i;
-            cnt=0;
             for (int j=0; j< B.size(); j++) {
-                l=j;
-                if(k < A.size() && l < B.size()){
-                    if(A.get(k).equals(B.get(l)) ){
+                int k=i;
+                int l=j;
+                int cnt=0;    
+                while(k < A.size() && l < B.size() && A.get(k).equals(B.get(l)) ){
                         cnt++;
-                        //System.out.println("A[" +k +"] = B["+ l +"], cnt=" + cnt);
+                        // System.out.println("A[" +k +"] = B["+ l +"], cnt=" + cnt);
                         k++;
                         l++;
-                    }else{
-                        if(cnt > maxCnt){
-                            maxCnt =cnt;
-                            cnt=0;
-                            posMaxA=i;
-                            System.out.println("New max at " + i + " = "+ maxCnt);
-                        }
-                        break;
-                    }
-                     if(k == A.size() || l == B.size()){
-                        System.out.println("End of list");
-                        if(cnt > maxCnt){
-                            maxCnt =cnt;
-                            posMaxA=i;
-                            System.out.println("New max at " + i + " = "+ maxCnt);
-                        }
-                    }   
                 }
-            }
                 
-            
+                if(cnt > maxCnt){
+                    maxCnt = cnt;
+                    posMaxA = i;
+                    System.out.println("New max at " + i + " = "+ maxCnt);
+                }
+                
+            }
         }
         List<String> result = new ArrayList<>();
         if(maxCnt >0){
