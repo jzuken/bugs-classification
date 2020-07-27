@@ -8,7 +8,11 @@ import com.github.gumtreediff.matchers.Matcher;
 import com.github.gumtreediff.matchers.Matchers;
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.utils.Pair;
+import com.github.gumtreediff.gen.TreeGenerator;
+import com.github.gumtreediff.gen.srcml.SrcmlCTreeGenerator;
+import com.github.gumtreediff.tree.TreeContext;
 import org.ml_methods_group.common.*;
+import org.ml_methods_group.common.ast.NodeType;
 import org.ml_methods_group.common.ast.ASTUtils;
 import org.ml_methods_group.common.ast.changes.BasicChangeGenerator;
 import org.ml_methods_group.common.ast.changes.ChangeGenerator;
@@ -135,7 +139,21 @@ public class Application {
 
                 );
                 break;
-
+            case "prepare.lase":
+                if (args.length != 4 ) {
+                    System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
+                            "    Path to code dataset" + System.lineSeparator() +
+                            "    Path to store representation" + System.lineSeparator() +
+                            "    LASE variant (conctrete,  abstract)" + System.lineSeparator() 
+                            );
+                    return;
+                }
+                prepareLASEDataset(
+                        Paths.get(args[1]),
+                        Paths.get(args[2]),
+                        args[3]
+                );
+                break;
             case "parse":
                 if (args.length != 3) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
@@ -732,6 +750,192 @@ public class Application {
     }
 
   
+
+
+    private static void prepareLASEDataset(Path pathToDataset, Path pathToSaveRepresentations, String version) throws IOException {
+
+        int processed=0;
+        int skipped=0;
+
+
+        String badFolderName =  pathToDataset.toString() + "\\bad";                          
+        String goodFolderName =  pathToDataset.toString() + "\\good";                          
+        try  {
+
+            List<String> result = Files.walk(Paths.get(badFolderName)).filter(Files::isRegularFile)
+                    .map(x -> x.toString()).collect(Collectors.toList());
+        
+       
+            var baseTime = System.currentTimeMillis();
+
+            for (String fName : result) {
+                
+                try{
+                
+                baseTime = System.currentTimeMillis();
+                processed++;
+                System.out.println("******************* found: " + processed + ", skipped: " + skipped);
+
+                Path methodBeforePath = Paths.get(fName);
+                Path methodAfterPath = Paths.get(fName.replace(badFolderName, goodFolderName));
+                String[] paths = splitPath(fName.replace(badFolderName, ""));
+                
+                String defectId = paths[0]  +"_"+ version +"_" + paths[paths.length-1];
+
+                System.out.println(getDiff(baseTime) + ": Defect id: " +  defectId  );
+
+                File fromFile = methodBeforePath.toFile();
+                File toFile = methodAfterPath.toFile();
+
+                File actionsFile = new File(pathToSaveRepresentations.toString()+"\\" + defectId);
+                
+                String rightSolutionId = defectId + "_" + OK.ordinal();
+                String wrongSolutionId = defectId + "_" + FAIL.ordinal();
+
+
+                if(fromFile.length() >0 && toFile.length() >0 ){
+                    double rate = ((double) fromFile.length()) / ((double) toFile.length());
+                    System.out.println(getDiff(baseTime) + ": Checking size");
+                    if(rate >= 0.85 && rate <= 1.15){
+
+                            System.out.println(getDiff(baseTime) + ": Rate: " + rate ); //+" Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
+                            String emuCode = "";
+
+                            if(actionsFile.exists()){
+                                System.out.println(getDiff(baseTime) + ": repared file exists");
+                            }else{
+
+                                // write empty file for skip crash at next pass
+                                BufferedWriter writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
+                                writer.write("{}");
+                                writer.close();
+
+                                var fromCode = Files.readString(methodBeforePath);
+                                var toCode = Files.readString(methodAfterPath);
+                               
+
+
+                                
+                                System.out.println(getDiff(baseTime) + ": Files loaded");
+                               
+                                var fromSolution = new Solution(fromCode, defectId, wrongSolutionId, FAIL);
+                                var toSolution = new Solution(toCode, defectId, rightSolutionId, OK);
+
+                                System.out.println(getDiff(baseTime) + ": Building source actions");
+
+                                TreeContext src;
+                                TreeContext dst;
+                               
+
+
+
+                                ASTGenerator generator = null;
+
+                                if (version.toLowerCase().equals("abstract")) {
+                                    generator = new CachedASTGenerator(  new NamesASTNormalizer() );
+                                }else{
+                                    generator = new CachedASTGenerator(  null );
+                                }
+
+                                src = generator.buildTreeContext(fromSolution);
+                                dst = generator.buildTreeContext(toSolution);
+                               
+                                Matcher matcher = Matchers.getInstance().getMatcher(src.getRoot(), dst.getRoot());
+                                try {
+                                    matcher.match();
+                                } catch (NullPointerException e) {
+                                    System.out.println("Cannot match: NullPointerException in m.match()");
+                                    
+                                }
+                                ActionGenerator actionGenerator = new ActionGenerator(src.getRoot(), dst.getRoot(), matcher.getMappings());
+                                try{
+                                    actionGenerator.generate();
+                                } catch (Exception e){
+                                    e.printStackTrace();
+                                    
+                                }
+                        
+                               
+                                final List<Action> actions = actionGenerator.getActions();
+                                fromSolution = null;
+                                toSolution = null;
+
+                                if(actions != null  && actions.size() > 0 ){
+                                    System.out.println(getDiff(baseTime) + ": Prepare es");
+                                    
+
+                                    emuCode = "";
+
+                                    // store Actions
+                                    switch (version.toLowerCase()) {
+                                       
+
+                                        case "concrete":
+                                        for (Action action : actions) { 
+                                            ITree actNode =action.getNode();
+                                            ITree parent = actNode.getParent();
+                                                emuCode += action.getName() + " " 
+                                                + NodeType.valueOf( actNode.getType()).name() + (actNode.hasLabel()? " " + actNode.getLabel() :"")
+                                                + " to " + NodeType.valueOf( parent.getType()).name()  + ";\n";
+                                            }
+                                            break;
+
+                                        case "abstract":
+
+                                        for (Action action : actions) { 
+                                            ITree actNode =action.getNode();
+                                            ITree parent = actNode.getParent();
+                                                emuCode += action.getName() + " " 
+                                                + NodeType.valueOf( actNode.getType()).name() 
+                                                + " to " + NodeType.valueOf( parent.getType()).name()  + ";\n";
+                                            }
+                                            break;
+
+                                    }
+
+                                   
+
+                                   
+
+                                    writer =null;
+                                    writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
+                                    writer.write(emuCode);
+                                    writer.close();
+
+                                }else{
+                                    writer =null;
+                                    System.out.println(getDiff(baseTime) + ": No actions detected");    
+                                }
+                            }
+                            System.out.println(getDiff(baseTime) + ": Done");
+                        }else{
+                            skipped++;
+                            System.out.println(getDiff(baseTime) + ": Skip Defect id: " +  defectId +" Very large file difference. Rate: " + rate); // Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
+                        }
+
+                    }
+                    
+                    toFile = null;
+                    fromFile = null;
+
+                }catch(Exception any)
+                {
+                    any.printStackTrace();
+                }
+
+            }
+
+            System.out.println(getDiff(baseTime) + ": All files are prepared");
+
+            
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+
+
 
     private static void saveClustersToReadableFormat(Clusters<Changes> clusters, Path storage) throws IOException {
         Clusters<String> idClusters = clusters.map(x -> x.getOrigin().getId());
