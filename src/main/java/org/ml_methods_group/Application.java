@@ -139,7 +139,25 @@ public class Application {
 
                 );
                 break;
-            case "prepare.lase":
+                case "build.lase":
+                if (args.length != 5 ) {
+                    System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
+                            "    Path to lase dataset" + System.lineSeparator() +
+                            "    Path to cluster list file" + System.lineSeparator() +
+                            "    Path to store cluster common actions" + System.lineSeparator() +
+                            "    LASE variant (conctrete,  abstract)" + System.lineSeparator() 
+                            );
+                    return;
+                }
+                buildLASEbyCluster(
+                        Paths.get(args[1]),
+                        Paths.get(args[2]),
+                        Paths.get(args[3]),
+                        args[4]
+                );
+                break;
+
+                case "prepare.lase":
                 if (args.length != 4 ) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
                             "    Path to code dataset" + System.lineSeparator() +
@@ -151,6 +169,7 @@ public class Application {
                 prepareLASEDataset(
                         Paths.get(args[1]),
                         Paths.get(args[2]),
+                      
                         args[3]
                 );
                 break;
@@ -752,11 +771,10 @@ public class Application {
   
 
 
-    private static void prepareLASEDataset(Path pathToDataset, Path pathToSaveRepresentations, String version) throws IOException {
+    private static void prepareLASEDataset(Path pathToDataset, Path pathToSaveRepresentations,  String version) throws IOException {
 
         int processed=0;
         int skipped=0;
-
 
         String badFolderName =  pathToDataset.toString() + "\\bad";                          
         String goodFolderName =  pathToDataset.toString() + "\\good";                          
@@ -876,7 +894,7 @@ public class Application {
                                             ITree parent = actNode.getParent();
                                                 emuCode += action.getName() + " " 
                                                 + NodeType.valueOf( actNode.getType()).name() + (actNode.hasLabel()? " " + actNode.getLabel() :"")
-                                                + " to " + NodeType.valueOf( parent.getType()).name()  + ";\n";
+                                                + " to " + NodeType.valueOf( parent.getType()).name()  + "\n";
                                             }
                                             break;
 
@@ -932,6 +950,140 @@ public class Application {
             e.printStackTrace();
         }
 
+    }
+
+
+    private static void buildLASEbyCluster(Path pathToLaseDataset, Path pathToClusterFile,  Path pathToCommonActions, String version) throws IOException {
+        
+        List<String> clusters = Files.readAllLines(pathToClusterFile);
+        int clusterNum=0;
+                           
+        try  {
+
+            for(String cluster: clusters){
+                String[] defects = cluster.split(" ");
+                System.out.println("processing cluster:" + cluster);
+
+                if(defects.length >1){
+
+                    List<String> result = Files.walk(pathToLaseDataset).filter(Files::isRegularFile)
+                    .map(x -> x.toString()).collect(Collectors.toList());
+      
+                    var baseTime = System.currentTimeMillis();
+                    List<String> defectFiles = new ArrayList<>();
+
+                    // collect all files for defect to build edit sequence
+                    for (String fName : result) {
+                        boolean useFile =false;
+                        
+                        for(String defect : defects){
+                           
+                            if(fName.contains(defect+"_"+version)){
+                                useFile = true;
+                                break;
+                            }
+                        }
+                        if (useFile){
+                            
+                            defectFiles.add(fName);
+                        }
+                    }
+
+                    boolean firstFile =true;
+
+                    // collect common actions for cluster here
+                    List<String> commonActions = new ArrayList<>();
+                    clusterNum++;
+
+                    for (String fName : defectFiles) {
+                        System.out.println("processing file:" + fName);
+                        List<String> actions = Files.readAllLines(Paths.get(fName));
+                        if(actions.size() >0){
+                            // build commoin Edit 
+                            if(! firstFile){
+                                System.out.println("Sizes:" + commonActions.size() + " " + actions.size()); 
+                                commonActions = BuildCommonActions(commonActions, actions);
+
+                                // if no commonactions stop processing this cluster
+                                if(commonActions.size()==0){
+                                    System.out.println("Stop analizing cluster:" + cluster + ". No common actions detected. " ); 
+                                    break;
+                                }
+
+                            }else{
+                                commonActions = actions;
+                                firstFile =false;
+                            }
+                        }else{
+                            System.out.println("skip file without edit actions: " + fName);
+                        }
+                        
+                    } 
+                    String CommonActionsName = pathToCommonActions.toAbsolutePath() + "/" + clusterNum +".txt";
+
+                    BufferedWriter writer = new BufferedWriter(new FileWriter(CommonActionsName));
+                    for(String action: commonActions){
+                        writer.write(action +"\r\n");
+                    }
+                    writer.close();
+                }
+
+            } 
+                    
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private static List<String> BuildCommonActions(List<String> A, List<String> B){
+        int cnt =0;
+        int maxCnt=0;
+        int posMaxA =-1;
+        int k=0;
+        int l=0;
+        for (int i=0; i< A.size(); i++) {
+            k=i;
+            cnt=0;
+            for (int j=0; j< B.size(); j++) {
+                l=j;
+                if(k < A.size() && l < B.size()){
+                    if(A.get(k).equals(B.get(l)) ){
+                        cnt++;
+                        //System.out.println("A[" +k +"] = B["+ l +"], cnt=" + cnt);
+                        k++;
+                        l++;
+                    }else{
+                        if(cnt > maxCnt){
+                            maxCnt =cnt;
+                            cnt=0;
+                            posMaxA=i;
+                            System.out.println("New max at " + i + " = "+ maxCnt);
+                        }
+                        break;
+                    }
+                     if(k == A.size() || l == B.size()){
+                        System.out.println("End of list");
+                        if(cnt > maxCnt){
+                            maxCnt =cnt;
+                            posMaxA=i;
+                            System.out.println("New max at " + i + " = "+ maxCnt);
+                        }
+                    }   
+                }
+            }
+                
+            
+        }
+        List<String> result = new ArrayList<>();
+        if(maxCnt >0){
+            for (int i=0; i< maxCnt; i++) {
+                result.add(A.get(posMaxA+i));
+            }
+        }
+        System.out.println("result CA: " + result.size());
+
+        return result;
     }
 
 
