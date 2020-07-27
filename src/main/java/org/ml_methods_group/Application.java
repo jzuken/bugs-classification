@@ -8,11 +8,7 @@ import com.github.gumtreediff.matchers.Matcher;
 import com.github.gumtreediff.matchers.Matchers;
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.utils.Pair;
-import com.github.gumtreediff.gen.TreeGenerator;
-import com.github.gumtreediff.gen.srcml.SrcmlCTreeGenerator;
-import com.github.gumtreediff.tree.TreeContext;
 import org.ml_methods_group.common.*;
-import org.ml_methods_group.common.ast.NodeType;
 import org.ml_methods_group.common.ast.ASTUtils;
 import org.ml_methods_group.common.ast.changes.BasicChangeGenerator;
 import org.ml_methods_group.common.ast.changes.ChangeGenerator;
@@ -34,7 +30,6 @@ import org.ml_methods_group.common.serialization.ProtobufSerializationUtils;
 import org.ml_methods_group.evaluation.approaches.clustering.ClusteringAlgorithm;
 import org.ml_methods_group.parsing.ParsingUtils;
 import org.ml_methods_group.testing.extractors.CachedFeaturesExtractor;
-
 
 import java.io.*;
 import java.nio.file.Files;
@@ -98,10 +93,11 @@ public class Application {
                 break;
 
             case "prepare.es":
-                if (args.length < 3 || args.length > 5) {
+                if (args.length < 4 || args.length > 6) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
                             "    Path to code dataset" + System.lineSeparator() +
                             "    Path to store representation" + System.lineSeparator() +
+                            "    Path to list of defect file" + System.lineSeparator() +
                             "    ES variant (code,  bitset, ngram, textngram)" + System.lineSeparator() +
                             "    [Optional] --ngramsize=X - Set size of ngram to X, default value 5" + System.lineSeparator());
                     return;
@@ -109,25 +105,10 @@ public class Application {
                 prepareESDataset(
                         Paths.get(args[1]),
                         Paths.get(args[2]),
-                        args[3],
+                        Paths.get(args[3]),
+                        args[4],
                         getNgramSizeFromArgs(args)
 
-                );
-                break;
-
-                case "prepare.lase":
-                if (args.length != 4 ) {
-                    System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
-                            "    Path to code dataset" + System.lineSeparator() +
-                            "    Path to store representation" + System.lineSeparator() +
-                            "    LASE variant (conctrete,  abstract)" + System.lineSeparator() 
-                            );
-                    return;
-                }
-                prepareLASEDataset(
-                        Paths.get(args[1]),
-                        Paths.get(args[2]),
-                        args[3]
                 );
                 break;
 
@@ -136,6 +117,7 @@ public class Application {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
                             "    Path to code prepared set" + System.lineSeparator() +
                             "    Path to store clustering" + System.lineSeparator() +
+                            "    Path to list of defect file" + System.lineSeparator() +
                             "    [Optional] --algorithm=X - Set clusterization algorithm (bow, vec, jac, ext_jac, full_jac, fuz_jac), default value bow" + System.lineSeparator() +
                             "    [Optional] --distanceLimit=X - Set clustering distance limit to X, default value 0.3" + System.lineSeparator() +
                             "    [Optional] --minClustersCount=X - Set minimum amount of clusters to X, default value 1" + System.lineSeparator() 
@@ -145,7 +127,8 @@ public class Application {
                 clusterESDataset(
                         Paths.get(args[1]),
                         Paths.get(args[2]),
-                        args[3],
+                        Paths.get(args[3]),
+                        args[4],
                         getAlgorithmFromArgs(args),
                         getDistanceLimitFromArgs(args),
                         getMinClustersCountFromArgs(args)
@@ -299,11 +282,11 @@ public class Application {
 
     private static ITree buildTree(Solution s) {
         ITree tree = null;
+        //TreeContext context = null;
         try {
-            final ASTGenerator generator =  // new BasicASTGenerator(new BasicASTNormalizer());
-            new CachedASTGenerator(  new NamesASTNormalizer() );
+            final ASTGenerator generator = new BasicASTGenerator(new BasicASTNormalizer());
             tree = generator.buildTree(s);
-
+            //tree = context.getRoot();
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -316,26 +299,27 @@ public class Application {
         ITree src;
         ITree dst;
         try {
-            final ASTGenerator generator = // new BasicASTGenerator(new BasicASTNormalizer());
-            new CachedASTGenerator(  new NamesASTNormalizer() );
+            final ASTGenerator generator = new BasicASTGenerator(new BasicASTNormalizer());
             src = generator.buildTree(FileBefore);
-
             dst = generator.buildTree(FileAfter);
         } catch (Exception e) {
-            // e.printStackTrace();
+            System.out.println("Error: " + e.getMessage());
+            e.printStackTrace();
             return null;
         }
         Matcher matcher = Matchers.getInstance().getMatcher(src, dst);
         try {
             matcher.match();
         } catch (NullPointerException e) {
-            //System.out.println("Cannot match: NullPointerException in m.match()");
+            System.out.println("Cannot match: NullPointerException in m.match()");
             return null;
         }
         ActionGenerator generator = new ActionGenerator(src, dst, matcher.getMappings());
         try{
             generator.generate();
         } catch (Exception e){
+            System.out.println("Generator Error: " + e.getMessage());
+            e.printStackTrace();
             return null;
         }
 
@@ -351,65 +335,26 @@ public class Application {
         final String rightSolutionId = id + OK.ordinal();
         final var toSolution = new Solution(toCode, id, rightSolutionId, OK);
 
-        TreeContext src;
-        TreeContext dst;
-        try {
-            final ASTGenerator generator =
-            new CachedASTGenerator(  new NamesASTNormalizer() );
-            src = generator.buildTreeContext(fromSolution);
-            dst = generator.buildTreeContext(toSolution);
-        } catch (Exception e) {
-            // e.printStackTrace();
-            return ;
-        }
-        Matcher matcher = Matchers.getInstance().getMatcher(src.getRoot(), dst.getRoot());
-        try {
-            matcher.match();
-        } catch (NullPointerException e) {
-            //System.out.println("Cannot match: NullPointerException in m.match()");
-            return ;
-        }
-        ActionGenerator generator = new ActionGenerator(src.getRoot(), dst.getRoot(), matcher.getMappings());
-        try{
-        generator.generate();
-        } catch (Exception e){
-            return ;
-        }
+        final EditActions ea = new EditActions(fromSolution, toSolution, buildMethodActions(fromSolution, toSolution));
 
-       
-        final List<Action> aList = generator.getActions();
-        // final EditActions ea = new EditActions(fromSolution, toSolution, aList);
+        var start = System.currentTimeMillis();
 
+        /* ObjectOutputStream objectOutputStream = new ObjectOutputStream(
+            new FileOutputStream(outputFile.toString()));
 
-        for (Action action : aList) { 
-            ITree actNode =action.getNode();
-            ITree parent = actNode.getParent();
-            // System.out.println(action.format(src) +" [#"+ actNode.getId() + " at "  + parent.toPrettyString(src) + " #"  + parent.getId() + "." + actNode.positionInParent() +"]");
-            //System.out.println(action.getName() + " " + actNode.toPrettyString(src) + " to " + parent.toPrettyString(src)  +" [#"+ actNode.getId() + " at "  + " #"  + parent.getId() + "." + actNode.positionInParent() +"]");
-            System.out.println(action.getName() + " " 
-            + NodeType.valueOf( actNode.getType()).name() + (actNode.hasLabel()? " " + actNode.getLabel() :"")
-            + " to " + NodeType.valueOf( parent.getType()).name()  
-            + " at "  + " "  + parent.getId() + "." + actNode.positionInParent() );
-        }
-
-
-/*        var start = System.currentTimeMillis();
-
-
+        objectOutputStream.writeObject(ea);
+        objectOutputStream.close();
+        */
 
         File actionsFile = new File(outputFile.toString());
         BufferedWriter writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
         for (Action action : ea.getEditActions()) {
-            ITree actNode =action.getNode();
-            System.out.println(action.format(src) +" [node:"+ actNode.getId() +" parent:" + actNode.getParent().getId() + " " + actNode.getParent().toPrettyString(src) +"]");
-           // System.out.println( "2:" + action.format(dst) +" [node: "+ actNode.getId() +" parent:"  + actNode.getParent().toPrettyString(dst) +"]");
-             writer.write(ea.getActionName(action) + "\n");
+            writer.write(ea.getActionName(action) + "\n");
         }
         writer.close();
 
 
         System.out.println("Saving actions took " + ((System.currentTimeMillis() - start) / 1000.0) + " s");
-        */
     }
 
     public static void clusterFolder(Path sourceFolder, Path storage,
@@ -513,366 +458,195 @@ public class Application {
                             .toArray(String[]::new);
     }
 
-
-
-    private static void prepareLASEDataset(Path pathToDataset, Path pathToSaveRepresentations, String version) throws IOException {
-
-        int processed=0;
-        int skipped=0;
-
-
-        String badFolderName =  pathToDataset.toString() + "\\bad";                          
-        String goodFolderName =  pathToDataset.toString() + "\\good";                          
-        try  {
-
-            List<String> result = Files.walk(Paths.get(badFolderName)).filter(Files::isRegularFile)
-                    .map(x -> x.toString()).collect(Collectors.toList());
-        
-       
-            var baseTime = System.currentTimeMillis();
-
-            for (String fName : result) {
-                
-                try{
-                
-                baseTime = System.currentTimeMillis();
-                processed++;
-                System.out.println("******************* found: " + processed + ", skipped: " + skipped);
-
-                Path methodBeforePath = Paths.get(fName);
-                Path methodAfterPath = Paths.get(fName.replace(badFolderName, goodFolderName));
-                String[] paths = splitPath(fName.replace(badFolderName, ""));
-                
-                String defectId = paths[0]  +"_"+ version +"_" + paths[paths.length-1];
-
-                System.out.println(getDiff(baseTime) + ": Defect id: " +  defectId  );
-
-                File fromFile = methodBeforePath.toFile();
-                File toFile = methodAfterPath.toFile();
-
-                File actionsFile = new File(pathToSaveRepresentations.toString()+"\\" + defectId);
-                
-                String rightSolutionId = defectId + "_" + OK.ordinal();
-                String wrongSolutionId = defectId + "_" + FAIL.ordinal();
-
-
-                if(fromFile.length() >0 && toFile.length() >0 ){
-                    double rate = ((double) fromFile.length()) / ((double) toFile.length());
-                    System.out.println(getDiff(baseTime) + ": Checking size");
-                    if(rate >= 0.85 && rate <= 1.15){
-
-                            System.out.println(getDiff(baseTime) + ": Rate: " + rate ); //+" Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
-                            String emuCode = "";
-
-                            if(actionsFile.exists()){
-                                System.out.println(getDiff(baseTime) + ": repared file exists");
-                            }else{
-
-                                // write empty file for skip crash at next pass
-                                BufferedWriter writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
-                                writer.write("{}");
-                                writer.close();
-
-                                var fromCode = Files.readString(methodBeforePath);
-                                var toCode = Files.readString(methodAfterPath);
-                               
-
-
-                                
-                                System.out.println(getDiff(baseTime) + ": Files loaded");
-                               
-                                var fromSolution = new Solution(fromCode, defectId, wrongSolutionId, FAIL);
-                                var toSolution = new Solution(toCode, defectId, rightSolutionId, OK);
-
-                                System.out.println(getDiff(baseTime) + ": Building source actions");
-
-                                TreeContext src;
-                                TreeContext dst;
-                               
-
-
-
-                                ASTGenerator generator = null;
-
-                                if (version.toLowerCase().equals("abstract")) {
-                                    generator = new CachedASTGenerator(  new NamesASTNormalizer() );
-                                }else{
-                                    generator = new CachedASTGenerator(  null );
-                                }
-
-                                src = generator.buildTreeContext(fromSolution);
-                                dst = generator.buildTreeContext(toSolution);
-                               
-                                Matcher matcher = Matchers.getInstance().getMatcher(src.getRoot(), dst.getRoot());
-                                try {
-                                    matcher.match();
-                                } catch (NullPointerException e) {
-                                    System.out.println("Cannot match: NullPointerException in m.match()");
-                                    
-                                }
-                                ActionGenerator actionGenerator = new ActionGenerator(src.getRoot(), dst.getRoot(), matcher.getMappings());
-                                try{
-                                    actionGenerator.generate();
-                                } catch (Exception e){
-                                    e.printStackTrace();
-                                    
-                                }
-                        
-                               
-                                final List<Action> actions = actionGenerator.getActions();
-                                fromSolution = null;
-                                toSolution = null;
-
-                                if(actions != null  && actions.size() > 0 ){
-                                    System.out.println(getDiff(baseTime) + ": Prepare es");
-                                    
-
-                                    emuCode = "";
-
-                                    // store Actions
-                                    switch (version.toLowerCase()) {
-                                       
-
-                                        case "concrete":
-                                        for (Action action : actions) { 
-                                            ITree actNode =action.getNode();
-                                            ITree parent = actNode.getParent();
-                                                emuCode += action.getName() + " " 
-                                                + NodeType.valueOf( actNode.getType()).name() + (actNode.hasLabel()? " " + actNode.getLabel() :"")
-                                                + " to " + NodeType.valueOf( parent.getType()).name()  + ";\n";
-                                            }
-                                            break;
-
-                                        case "abstract":
-
-                                        for (Action action : actions) { 
-                                            ITree actNode =action.getNode();
-                                            ITree parent = actNode.getParent();
-                                                emuCode += action.getName() + " " 
-                                                + NodeType.valueOf( actNode.getType()).name() 
-                                                + " to " + NodeType.valueOf( parent.getType()).name()  + ";\n";
-                                            }
-                                            break;
-
-                                    }
-
-                                   
-
-                                   
-
-                                    writer =null;
-                                    writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
-                                    writer.write(emuCode);
-                                    writer.close();
-
-                                }else{
-                                    writer =null;
-                                    System.out.println(getDiff(baseTime) + ": No actions detected");    
-                                }
-                            }
-                            System.out.println(getDiff(baseTime) + ": Done");
-                        }else{
-                            skipped++;
-                            System.out.println(getDiff(baseTime) + ": Skip Defect id: " +  defectId +" Very large file difference. Rate: " + rate); // Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
-                        }
-
-                    }
-                    
-                    toFile = null;
-                    fromFile = null;
-
-                }catch(Exception any)
-                {
-                    any.printStackTrace();
-                }
-
-            }
-
-            System.out.println(getDiff(baseTime) + ": All files are prepared");
-
-            
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-    }
-
-
-    private static void prepareESDataset(Path pathToDataset, Path pathToSaveRepresentations, String version, int NgramSize) throws IOException {
+    private static void prepareESDataset(Path pathToDataset, Path pathToSaveRepresentations, Path pathToBugList, String version, int NgramSize) throws IOException {
 
         
         int processed=0;
         int skipped=0;
+        int total=0;
 
 
         String badFolderName =  pathToDataset.toString() + "\\bad";                          
-        String goodFolderName =  pathToDataset.toString() + "\\good";                          
+        String goodFolderName =  pathToDataset.toString() + "\\good";   
+        List<String> defects = Files.readAllLines(pathToBugList);                       
         try  {
-
+            System.out.println("Build list of files");
             List<String> result = Files.walk(Paths.get(badFolderName)).filter(Files::isRegularFile)
                     .map(x -> x.toString()).collect(Collectors.toList());
         
-            //result.forEach(System.out::println);
+            System.out.println("Collected " +result.size() +" files");
 
             EditActionStore store = new EditActionStore();
             var baseTime = System.currentTimeMillis();
 
             for (String fName : result) {
-                
-                try{
-                
-                baseTime = System.currentTimeMillis();
-                processed++;
-                System.out.println("******************* found: " + processed + ", skipped: " + skipped);
+                total++;
+                if(total % 1000 ==0)
+                    System.out.println("******************* total: " + total);
+                Boolean useFile = false;
+                for( String defect: defects) {
+                    if(fName.contains(defect)){
+                        useFile = true;
+                        break;
+                    }
+                }
+                if(useFile){
+                    try{
+                    
+                    baseTime = System.currentTimeMillis();
+                    processed++;
+                    System.out.println("******************* total: " + total +", found: " + processed + ", skipped: " + skipped);
 
-                Path methodBeforePath = Paths.get(fName);
-                Path methodAfterPath = Paths.get(fName.replace(badFolderName, goodFolderName));
-                String[] paths = splitPath(fName.replace(badFolderName, ""));
-                
-                String defectId = paths[0]  +"_"+ version +"_" + paths[paths.length-1];
+                    Path methodBeforePath = Paths.get(fName);
+                    Path methodAfterPath = Paths.get(fName.replace(badFolderName, goodFolderName));
+                    String[] paths = splitPath(fName.replace(badFolderName, ""));
+                    
+                    String defectId = paths[0]  +"_"+ version +"_" + paths[paths.length-1];
 
-                System.out.println(getDiff(baseTime) + ": Defect id: " +  defectId  );
+                    System.out.println(getDiff(baseTime) + ": Defect id: " +  defectId  );
 
-                File fromFile = methodBeforePath.toFile();
-                File toFile = methodAfterPath.toFile();
+                    File fromFile = methodBeforePath.toFile();
+                    File toFile = methodAfterPath.toFile();
 
-                File actionsFile = new File(pathToSaveRepresentations.toString()+"\\" + defectId);
-                
-                String rightSolutionId = defectId + "_" + OK.ordinal();
-                String wrongSolutionId = defectId + "_" + FAIL.ordinal();
-
-
-                if(fromFile.length() >0 && toFile.length() >0 ){
-                    double rate = ((double) fromFile.length()) / ((double) toFile.length());
-                    System.out.println(getDiff(baseTime) + ": Checking size");
-                    if(rate >= 0.85 && rate <= 1.15){
-
-                            System.out.println(getDiff(baseTime) + ": Rate: " + rate ); //+" Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
-                            String emuCode = "";
-
-                            if(actionsFile.exists()){
-                                System.out.println(getDiff(baseTime) + ": repared file exists");
-                            }else{
-
-                                // write empty file for skip crash at next pass
-                                BufferedWriter writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
-                                writer.write("{}");
-                                writer.close();
-
-                                var fromCode = Files.readString(methodBeforePath);
-                                var toCode = Files.readString(methodAfterPath);
-                               
-                                
-                                System.out.println(getDiff(baseTime) + ": Files loaded");
-
-                                if(fromCode.length() >1000 || toCode.length() > 1000){
-                                     String s1=EditActionStore.GetDifference(fromCode, toCode);
-                                     String s2=EditActionStore.GetDifference(toCode, fromCode);
-                                     //System.out.println("s1:" +s1);
-                                     //System.out.println("s2:" +s2);
-                                     fromCode =s1;
-                                     toCode =s2;
-                                }
+                    File actionsFile = new File(pathToSaveRepresentations.toString()+"\\" + defectId);
+                    
+                    String rightSolutionId = defectId + "_" + OK.ordinal();
+                    String wrongSolutionId = defectId + "_" + FAIL.ordinal();
 
 
-                                var fromSolution = new Solution(fromCode, defectId, wrongSolutionId, FAIL);
-                                var toSolution = new Solution(toCode, defectId, rightSolutionId, OK);
+                    if(fromFile.length() >0 && toFile.length() >0 ){
+                        double rate = ((double) fromFile.length()) / ((double) toFile.length());
+                        System.out.println(getDiff(baseTime) + ": Checking size");
+                        if(rate >= 0.85 && rate <= 1.15){
 
-                                
-                                System.out.println(getDiff(baseTime) + ": Building source actions");
-                                List<Action> actions = buildMethodActions(fromSolution, toSolution);
-                                System.out.println(getDiff(baseTime) + ": Buit source actions");
+                                System.out.println(getDiff(baseTime) + ": Rate: " + rate ); //+" Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
+                                String emuCode = "";
 
-                                fromSolution = null;
-                                toSolution = null;
+                                if(actionsFile.exists()){
+                                    System.out.println(getDiff(baseTime) + ": repared file exists");
+                                }else{
 
-                                if(actions != null  && actions.size() > 0 ){
-                                    System.out.println(getDiff(baseTime) + ": Prepare es");
-                                    Pair<List<String>, List<String>> actionsStrings = store.convertToStrings(actions);
-
-                                   
-                                    actions= null;
-
-                                    emuCode = "";
-                                    int Cnt = 0;
-                                    // store NGRAMS
-                                    switch (version.toLowerCase()) {
-                                        case "ngram": {
-                                            List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(), NgramSize);
-                                            //System.out.println("NGarms: " +NGrams.toString());
-                                            for (BitSet bs : NGrams) {
-                                                String tmp = bs.toString();
-                                                if (!tmp.equals("{}")) {
-                                                    Cnt++;
-                                                    emuCode += "int x" + Cnt + "[] =" + tmp + ";\n";
-                                                }
-                                            }
-                                            NGrams = null;
-                                        }
-                                        break;
-
-
-                                        case "textngram": {
-                                            List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(), NgramSize);
-
-                                            for (BitSet bs : NGrams) {
-                                                String tmp = store.NgramToText(bs);
-                                                Cnt++;
-                                                emuCode += "char* x" + Cnt + "[] =\"" + tmp + "\";\n";
-
-                                            }
-
-                                            NGrams = null;
-                                        }
-                                        break;
-
-                                        case "code":
-                                            for (String s : actionsStrings.getSecond()) {
-                                                emuCode += EditActionStore.actionToC(s) + ";\n";
-                                            }
-                                            break;
-
-                                        case "bitset":
-
-                                            for (String s : actionsStrings.getSecond()) {
-                                                if (!s.equals("")) {
-                                                    Cnt++;
-                                                    emuCode += "int x" + Cnt + "[] =" + store.calcActionsBitSet(s) + ";\n";
-                                                }
-                                            }
-                                            break;
-
-                                    }
-
-                                    actionsStrings = null;
-
-                                    emuCode = "void block(){\n" + emuCode + "}\n";
-                                    //System.out.println("emuCode: " + emuCode);
-
-                                    writer =null;
-                                    writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
-                                    writer.write(emuCode);
+                                    // write empty file for skip crash at next pass
+                                    BufferedWriter writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
+                                    writer.write("{}");
                                     writer.close();
 
-                                }else{
-                                    writer =null;
-                                    System.out.println(getDiff(baseTime) + ": No actions detected");    
+                                    var fromCode = Files.readString(methodBeforePath);
+                                    var toCode = Files.readString(methodAfterPath);
+                                
+                                    
+                                    System.out.println(getDiff(baseTime) + ": Files loaded");
+
+                                    if(fromCode.length() >1000 || toCode.length() > 1000){
+                                        String s1=EditActionStore.GetDifference(fromCode, toCode);
+                                        String s2=EditActionStore.GetDifference(toCode, fromCode);
+                                        //System.out.println("s1:" +s1);
+                                        //System.out.println("s2:" +s2);
+                                        fromCode =s1;
+                                        toCode =s2;
+                                    }
+                                    
+
+
+                                    var fromSolution = new Solution(fromCode, defectId, wrongSolutionId, FAIL);
+                                    var toSolution = new Solution(toCode, defectId, rightSolutionId, OK);
+
+                                    
+                                    System.out.println(getDiff(baseTime) + ": Building source actions");
+                                    List<Action> actions = buildMethodActions(fromSolution, toSolution);
+                                    System.out.println(getDiff(baseTime) + ": Buit source actions");
+
+                                    fromSolution = null;
+                                    toSolution = null;
+
+                                    if(actions != null  && actions.size() > 0 ){
+                                        System.out.println(getDiff(baseTime) + ": Prepare es");
+                                        Pair<List<String>, List<String>> actionsStrings = store.convertToStrings(actions);
+
+                                    
+                                        actions= null;
+
+                                        emuCode = "";
+                                        int Cnt = 0;
+                                        // store NGRAMS
+                                        switch (version.toLowerCase()) {
+                                            case "ngram": {
+                                                List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(), NgramSize);
+                                                //System.out.println("NGarms: " +NGrams.toString());
+                                                for (BitSet bs : NGrams) {
+                                                    String tmp = bs.toString();
+                                                    if (!tmp.equals("{}")) {
+                                                        Cnt++;
+                                                        emuCode += "int x" + Cnt + "[] =" + tmp + ";\n";
+                                                    }
+                                                }
+                                                NGrams = null;
+                                            }
+                                            break;
+
+
+                                            case "textngram": {
+                                                List<BitSet> NGrams = store.calcActionsNgram(actionsStrings.getSecond(), NgramSize);
+
+                                                for (BitSet bs : NGrams) {
+                                                    String tmp = store.NgramToText(bs);
+                                                    Cnt++;
+                                                    emuCode += "char* x" + Cnt + "[] =\"" + tmp + "\";\n";
+
+                                                }
+
+                                                NGrams = null;
+                                            }
+                                            break;
+
+                                            case "code":
+                                                for (String s : actionsStrings.getSecond()) {
+                                                    emuCode += EditActionStore.actionToC(s) + ";\n";
+                                                }
+                                                break;
+
+                                            case "bitset":
+
+                                                for (String s : actionsStrings.getSecond()) {
+                                                    if (!s.equals("")) {
+                                                        Cnt++;
+                                                        emuCode += "int x" + Cnt + "[] =" + store.calcActionsBitSet(s) + ";\n";
+                                                    }
+                                                }
+                                                break;
+
+                                        }
+
+                                        actionsStrings = null;
+
+                                        emuCode = "void block(){\n" + emuCode + "}\n";
+                                        //System.out.println("emuCode: " + emuCode);
+
+                                        writer =null;
+                                        writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
+                                        writer.write(emuCode);
+                                        writer.close();
+
+                                    }else{
+                                        writer =null;
+                                        System.out.println(getDiff(baseTime) + ": No actions detected");    
+                                    }
                                 }
+                                System.out.println(getDiff(baseTime) + ": Done");
+                            }else{
+                                skipped++;
+                                System.out.println(getDiff(baseTime) + ": Skip Defect id: " +  defectId +" Very large file difference. Rate: " + rate); // Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
                             }
-                            System.out.println(getDiff(baseTime) + ": Done");
-                        }else{
-                            skipped++;
-                            System.out.println(getDiff(baseTime) + ": Skip Defect id: " +  defectId +" Very large file difference. Rate: " + rate); // Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
+
                         }
+                        
+                        toFile = null;
+                        fromFile = null;
 
+                    }catch(Exception any)
+                    {
+                        any.printStackTrace();
                     }
-                    
-                    toFile = null;
-                    fromFile = null;
-
-                }catch(Exception any)
-                {
-                    any.printStackTrace();
                 }
 
             }
@@ -889,10 +663,14 @@ public class Application {
 
 
 
-    private static void clusterESDataset(Path pathToPrepared, Path pathToSaveCluster, String version,  ClusteringAlgorithm algorithm,
+    private static void clusterESDataset(Path pathToPrepared, Path pathToSaveCluster, Path pathToBugList, String version,  ClusteringAlgorithm algorithm,
                                          double distanceLimit, int minClustersCount) throws IOException {
 
+        int processed=0;
+        int skipped=0;
+        int total=0;
         List<Changes> AllChanges = new ArrayList();
+        List<String> defects = Files.readAllLines(pathToBugList); 
 
                                 
         try  {
@@ -901,31 +679,43 @@ public class Application {
             List<String> result = Files.walk(Paths.get(pathToPrepared.toString())).filter(Files::isRegularFile)
                     .map(x -> x.toString()).collect(Collectors.toList());
             for (String fName : result) {
-                
-                try{
-                    String[] paths = splitPath(fName.replace(pathToPrepared.toString(), ""));
-                
-                    String defectId =  paths[paths.length-1];
-                    baseTime = System.currentTimeMillis();
-                    System.out.println("*******************");
-                    String emuCode = "";
-                    System.out.println(getDiff(baseTime) + ": read prepared " + defectId);
-                    emuCode = Files.readString(Paths.get(fName));
-                    if(! emuCode.equals("{}") ){
-                        var fromSolutionNG = new Solution("", defectId, defectId+"_EMPTY", FAIL);
-                        var toSolutionNG = new Solution(emuCode, defectId, defectId+"_ES", OK);
-                        System.out.println(getDiff(baseTime) + ": Creating es changes");
-                        Changes change = getChanges(false, fromSolutionNG, toSolutionNG);
-                        System.out.println(getDiff(baseTime) + ": Collect es changes");
-                        AllChanges.add(change);
-                    }else{
-                        System.out.println(getDiff(baseTime) + ": Skip no-action file");
+                total++;
+                Boolean useFile = false;
+                String defectId ="";
+                for( String defect: defects) {
+                    if(fName.contains(defect)){
+                        useFile = true;
+                        defectId= defect;
+                        break;
                     }
-  
+                }
+                if(useFile){
+                    try{
+                        //String[] paths = splitPath(fName.replace(pathToPrepared.toString(), ""));
+                        //String defectId =  paths[paths.length-1];
+                        baseTime = System.currentTimeMillis();
+                        processed++;
+                        System.out.println("******************* total: " + total +", found: " + processed + ", skipped: " + skipped);
+                        String emuCode = "";
+                        System.out.println(getDiff(baseTime) + ":  " + defectId);
+                        emuCode = Files.readString(Paths.get(fName));
+                        if(! emuCode.equals("{}") ){
+                            var fromSolutionNG = new Solution("", defectId, defectId+"_EMPTY", FAIL);
+                            var toSolutionNG = new Solution(emuCode, defectId, defectId+"_ES", OK);
+                            System.out.println(getDiff(baseTime) + ": Creating es changes (" + emuCode.length() +" bytes )");
+                            Changes change = getChanges(false, fromSolutionNG, toSolutionNG);
+                            System.out.println(getDiff(baseTime) + ": Collect es changes");
+                            AllChanges.add(change);
+                        }else{
+                            skipped++;
+                            System.out.println(getDiff(baseTime) + ": Skip no-action file");
+                        }
+    
 
-                }catch(Exception any)
-                {
-                    any.printStackTrace();
+                    }catch(Exception any)
+                    {
+                        any.printStackTrace();
+                    }
                 }
 
             }
