@@ -340,6 +340,9 @@ public abstract class ASTProcessor {
  			case C_NAME:
                 newTree = visitCName(node);
             break;
+            case C_COMMENT:
+                newTree = visitComment(node);
+             break; 
             default:
                 newTree = defaultVisit(node);
         }
@@ -607,6 +610,11 @@ public abstract class ASTProcessor {
     protected ITree visitBlockComment(ITree node) {
         return defaultVisit(node);
     }
+
+    protected ITree visitComment(ITree node) {
+        return defaultVisit(node);
+    }
+
 
     protected ITree visitTagElement(ITree node) {
         return defaultVisit(node);
