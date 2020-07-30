@@ -253,6 +253,11 @@ public class BasicASTNormalizer implements ASTNormalizer {
         }
 
         @Override
+        protected ITree visitComment(ITree node) {
+            return null;
+        }
+
+        @Override
         protected ITree visitBlockComment(ITree node) {
             return null;
         }
