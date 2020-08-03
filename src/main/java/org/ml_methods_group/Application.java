@@ -53,6 +53,7 @@ public class Application {
     static final double DEFAULT_DISTANCE_LIMIT = 0.3;
     static final int DEFAULT_MIN_CLUSTERS_COUNT = 1;
     static final int DEFAULT_NGRAM_SIZE = 5;
+    static final int MAX_FILE_SIZE = 200 * 1024;
     static final ClusteringAlgorithm DEFAULT_ALGORITHM = ClusteringAlgorithm.BagOfWords;
 
     public static void main(String[] args) throws Exception {
@@ -553,9 +554,10 @@ public class Application {
 
 
                     if(fromFile.length() >0 && toFile.length() >0 ){
+                        System.out.println("Sizes: " + fromFile.length() +" ->" + toFile.length());
                         double rate = ((double) fromFile.length()) / ((double) toFile.length());
                         System.out.println(getDiff(baseTime) + ": Checking size");
-                        if(rate >= 0.85 && rate <= 1.15){
+                        if(fromFile.length() <= MAX_FILE_SIZE && toFile.length() <= MAX_FILE_SIZE && rate >= 0.85 && rate <= 1.15){
 
                                 System.out.println(getDiff(baseTime) + ": Rate: " + rate ); //+" Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
                                 String emuCode = "";
@@ -673,7 +675,7 @@ public class Application {
                                 System.out.println(getDiff(baseTime) + ": Done");
                             }else{
                                 skipped++;
-                                System.out.println(getDiff(baseTime) + ": Skip Defect id: " +  defectId +" Very large file difference. Rate: " + rate); // Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
+                                System.out.println(getDiff(baseTime) + ": Skip Defect id: " +  defectId +" Very large file difference or size. Rate: " + rate); // Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
                             }
 
                         }
@@ -821,9 +823,10 @@ public class Application {
 
 
                     if(fromFile.length() >0 && toFile.length() >0 ){
+                        System.out.println("Sizes: " + fromFile.length() +" ->" + toFile.length());
                         double rate = ((double) fromFile.length()) / ((double) toFile.length());
                         System.out.println(getDiff(baseTime) + ": Checking size");
-                        if(rate >= 0.85 && rate <= 1.15){
+                        if(fromFile.length() <= MAX_FILE_SIZE && toFile.length() <= MAX_FILE_SIZE &&  rate >= 0.85 && rate <= 1.15){
 
                                 System.out.println(getDiff(baseTime) + ": Rate: " + rate ); //+" Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
                                 String emuCode = "";
@@ -922,7 +925,7 @@ public class Application {
                                 System.out.println(getDiff(baseTime) + ": Done");
                             }else{
                                 skipped++;
-                                System.out.println(getDiff(baseTime) + ": Skip Defect id: " +  defectId +" Very large file difference. Rate: " + rate); // Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
+                                System.out.println(getDiff(baseTime) + ": Skip Defect id: " +  defectId +" Very large file difference or size. Rate: " + rate); // Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
                             }
 
                         }
