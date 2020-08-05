@@ -781,7 +781,20 @@ public class Application {
 
         String badFolderName =  pathToDataset.toString() + "\\bad";                          
         String goodFolderName =  pathToDataset.toString() + "\\good";   
-        List<String> defects = Files.readAllLines(pathToBugList);                        
+        List<String> defects = Files.readAllLines(pathToBugList);        
+        
+        // check directory structure
+        File directory = new File(pathToSaveRepresentations.toString() );
+        if(!directory.exists()){
+            directory.mkdir();
+        }
+
+        File directory2 = new File(pathToSaveRepresentations.toString() +"\\ast" );
+        if(!directory2.exists()){
+            directory2.mkdir();
+        }
+
+
         try  {
 
             List<String> result = Files.walk(Paths.get(badFolderName)).filter(Files::isRegularFile)
@@ -817,6 +830,7 @@ public class Application {
                     File toFile = methodAfterPath.toFile();
 
                     File actionsFile = new File(pathToSaveRepresentations.toString()+"\\" + defectId);
+                    File contextFile = new File(pathToSaveRepresentations.toString()+"\\ast\\" + defectId);
                     
                     String rightSolutionId = defectId + "_" + OK.ordinal();
                     String wrongSolutionId = defectId + "_" + FAIL.ordinal();
@@ -842,10 +856,7 @@ public class Application {
 
                                     var fromCode = Files.readString(methodBeforePath);
                                     var toCode = Files.readString(methodAfterPath);
-                                
 
-
-                                    
                                     System.out.println(getDiff(baseTime) + ": Files loaded");
                                 
                                     var fromSolution = new Solution(fromCode, defectId, wrongSolutionId, FAIL);
@@ -855,9 +866,6 @@ public class Application {
 
                                     TreeContext src;
                                     TreeContext dst;
-                                
-
-
 
                                     ASTGenerator generator = null;
 
@@ -906,10 +914,11 @@ public class Application {
                                                 + " to " + NodeType.valueOf( parent.getType()).name()  + "\n";
                                         }
                                    
-
-                                         
-                                    
-
+                                        // save actions context
+                                        ObjectOutputStream objectOutputStream = new ObjectOutputStream(
+                                            new FileOutputStream(contextFile.getAbsolutePath()));
+                                        objectOutputStream.writeObject(actions);
+                                        objectOutputStream.close();
                                     
 
                                         writer =null;
@@ -965,10 +974,11 @@ public class Application {
 
                 if(defects.length >1){
 
-                    List<String> result = Files.walk(pathToLaseDataset).filter(Files::isRegularFile)
+                    List<String> result = Files.walk(pathToLaseDataset, 1).filter(Files::isRegularFile)
                     .map(x -> x.toString()).collect(Collectors.toList());
       
                     List<String> defectFiles = new ArrayList<>();
+
 
                     // collect all files for defect to build edit sequence
                     for (String fName : result) {
@@ -985,7 +995,9 @@ public class Application {
                             String emuCode = Files.readString(Paths.get(fName));
                             if(! emuCode.equals("{}") ){
                                 defectFiles.add(fName);
+                               
                             }
+
                         }
                     }
 
@@ -995,10 +1007,27 @@ public class Application {
                     List<String> commonActions = new ArrayList<>();
                     
                     if(defectFiles.size() >0){
+                        List<Action> ast = null;
+                        List<Action> prev_ast = null;
                         for (String fName : defectFiles) {
                             System.out.println("processing file:" + fName);
                             List<String> actions = Files.readAllLines(Paths.get(fName));
                             if(actions.size() >0){
+
+                                String[] paths = splitPath(fName);
+                                String AstFile = pathToLaseDataset.toString()+"\\ast\\" +  paths[paths.length-1];
+
+                                
+                                try {
+                                    var objectInputStream = new ObjectInputStream(
+                                            new FileInputStream(AstFile));
+                                    Object obj = objectInputStream.readObject();
+                                    objectInputStream.close();
+                                    ast =  (List<Action>) obj ;
+                                } catch (IOException | ClassNotFoundException e) {
+                                    ast = null;
+                                }
+
                                 // build commoin Edit 
                                 if(! firstFile){
                                     System.out.println("Sizes:" + commonActions.size() + " " + actions.size()); 
@@ -1010,10 +1039,17 @@ public class Application {
                                         break;
                                     }
 
+                                    // checking tree structure for pair
+                                    if(prev_ast != null && ast != null) {
+
+                                    }   
+
+
                                 }else{
                                     commonActions = actions;
                                     firstFile =false;
                                 }
+                                prev_ast = ast;
                             }else{
                                 System.out.println("skip file without edit actions: " + fName);
                             }
