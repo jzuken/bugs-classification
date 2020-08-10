@@ -382,7 +382,6 @@ public class Application {
 
         /* ObjectOutputStream objectOutputStream = new ObjectOutputStream(
             new FileOutputStream(outputFile.toString()));
-
         objectOutputStream.writeObject(ea);
         objectOutputStream.close();
         */
@@ -888,7 +887,7 @@ public class Application {
                                         actionGenerator.generate();
                                     } catch (Exception e){
                                         System.out.println( e.getMessage());
-                                        System.out.println( e.getStackTrace().toString());
+                                        e.printStackTrace();
                                     }
                             
                                 
@@ -949,7 +948,7 @@ public class Application {
                     }catch(Exception any)
                     {
                         System.out.println( any.getMessage());
-                        System.out.println( any.getStackTrace().toString());
+                        any.printStackTrace();
                     }
                 }
 
@@ -960,7 +959,7 @@ public class Application {
             
         } catch (IOException e) {
             System.out.println( e.getMessage());
-            System.out.println( e.getStackTrace().toString());
+            e.printStackTrace();
         }
 
     }
@@ -970,6 +969,12 @@ public class Application {
         
         List<String> clusters = Files.readAllLines(pathToClusterFile);
         int clusterNum=0;
+
+         // check directory structure
+         File directory = new File(pathToCommonActions.toString() );
+         if(!directory.exists()){
+             directory.mkdir();
+         }
                            
         try  {
 
