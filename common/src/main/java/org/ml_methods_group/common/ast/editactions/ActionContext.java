@@ -19,7 +19,15 @@ public class ActionContext {
         String nodePath = NodeType.valueOf(n.getType()).name();
         while( ! IsContextRoot(n) ){
             n = n.getParent();
-            nodePath = NodeType.valueOf(n.getType()).name() +"\\" + nodePath;
+            if(n != null){
+                if(n.getType()!=-1)
+                    try{
+                        nodePath = NodeType.valueOf(n.getType()).name() +"\\" + nodePath;
+                    }catch(Exception e){
+                        nodePath = n.getType() +"\\" + nodePath;
+                        System.out.println(n.getType() +" -> " + e.getMessage());
+                    }
+            }
         }
         return nodePath;
     }
@@ -33,6 +41,9 @@ public class ActionContext {
     }
 
     private static Boolean IsContextRoot(ITree n){
+        if(n ==null)  
+        return true; 
+
         // first noe in tree !
         if(n.getParent() ==null)  
             return true; 
@@ -44,6 +55,7 @@ public class ActionContext {
             nt == NodeType.C_IF_STMT || 
             nt == NodeType.C_DO ||
             nt == NodeType.C_FUNCTION_DECL ||
+            nt == NodeType.C_FUNCTION ||
             nt == NodeType.C_INCLUDE ||
             nt == NodeType.C_STRUCT ||
             nt == NodeType.C_TYPE ||
@@ -51,7 +63,8 @@ public class ActionContext {
             nt == NodeType.C_LABEL ||
             nt == NodeType.C_STRUCT ||
             nt == NodeType.C_MACRO ||
-            nt == NodeType.C_NAMESPACE 
+            nt == NodeType.C_NAMESPACE ||
+            nt == NodeType.C_STRUCT_DECL
         )
             return true;
 
