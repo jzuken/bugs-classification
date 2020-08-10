@@ -45,6 +45,7 @@ public class BasicChangeGenerator implements ChangeGenerator {
         final ITree afterTree = generator.buildTree(after);
         var secondMark = System.currentTimeMillis();
         System.out.println("Second tree is built in " + ((secondMark - firstMark) / 1000.0) + " s");
+        
         final ChangesGenerationResult result = factories.stream()
                 .map(factory -> generate(beforeTree.deepCopy(), afterTree.deepCopy(), factory))
                 .filter(Optional::isPresent)

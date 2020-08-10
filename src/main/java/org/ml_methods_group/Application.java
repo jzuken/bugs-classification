@@ -19,6 +19,7 @@ import org.ml_methods_group.common.ast.changes.ChangeGenerator;
 import org.ml_methods_group.common.ast.changes.Changes;
 import org.ml_methods_group.common.ast.editactions.EditActionStore;
 import org.ml_methods_group.common.ast.editactions.EditActions;
+import org.ml_methods_group.common.ast.editactions.ActionContext;
 import org.ml_methods_group.common.ast.generation.ASTGenerator;
 import org.ml_methods_group.common.ast.generation.BasicASTGenerator;
 import org.ml_methods_group.common.ast.generation.CachedASTGenerator;
@@ -34,6 +35,7 @@ import org.ml_methods_group.common.serialization.ProtobufSerializationUtils;
 import org.ml_methods_group.evaluation.approaches.clustering.ClusteringAlgorithm;
 import org.ml_methods_group.parsing.ParsingUtils;
 import org.ml_methods_group.testing.extractors.CachedFeaturesExtractor;
+
 
 import java.io.*;
 import java.nio.file.Files;

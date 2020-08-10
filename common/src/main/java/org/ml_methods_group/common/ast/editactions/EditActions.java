@@ -1,10 +1,16 @@
 package org.ml_methods_group.common.ast.editactions;
 
 import org.ml_methods_group.common.Solution;
+
+//import jdk.nashorn.internal.runtime.regexp.joni.constants.NodeType;
+
+import org.ml_methods_group.common.ast.NodeType;
+
 import com.github.gumtreediff.actions.model.Action;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
+import com.github.gumtreediff.tree.ITree;
 
 
 public class EditActions  implements Serializable {
@@ -30,9 +36,10 @@ public class EditActions  implements Serializable {
         return actions;
     }
 
-    public String getActionName(Action action){
+    public static String getActionName(Action action){
         return action.toString() + " " + action.getNode().getParent().getType() + "@@";
     }
+    
 
     @Override
     public int hashCode() {
