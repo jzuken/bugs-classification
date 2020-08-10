@@ -791,11 +791,7 @@ public class Application {
             directory.mkdir();
         }
 
-        File directory2 = new File(pathToSaveRepresentations.toString() +"\\ast" );
-        if(!directory2.exists()){
-            directory2.mkdir();
-        }
-
+       
 
         try  {
 
@@ -832,7 +828,7 @@ public class Application {
                     File toFile = methodAfterPath.toFile();
 
                     File actionsFile = new File(pathToSaveRepresentations.toString()+"\\" + defectId);
-                    File contextFile = new File(pathToSaveRepresentations.toString()+"\\ast\\" + defectId);
+                   
                     
                     String rightSolutionId = defectId + "_" + OK.ordinal();
                     String wrongSolutionId = defectId + "_" + FAIL.ordinal();
@@ -884,15 +880,15 @@ public class Application {
                                     try {
                                         matcher.match();
                                     } catch (NullPointerException e) {
-                                        System.out.println("Cannot match: NullPointerException in m.match()");
+                                        System.out.println(e.getMessage());
                                         
                                     }
                                     ActionGenerator actionGenerator = new ActionGenerator(src.getRoot(), dst.getRoot(), matcher.getMappings());
                                     try{
                                         actionGenerator.generate();
                                     } catch (Exception e){
-                                        e.printStackTrace();
-                                        
+                                        System.out.println( e.getMessage());
+                                        System.out.println( e.getStackTrace().toString());
                                     }
                             
                                 
@@ -911,17 +907,23 @@ public class Application {
                                         for (Action action : actions) { 
                                             ITree actNode =action.getNode();
                                             ITree parent = actNode.getParent();
-                                                emuCode += action.getName() + " " 
-                                                + NodeType.valueOf( actNode.getType()).name() + (actNode.hasLabel()? " " + actNode.getLabel().replace("\r"," ").replace("\n"," ") :"")
-                                                + " to " + NodeType.valueOf( parent.getType()).name()  + "\n";
+                                                String actString = action.getName() + " " 
+                                                + NodeType.valueOf( actNode.getType()).name() 
+                                                + (actNode.hasLabel()? " " + actNode.getLabel().replace("\r"," ").replace("\n"," ") :"")
+                                                + " to " + NodeType.valueOf( parent.getType()).name() ;
+
+                                                //  use same path  for both methods ??? 
+                                                if (version.toLowerCase().equals("abstract")) {
+                                                    actString += " ::::[" + ActionContext.GetContextPath(action) +"]";
+                                                }else{
+                                                    actString += " ::::[" + ActionContext.GetContextPath(action) +"]";
+                                                }
+                                                
+                                                emuCode += actString +"\n";
+
                                         }
                                    
-                                        // save actions context
-                                        ObjectOutputStream objectOutputStream = new ObjectOutputStream(
-                                            new FileOutputStream(contextFile.getAbsolutePath()));
-                                        objectOutputStream.writeObject(actions);
-                                        objectOutputStream.close();
-                                    
+                                                                      
 
                                         writer =null;
                                         writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
@@ -946,7 +948,8 @@ public class Application {
 
                     }catch(Exception any)
                     {
-                        any.printStackTrace();
+                        System.out.println( any.getMessage());
+                        System.out.println( any.getStackTrace().toString());
                     }
                 }
 
@@ -956,7 +959,8 @@ public class Application {
 
             
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println( e.getMessage());
+            System.out.println( e.getStackTrace().toString());
         }
 
     }
@@ -1009,26 +1013,18 @@ public class Application {
                     List<String> commonActions = new ArrayList<>();
                     
                     if(defectFiles.size() >0){
-                        List<Action> ast = null;
-                        List<Action> prev_ast = null;
+                      
                         for (String fName : defectFiles) {
                             System.out.println("processing file:" + fName);
                             List<String> actions = Files.readAllLines(Paths.get(fName));
                             if(actions.size() >0){
 
                                 String[] paths = splitPath(fName);
-                                String AstFile = pathToLaseDataset.toString()+"\\ast\\" +  paths[paths.length-1];
+                                
+                                
 
                                 
-                                try {
-                                    var objectInputStream = new ObjectInputStream(
-                                            new FileInputStream(AstFile));
-                                    Object obj = objectInputStream.readObject();
-                                    objectInputStream.close();
-                                    ast =  (List<Action>) obj ;
-                                } catch (IOException | ClassNotFoundException e) {
-                                    ast = null;
-                                }
+                                
 
                                 // build commoin Edit 
                                 if(! firstFile){
@@ -1041,17 +1037,14 @@ public class Application {
                                         break;
                                     }
 
-                                    // checking tree structure for pair
-                                    if(prev_ast != null && ast != null) {
-
-                                    }   
+                                   
 
 
                                 }else{
                                     commonActions = actions;
                                     firstFile =false;
                                 }
-                                prev_ast = ast;
+                                
                             }else{
                                 System.out.println("skip file without edit actions: " + fName);
                             }
