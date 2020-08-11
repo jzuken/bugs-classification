@@ -903,19 +903,19 @@ public class Application {
 
                                         // store Actions
                                        
-                                        for (Action action : actions) { 
+                                           for (Action action : actions) { 
                                             ITree actNode =action.getNode();
-                                            ITree parent = actNode.getParent();
-                                                String actString = action.getName() + " " 
-                                                + NodeType.valueOf( actNode.getType()).name() 
-                                                + (actNode.hasLabel()? " " + actNode.getLabel().replace("\r"," ").replace("\n"," ") :"")
-                                                + " to " + NodeType.valueOf( parent.getType()).name() ;
+                                            //ITree parent = actNode.getParent();
+                                                String actString = action.getName()  ;
+                                                //+ NodeType.valueOf( actNode.getType()).name() 
+                                                //+ (actNode.hasLabel()? " " + actNode.getLabel().replace("\r"," ").replace("\n"," ") :"")
+                                                //+ " to " + NodeType.valueOf( parent.getType()).name() ;
 
                                                 //  use same path  for both methods ??? 
                                                 if (version.toLowerCase().equals("abstract")) {
-                                                    actString += " ::::[" + ActionContext.GetContextPath(action) +"]";
+                                                    actString += " " + ActionContext.GetContextPath(action,false,src) + (actNode.hasLabel()? " " + actNode.getLabel().replace("\r"," ").replace("\n"," ") :"");
                                                 }else{
-                                                    actString += " ::::[" + ActionContext.GetContextPath(action) +"]";
+                                                    actString += " " + ActionContext.GetContextPath(action,true,src) ;
                                                 }
                                                 
                                                 emuCode += actString +"\n";
