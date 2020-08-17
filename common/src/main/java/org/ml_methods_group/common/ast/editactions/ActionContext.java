@@ -59,7 +59,7 @@ public class ActionContext {
         return n;
     }
 
-    private static Boolean IsContextRoot(ITree n){
+    public static Boolean IsContextRoot(ITree n){
         if(n == null)  
         return true; 
 
