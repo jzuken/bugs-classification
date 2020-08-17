@@ -185,8 +185,8 @@ public class Application {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
                             "    Path to code dataset" + System.lineSeparator() +
                             "    Path to store representation" + System.lineSeparator() +
-                            "    Path defect A id" + System.lineSeparator() +
-                            "    Path defect B id" + System.lineSeparator() +
+                            "    Id of defect to test (bad only file)" + System.lineSeparator() +
+                            "    Id of defect used as template (bad + good)" + System.lineSeparator() +
                             "    LASE variant (conctrete,  abstract)" + System.lineSeparator() 
                             );
                     return;
