@@ -4,7 +4,7 @@ package org.ml_methods_group.common.ast.matches;
 import org.ml_methods_group.common.ast.matches.testStringAlgoritm;
 import com.github.gumtreediff.matchers.MappingStore;
 import com.github.gumtreediff.matchers.Matcher;
-import com.github.gumtreediff.matchers.Register;
+import com.github.gumtreediff.actions.model.Action;
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.TreeUtils;
 import java.util.HashSet;
@@ -34,10 +34,23 @@ public class testMatcher  extends Matcher {
     }
 
 
+    protected boolean NodeInActions(ITree src,  List<Action> actions){
+        boolean yes =false;
+        for(Action a : actions){
+            if(a.getNode().getId() == src.getId())
+                return true;
+            for( ITree c : src.getDescendants()){
+                if(a.getNode().getId() == c.getId())
+                    return true;
+            }
+        }
+        return yes;
+    }
 
     protected int numberOfCommonChildren(ITree src, ITree dst) {
         Set<ITree> dstDescendants = new HashSet<>(dst.getDescendants());
         int common = 0;
+
 
         ITree m0 = mappings.getDst(src);
         if (m0 != null && dstDescendants.contains(m0)){
@@ -45,7 +58,7 @@ public class testMatcher  extends Matcher {
                 ITree m = mappings.getDst(t);
                 if (m != null && dstDescendants.contains(m)){
                     common++;
-                    common += numberOfCommonChildren(t,dst);
+                    common += numberOfCommonChildren(t, dst);
                 }
             }
         }
@@ -69,13 +82,19 @@ public class testMatcher  extends Matcher {
         return false;
     }
 
-    public ITree GetLongestSrcSubtree(){
+    public ITree GetLongestSrcSubtree(List<Action> actions){
         List<ITree> srcSeq = TreeUtils.preOrder(src);
         int[] c = new int[srcSeq.size() + 1];
+        
 
         // считаем количество общих потомков для каждого узла
         for (int i = 0; i < srcSeq.size(); i++){
             c[i]=numberOfCommonChildren(srcSeq.get(i), dst);
+        }
+
+        for (int i = 0; i < srcSeq.size(); i++){
+            if(!NodeInActions( srcSeq.get(i), actions))
+                c[i]=0;
         }
 
         int maxIdx=0;

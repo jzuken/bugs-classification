@@ -1269,7 +1269,7 @@ public class Application {
                 
             }
 
-            ITree minSrc = matcher.GetLongestSrcSubtree();
+            ITree minSrc = matcher.GetLongestSrcSubtree(actB);
             TreeContext mSrc = new TreeContext();
             mSrc.importTypeLabels(dstB);
             mSrc.setRoot(minSrc);
