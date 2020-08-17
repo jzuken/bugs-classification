@@ -49,8 +49,8 @@ public class testMatcher  extends Matcher {
                 }
             }
         }
-        if(common >0)
-            System.out.println("Node " + src.getId() +" has " + common + " common descendants");
+        //if(common >0)
+        //    System.out.println("Node " + src.getId() +" has " + common + " common descendants");
         return common;
     }
 
@@ -87,7 +87,7 @@ public class testMatcher  extends Matcher {
 
         System.out.println("longest SRC matches: " + c[maxIdx] );
         System.out.println("longest node id: " + srcSeq.get(maxIdx).getId() );
-        System.out.println("Node has " + numberOfChildren(srcSeq.get(maxIdx)) + " dependents childrens" );
+        System.out.println("Node has " + srcSeq.get(maxIdx).getDescendants().size() + " descendants before cleaning" );
 
         ITree longestRoot = srcSeq.get(maxIdx);
         System.out.println("longest SRC subtree size: " + longestRoot.getSize() );
@@ -136,21 +136,19 @@ public class testMatcher  extends Matcher {
     public ITree  removeUnmappedSrcNodes(ITree node, ITree dst){
 
         Set<ITree> dstDescendants = new HashSet<>(dst.getDescendants());
-        
-        
 
         List<ITree> children = node.getChildren();
         List<ITree> toRemove = new ArrayList<ITree>();
 
-        System.out.println("Removeing extra childern for " + node.getId() + ", checking " + children.size() + " childrens");
+        System.out.println("Remove extra childern for " + node.getId() + ", checking " + children.size() + " childrens");
         for (ITree t : children) {
             if ( numberOfCommonChildren(t,dst) == 0 ){
-                System.out.println("Child " + t.getId() + " will be removed");
+                // System.out.println("Child " + t.getId() + " will be removed");
                 toRemove.add(t);
             }
         }
 
-        System.out.println("Prepare to remove " +toRemove.size() + " items");
+        // System.out.println("Prepare to remove " +toRemove.size() + " items");
 
          // removing nodes
         for (ITree t : toRemove) {
@@ -158,7 +156,7 @@ public class testMatcher  extends Matcher {
         }
 
 
-        System.out.println("Node has " +children.size() + " childrens");
+        System.out.println("Node has " +children.size() + " childrens after remove");
 
         node.setChildren(children);
         

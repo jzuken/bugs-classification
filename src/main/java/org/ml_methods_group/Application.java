@@ -1258,9 +1258,9 @@ public class Application {
 
             System.out.println(getDiff(baseTime) + ": Defects are prepared. Try to build maxtree");
 
-            if(dstA != null && dstB != null){
+            if(srcA != null && dstB != null){
 
-            testMatcher matcher = new testMatcher(dstA.getRoot(), dstB.getRoot(),new MappingStore());
+            testMatcher matcher = new testMatcher(srcA.getRoot(), dstB.getRoot(),new MappingStore());
                                    
             try {
                 matcher.match();
