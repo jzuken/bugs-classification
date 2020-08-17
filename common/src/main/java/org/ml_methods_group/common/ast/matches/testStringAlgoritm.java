@@ -60,17 +60,14 @@ public final class testStringAlgoritm {
         return false;
     }
     
-    public static boolean isEql(ITree A, ITree B){
-        Tree a = (Tree) A;
-        Tree b = (Tree) B;
-        Boolean y= false;
+    public static boolean isEql(ITree a, ITree b){
         if(isSimilarType(a,b)){
             if(a.hasLabel() && b.hasLabel()) 
-                y = true;
+               return true;
             if(!a.hasLabel() && !b.hasLabel()) 
-                y = true;
+                return true;
         }
-        return y;
+        return false;
     }
 
     public static List<int[]> doIt(List<ITree> s0, List<ITree> s1) {
