@@ -1042,6 +1042,10 @@ public class Application {
                 for( String defect: defects) {
                     if(fName.contains(defect)){
                         useFile = true;
+                        if(defect == DefectA) 
+                            isB=false;
+                        else
+                            isB=true;
                         break;
                     }
                 }
@@ -1145,7 +1149,7 @@ public class Application {
                                         //dstA = dst;
                                         //matcherA =matcherAst;
                                         //actA = actions;
-                                        isB = true;
+                                        //isB = true;
 
                                     }
 
@@ -1193,6 +1197,7 @@ public class Application {
                     }
 
                     ITree minSrc = matcher.GetLongestSrcSubtree(actB);
+                    
                     TreeContext mSrc = new TreeContext();
                     mSrc.importTypeLabels(dstB);
                     mSrc.setRoot(minSrc);

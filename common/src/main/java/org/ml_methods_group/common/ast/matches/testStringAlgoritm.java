@@ -1,4 +1,5 @@
 package org.ml_methods_group.common.ast.matches;
+
 import org.ml_methods_group.common.ast.NodeType;
 
 import java.util.ArrayList;
@@ -19,8 +20,6 @@ public final class testStringAlgoritm {
         if(A.getType() ==-1 && B.getType()==-1) return true;
         if(A.getType() ==-1 || B.getType()==-1) return false;
         
-        Boolean y= false;
-
         NodeType tA = NodeType.valueOf(A.getType());
         NodeType tB = NodeType.valueOf(A.getType());
         if(
@@ -54,11 +53,11 @@ public final class testStringAlgoritm {
         if(
             (tA == NodeType.C_TYPE || tA == NodeType.C_STRUCT_DECL ||  tA == NodeType.C_UNION  )
             &&
-            (tB == NodeType.C_TYPE || tB == NodeType.C_STRUCT_DECL ||  tB == NodeType.C_UNION   )
+            (tB == NodeType.C_TYPE || tB == NodeType.C_STRUCT_DECL ||  tB == NodeType.C_UNION  )
         )
             return true; 
 
-        return y;
+        return false;
     }
     
     public static boolean isEql(ITree A, ITree B){
