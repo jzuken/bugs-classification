@@ -1271,7 +1271,9 @@ public class Application {
 
             ITree minSrc = matcher.GetLongestSrcSubtree();
             TreeContext mSrc = new TreeContext();
+            mSrc.importTypeLabels(dstB);
             mSrc.setRoot(minSrc);
+            mSrc.getRoot().refresh();
 
             try {
                 TreeIoUtils.toXml(mSrc ).writeTo(pathToSaveRepresentations.toString()+"\\ast\\maxTree.xml" );

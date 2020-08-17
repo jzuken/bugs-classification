@@ -92,8 +92,10 @@ public class testMatcher  extends Matcher {
         ITree longestRoot = srcSeq.get(maxIdx);
         System.out.println("longest SRC subtree size: " + longestRoot.getSize() );
         
+        Set<ITree> dstDescendants = new HashSet<>(dst.getDescendants());
+
         // надо убрать все  узлы, которые не входят в искомое дерево
-        longestRoot= removeUnmappedSrcNodes(longestRoot,dst);
+        longestRoot= removeUnmappedSrcNodes(longestRoot, dst, dstDescendants);
 
         longestRoot.setParent(null);
         longestRoot.refresh();
@@ -133,17 +135,20 @@ public class testMatcher  extends Matcher {
         return longestRoot;
     }
 
-    public ITree  removeUnmappedSrcNodes(ITree node, ITree dst){
+    public ITree  removeUnmappedSrcNodes(ITree node, ITree dst , Set<ITree> dstDescendants){
 
-        Set<ITree> dstDescendants = new HashSet<>(dst.getDescendants());
+        //Set<ITree> dstDescendants = new HashSet<>(dst.getDescendants());
 
         List<ITree> children = node.getChildren();
         List<ITree> toRemove = new ArrayList<ITree>();
 
         System.out.println("Remove extra childern for " + node.getId() + ", checking " + children.size() + " childrens");
         for (ITree t : children) {
-            if ( numberOfCommonChildren(t,dst) == 0 ){
-                // System.out.println("Child " + t.getId() + " will be removed");
+            ITree m = mappings.getDst(t);
+            if (m == null || ! dstDescendants.contains(m))
+            //if ( numberOfCommonChildren(t,dst) == 0 )
+            {
+                //System.out.println("Child " + t.getId() + " will be removed");
                 toRemove.add(t);
             }
         }
@@ -162,7 +167,7 @@ public class testMatcher  extends Matcher {
         
 
         for (ITree t : children ) {
-            t = removeUnmappedSrcNodes(t, dst);
+            t = removeUnmappedSrcNodes(t, dst, dstDescendants);
         }
 
         return node;
