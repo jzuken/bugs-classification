@@ -7,6 +7,8 @@ import com.github.gumtreediff.matchers.Matcher;
 import com.github.gumtreediff.actions.model.Action;
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.TreeUtils;
+
+
 import java.util.HashSet;
 
 import java.util.List;
@@ -36,12 +38,20 @@ public class testMatcher  extends Matcher {
 
     protected boolean NodeInActions(ITree src,  List<Action> actions){
         boolean yes =false;
-        for(Action a : actions){
-            if(a.getNode().getId() == src.getId())
-                return true;
-            for( ITree c : src.getDescendants()){
-                if(a.getNode().getId() == c.getId())
+        ITree m = mappings.getDst(src);
+        if(m != null){
+            for(Action a : actions){
+
+                if(a.getNode().getId() == m.getId())
                     return true;
+
+                for( ITree c : src.getDescendants()){
+                    ITree n = mappings.getDst(c);
+                    if(n!=null){
+                        if(a.getNode().getId() == n.getId())
+                            return true;
+                    }
+                }
             }
         }
         return yes;
@@ -67,12 +77,7 @@ public class testMatcher  extends Matcher {
         return common;
     }
 
-
-    protected int numberOfChildren(ITree src) {
-        
-        //System.out.println("Node " + src.getId() +" has " + src.getDescendants().size() + " descendants");
-        return src.getDescendants().size();
-    }
+  
 
     protected boolean IsCommonNode(ITree src,  Set<ITree> dstDescendants){
         ITree m = mappings.getDst(src);
@@ -104,12 +109,12 @@ public class testMatcher  extends Matcher {
             if(c[maxIdx] <= c[i]) maxIdx= i;
         }
 
-        System.out.println("longest SRC matches: " + c[maxIdx] );
+        System.out.println("longest matches: " + c[maxIdx] );
         System.out.println("longest node id: " + srcSeq.get(maxIdx).getId() );
-        System.out.println("Node has " + srcSeq.get(maxIdx).getDescendants().size() + " descendants before cleaning" );
+        //System.out.println("Node has " + srcSeq.get(maxIdx).getDescendants().size() + " descendants before cleaning" );
 
         ITree longestRoot = srcSeq.get(maxIdx);
-        System.out.println("longest SRC subtree size: " + longestRoot.getSize() );
+        System.out.println("longest subtree size before clean: " + longestRoot.getSize() );
         
         Set<ITree> dstDescendants = new HashSet<>(dst.getDescendants());
 
@@ -119,13 +124,13 @@ public class testMatcher  extends Matcher {
         longestRoot.setParent(null);
         longestRoot.refresh();
         
-        System.out.println("longest SRC subtree size after clean: " + longestRoot.getSize() );
+        System.out.println("longest subtree size after clean: " + longestRoot.getSize() );
 
         return longestRoot.deepCopy();
     }
 
 
-    public ITree GetLongestDstSubtree(){
+   /* public ITree GetLongestDstSubtree(){
         List<ITree> dstSeq = TreeUtils.preOrder(dst);
         int[] c = new int[dstSeq.size() + 1];
 
@@ -153,6 +158,7 @@ public class testMatcher  extends Matcher {
 
         return longestRoot;
     }
+    */
 
     public ITree  removeUnmappedSrcNodes(ITree node, ITree dst , Set<ITree> dstDescendants){
 
@@ -161,7 +167,7 @@ public class testMatcher  extends Matcher {
         List<ITree> children = node.getChildren();
         List<ITree> toRemove = new ArrayList<ITree>();
 
-        System.out.println("Remove extra childern for " + node.getId() + ", checking " + children.size() + " childrens");
+        //System.out.println("Remove extra childern for " + node.getId() + ", checking " + children.size() + " childrens");
         for (ITree t : children) {
             ITree m = mappings.getDst(t);
             if (m == null || ! dstDescendants.contains(m))
@@ -180,7 +186,7 @@ public class testMatcher  extends Matcher {
         }
 
 
-        System.out.println("Node has " +children.size() + " childrens after remove");
+        //System.out.println("Node has " +children.size() + " childrens after remove");
 
         node.setChildren(children);
         
@@ -193,7 +199,7 @@ public class testMatcher  extends Matcher {
 
     }
 
-    public ITree  removeUnmappedDstNodes(ITree node){
+    /* public ITree  removeUnmappedDstNodes(ITree node){
 
         List<ITree> children = node.getChildren();
         List<ITree> toRemove = new ArrayList<ITree>();
@@ -218,5 +224,6 @@ public class testMatcher  extends Matcher {
         return node;
 
     }
+    */
 
 }

@@ -1027,12 +1027,12 @@ public class Application {
             var baseTime = System.currentTimeMillis();
             boolean isB= false;
             TreeContext srcA = null;
-            TreeContext srcB= null;
-            TreeContext dstA = null;
+            //TreeContext srcB= null;
+            //TreeContext dstA = null;
             TreeContext dstB = null ;
-            Matcher matcherA = null;
-            Matcher matcherB = null ;
-            List<Action> actA = null ;
+            //Matcher matcherA = null;
+            //Matcher matcherB = null ;
+            //List<Action> actA = null ;
             List<Action> actB = null;
 
 
@@ -1050,7 +1050,7 @@ public class Application {
                     
                     baseTime = System.currentTimeMillis();
                     processed++;
-                    System.out.println("******************* found: " + processed + ", skipped: " + skipped);
+                    //System.out.println("******************* found: " + processed + ", skipped: " + skipped);
 
                     Path methodBeforePath = Paths.get(fName);
                     Path methodAfterPath = Paths.get(fName.replace(badFolderName, goodFolderName));
@@ -1076,13 +1076,8 @@ public class Application {
                         System.out.println(getDiff(baseTime) + ": Checking size");
                         if(fromFile.length() <= MAX_FILE_SIZE && toFile.length() <= MAX_FILE_SIZE ){
 
-                                // System.out.println(getDiff(baseTime) + ": Rate: " + rate ); //+" Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
-                                String emuCode = "";
-
-                                if(actionsFile.exists()){
-                                    System.out.println(getDiff(baseTime) + ": repared file exists");
-                                }else{
-
+                               
+                               {
                                     // write empty file for skip crash at next pass
                                     BufferedWriter writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
                                     writer.write("{}");
@@ -1096,8 +1091,8 @@ public class Application {
                                     var fromSolution = new Solution(fromCode, defectId, wrongSolutionId, FAIL);
                                     var toSolution = new Solution(toCode, defectId, rightSolutionId, OK);
 
-                                    TreeContext src;
-                                    TreeContext dst;
+                                    TreeContext src=null;
+                                    TreeContext dst=null;
 
                                     ASTGenerator generator = null;
 
@@ -1110,44 +1105,46 @@ public class Application {
                                     src = generator.buildTreeContext(fromSolution);
                                     System.out.println("SRC tree size=" + src.getRoot().getSize());
 
-                                    dst = generator.buildTreeContext(toSolution);
-                                    System.out.println("DST tree size=" + dst.getRoot().getSize());
+                                   
                                     
                                     TreeIoUtils.toXml(src ).writeTo(pathToSaveRepresentations.toString()+"\\ast\\src_" + defectId );
-                                    TreeIoUtils.toXml(dst ).writeTo(pathToSaveRepresentations.toString()+"\\ast\\dst_" + defectId );
-                                
-                                    Matcher matcherAst = Matchers.getInstance().getMatcher(src.getRoot(), dst.getRoot());
                                     
-                                    System.out.println("Compare trees");
-                                    try {
-                                        matcherAst.match();
-                                    } catch (NullPointerException e) {
-                                        System.out.println(e.getMessage());
-                                    }
+                                    if(isB) {
 
-                                    System.out.println("Build AST");
-
-                                    ActionGenerator actionGenerator = new ActionGenerator(src.getRoot(), dst.getRoot(), matcherAst.getMappings());
-                                    try{
-                                        actionGenerator.generate();
-                                    } catch (Exception e){
-                                        System.out.println( e.getMessage());
-                                        e.printStackTrace();
-                                    }
-                            
+                                        dst = generator.buildTreeContext(toSolution);
+                                        System.out.println("DST tree size=" + dst.getRoot().getSize());
+                                        TreeIoUtils.toXml(dst ).writeTo(pathToSaveRepresentations.toString()+"\\ast\\dst_" + defectId );
                                 
-                                    final List<Action> actions = actionGenerator.getActions();
+                                        Matcher matcherAst = Matchers.getInstance().getMatcher(src.getRoot(), dst.getRoot());
+                                        System.out.println("Compare trees");
+                                        try {
+                                            matcherAst.match();
+                                        } catch (NullPointerException e) {
+                                            System.out.println(e.getMessage());
+                                        }
 
-                                    if(isB){
-                                        srcB = src;
+                                        System.out.println("Build AST");
+
+                                        ActionGenerator actionGenerator = new ActionGenerator(src.getRoot(), dst.getRoot(), matcherAst.getMappings());
+                                        try{
+                                            actionGenerator.generate();
+                                        } catch (Exception e){
+                                            System.out.println( e.getMessage());
+                                            e.printStackTrace();
+                                        }
+                                
+                                    
+                                        final List<Action> actions = actionGenerator.getActions();
+
+                                        //srcB = src;
                                         dstB = dst;
-                                        matcherB =matcherAst;
+                                       // matcherB =matcherAst;
                                         actB = actions;
                                     }else{
                                         srcA = src;
-                                        dstA = dst;
-                                        matcherA =matcherAst;
-                                        actA = actions;
+                                        //dstA = dst;
+                                        //matcherA =matcherAst;
+                                        //actA = actions;
                                         isB = true;
 
                                     }
@@ -1156,84 +1153,9 @@ public class Application {
                                     fromSolution = null;
                                     toSolution = null;
 
-                                    if(actions != null  && actions.size() > 0 ){
-                                        System.out.println(getDiff(baseTime) + ": Prepare es");
-                                        
-
-                                        emuCode = "";
-
-                                        // store Actions
-                                            int idx=0;
-                                           for (Action action : actions) { 
-                                            ITree actNode =action.getNode();
-                                            //ITree parent = actNode.getParent();
-                                                String actString = action.getName()  ;
-                                                //+ NodeType.valueOf( actNode.getType()).name() 
-                                                //+ (actNode.hasLabel()? " " + actNode.getLabel().replace("\r"," ").replace("\n"," ") :"")
-                                                //+ " to " + NodeType.valueOf( parent.getType()).name() ;
-
-                                                //  use same path  for both methods ??? 
-                                                if (version.toLowerCase().equals("abstract")) {
-                                                    actString += " " + ActionContext.GetContextPath(action,false,src) + (actNode.hasLabel()? " " + actNode.getLabel().replace("\r"," ").replace("\n"," ") :"");
-                                                }else{
-                                                    actString += " " + ActionContext.GetContextPath(action,true,src) ;
-                                                }
-                                                
-                                               /* 
-                                                TreeContext tmp = new TreeContext();
-                                                tmp.importTypeLabels(src);
-
-                                               
-                                                ITree node2add = action.getNode();
-                                                List<ITree> lt = new ArrayList();
-
-                                                while(! ActionContext.IsContextRoot(node2add)){
-                                                    lt.add(node2add);
-                                                    node2add =node2add.getParent();
-                                                }
-
-                                                if(lt.size()>0){
-                                                    int i=lt.size()-1;
-                                                    ITree root = tmp.createTree(
-                                                        lt.get(i).getType()
-                                                    ,lt.get(i).getLabel()
-                                                    ,src.getTypeLabel(lt.get(i))
-                                                    );
-                                                    ITree prev =root;
-                                                    ITree child =null;
-                                                    while(i>0){
-                                                        i--;
-                                                        child = tmp.createTree(
-                                                            lt.get(i).getType()
-                                                        ,lt.get(i).getLabel()
-                                                        ,src.getTypeLabel(lt.get(i))
-                                                        );
-                                                        prev.addChild(child);
-                                                        prev = child;
-                                                    }
-
-                                                    tmp.setRoot( root );
-
-                                                    idx++;
-                                                    TreeIoUtils.toXml(tmp).writeTo(pathToSaveRepresentations.toString()+"\\ast\\" + defectId +"." + idx);
-                                                }
-                                                */
-                                                
-                                                emuCode += actString +"\n";
-
-                                        }
-
-                                        writer =null;
-                                        writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
-                                        writer.write(emuCode);
-                                        writer.close();
-
-                                    }else{
-                                        writer =null;
-                                        System.out.println(getDiff(baseTime) + ": No actions detected");    
-                                    }
+                                   
                                 }
-                                System.out.println(getDiff(baseTime) + ": Done");
+                                System.out.println(getDiff(baseTime) + ": defect processed");
                             }else{
                                 skipped++;
                                 System.out.println(getDiff(baseTime) + ": Skip Defect id: " +  defectId +" Very large file  size." ); // Files before: " + methodBeforePath.toString() +", after: " + methodAfterPath.toString());
@@ -1256,37 +1178,36 @@ public class Application {
 
             }
 
-            System.out.println(getDiff(baseTime) + ": Defects are prepared. Try to build maxtree");
+            System.out.println(getDiff(baseTime) + ": Try to build maxtree");
 
-            if(srcA != null && dstB != null){
+            if(srcA != null && dstB != null  ){
 
-            testMatcher matcher = new testMatcher(srcA.getRoot(), dstB.getRoot(),new MappingStore());
-                                   
-            try {
-                matcher.match();
-            } catch (NullPointerException e) {
-                System.out.println(e.getMessage());
-                
-            }
+                if( actB.size() >0) {
+                    testMatcher matcher = new testMatcher(srcA.getRoot(), dstB.getRoot(),new MappingStore());
+                                        
+                    try {
+                        matcher.match();
+                    } catch (NullPointerException e) {
+                        System.out.println(e.getMessage());
+                        
+                    }
 
-            ITree minSrc = matcher.GetLongestSrcSubtree(actB);
-            TreeContext mSrc = new TreeContext();
-            mSrc.importTypeLabels(dstB);
-            mSrc.setRoot(minSrc);
-            mSrc.getRoot().refresh();
+                    ITree minSrc = matcher.GetLongestSrcSubtree(actB);
+                    TreeContext mSrc = new TreeContext();
+                    mSrc.importTypeLabels(dstB);
+                    mSrc.setRoot(minSrc);
+                    mSrc.getRoot().refresh();
 
-            try {
-                TreeIoUtils.toXml(mSrc ).writeTo(pathToSaveRepresentations.toString()+"\\ast\\maxTree.xml" );
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-                
-            }
-            
-
-            //ITree minDst = matcher.GetLongestDstSubtree();
-
+                    try {
+                        TreeIoUtils.toXml(mSrc ).writeTo(pathToSaveRepresentations.toString()+"\\ast\\maxTree.xml" );
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());
+                    }
+                }else{
+                    System.out.println("No edit actions for defect2. Tree will be empty");
+                }
            }
-
+           System.out.println(getDiff(baseTime) + ": Done");
            
 
             

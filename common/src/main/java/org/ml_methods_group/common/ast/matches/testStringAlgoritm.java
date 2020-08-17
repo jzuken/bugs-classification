@@ -1,4 +1,5 @@
 package org.ml_methods_group.common.ast.matches;
+import org.ml_methods_group.common.ast.NodeType;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -7,16 +8,64 @@ import java.util.List;
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.Tree;
 
+
 public final class testStringAlgoritm {
     private testStringAlgoritm() {}
 
 
+    public static boolean isSimilarType(ITree A, ITree B){
+
+        if(A.hasSameType(B)) return true;
+        if(A.getType() ==-1 && B.getType()==-1) return true;
+        if(A.getType() ==-1 || B.getType()==-1) return false;
+        
+        Boolean y= false;
+
+        NodeType tA = NodeType.valueOf(A.getType());
+        NodeType tB = NodeType.valueOf(A.getType());
+        if(
+            (tA == NodeType.C_DO || tA == NodeType.C_FOR || tA == NodeType.C_WHILE  )
+            &&
+            (tB == NodeType.C_DO || tB == NodeType.C_FOR || tB == NodeType.C_WHILE  )
+        )
+            return true;
+
+        if(
+            (tA == NodeType.C_IF_STMT || tA == NodeType.C_SWITCH   )
+            &&
+            (tB == NodeType.C_IF_STMT || tB == NodeType.C_SWITCH  )
+        )
+            return true;
+
+        if(
+            (tA == NodeType.C_RETURN || tA == NodeType.C_EXPR_STMT   )
+             &&
+            (tB == NodeType.C_RETURN || tB == NodeType.C_EXPR_STMT  )
+            )
+                return true;
+
+        if(
+            (tA == NodeType.C_ELSE || tA == NodeType.C_DEFAULT   )
+            &&
+            (tB == NodeType.C_ELSE || tB == NodeType.C_DEFAULT  )
+        )
+            return true;       
+            
+        if(
+            (tA == NodeType.C_TYPE || tA == NodeType.C_STRUCT_DECL ||  tA == NodeType.C_UNION  )
+            &&
+            (tB == NodeType.C_TYPE || tB == NodeType.C_STRUCT_DECL ||  tB == NodeType.C_UNION   )
+        )
+            return true; 
+
+        return y;
+    }
     
     public static boolean isEql(ITree A, ITree B){
         Tree a = (Tree) A;
         Tree b = (Tree) B;
         Boolean y= false;
-        if(a.hasSameType(b)){
+        if(isSimilarType(a,b)){
             if(a.hasLabel() && b.hasLabel()) 
                 y = true;
             if(!a.hasLabel() && !b.hasLabel()) 
