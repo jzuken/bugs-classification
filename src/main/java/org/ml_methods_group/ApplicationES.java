@@ -55,6 +55,7 @@ import static org.ml_methods_group.common.Solution.Verdict.OK;
 
 
 public class ApplicationES extends ApplicationMethods {
+    
     public static void prepareESDataset(Path pathToDataset, Path pathToSaveRepresentations, Path pathToBugList, String version, int NgramSize) throws IOException {
 
         

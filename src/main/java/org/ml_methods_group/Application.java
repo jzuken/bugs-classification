@@ -201,6 +201,25 @@ public class Application {
                 );
                 break;
 
+
+                case "matrix.maxtree":
+                if (args.length != 5 ) {
+                    System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
+                            "    Path to lase dataset" + System.lineSeparator() +
+                            "    Path to cluster list file" + System.lineSeparator() +
+                            "    Path to store matrix" + System.lineSeparator() +
+                            "    LASE variant (conctrete,  abstract)" + System.lineSeparator() 
+                            );
+                    return;
+                }
+                ApplicationLASE.scanCluster(
+                        Paths.get(args[1]),
+                        Paths.get(args[2]),
+                        Paths.get(args[3]),
+                        args[4]
+                );
+                break;
+
             case "parse":
                 if (args.length != 3) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +

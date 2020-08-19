@@ -349,110 +349,110 @@ public class ApplicationLASE extends ApplicationMethods {
                 if(useFile){
                     try{
                     
-                    baseTime = System.currentTimeMillis();
-                   
-                    Path methodBeforePath = Paths.get(fName);
-                    Path methodAfterPath = Paths.get(fName.replace(badFolderName, goodFolderName));
-                    String[] paths = splitPath(fName.replace(badFolderName, ""));
+                        baseTime = System.currentTimeMillis();
                     
-                    String defectId = paths[0]  +"_"+ version +"_" + paths[paths.length-1];
+                        Path methodBeforePath = Paths.get(fName);
+                        Path methodAfterPath = Paths.get(fName.replace(badFolderName, goodFolderName));
+                        String[] paths = splitPath(fName.replace(badFolderName, ""));
+                        
+                        String defectId = paths[0]  +"_"+ version +"_" + paths[paths.length-1];
 
-                    System.out.println(getDiff(baseTime) + ": Defect id: " +  defectId  );
+                        System.out.println(getDiff(baseTime) + ": Defect id: " +  defectId  );
 
-                    File fromFile = methodBeforePath.toFile();
-                    File toFile = methodAfterPath.toFile();
+                        File fromFile = methodBeforePath.toFile();
+                        File toFile = methodAfterPath.toFile();
 
-                    File actionsFile = new File(pathToSaveRepresentations.toString()+"\\" + defectId);
-                   
+                        File actionsFile = new File(pathToSaveRepresentations.toString()+"\\" + defectId);
                     
-                    String rightSolutionId = defectId + "_" + OK.ordinal();
-                    String wrongSolutionId = defectId + "_" + FAIL.ordinal();
-
-
-                    if(fromFile.length() >0 && toFile.length() >0 ){
-                        System.out.println("Sizes: " + fromFile.length() +" ->" + toFile.length());
-                        //double rate = ((double) fromFile.length()) / ((double) toFile.length());
-                        System.out.println(getDiff(baseTime) + ": Checking size");
-                        if(fromFile.length() <= MAX_FILE_SIZE && toFile.length() <= MAX_FILE_SIZE ){
-                        {
-                            var fromCode = Files.readString(methodBeforePath);
-                            var toCode = Files.readString(methodAfterPath);
-
-                            System.out.println(getDiff(baseTime) + ": Files loaded");
                         
-                            var fromSolution = new Solution(fromCode, defectId, wrongSolutionId, FAIL);
-                            var toSolution = new Solution(toCode, defectId, rightSolutionId, OK);
+                        String rightSolutionId = defectId + "_" + OK.ordinal();
+                        String wrongSolutionId = defectId + "_" + FAIL.ordinal();
 
-                            TreeContext src=null;
-                            TreeContext dst=null;
 
-                            ASTGenerator generator = null;
+                        if(fromFile.length() >0 && toFile.length() >0 ){
+                            System.out.println("Sizes: " + fromFile.length() +" ->" + toFile.length());
+                            //double rate = ((double) fromFile.length()) / ((double) toFile.length());
+                            System.out.println(getDiff(baseTime) + ": Checking size");
+                            if(fromFile.length() <= MAX_FILE_SIZE && toFile.length() <= MAX_FILE_SIZE ){
+                            {
+                                var fromCode = Files.readString(methodBeforePath);
+                                var toCode = Files.readString(methodAfterPath);
 
-                            if (version.toLowerCase().equals("abstract")) {
-                                generator = new CachedASTGenerator(  new NamesASTNormalizer() );
-                            }else{
-                                generator = new CachedASTGenerator(  new BasicASTNormalizer() );
-                            }
-
-                            src = generator.buildTreeContext(fromSolution);
-                            System.out.println("SRC tree size=" + src.getRoot().getSize());
-
+                                System.out.println(getDiff(baseTime) + ": Files loaded");
                             
-                            
-                            TreeIoUtils.toXml(src ).writeTo(pathToSaveRepresentations.toString()+"\\ast\\src_" + defectId );
-                                    
-                            if(isB) {
+                                var fromSolution = new Solution(fromCode, defectId, wrongSolutionId, FAIL);
+                                var toSolution = new Solution(toCode, defectId, rightSolutionId, OK);
 
-                                dst = generator.buildTreeContext(toSolution);
-                                System.out.println("DST tree size=" + dst.getRoot().getSize());
-                                TreeIoUtils.toXml(dst ).writeTo(pathToSaveRepresentations.toString()+"\\ast\\dst_" + defectId );
-                        
-                                Matcher matcherAst = Matchers.getInstance().getMatcher(src.getRoot(), dst.getRoot());
-                                System.out.println("Compare trees");
-                                try {
-                                    matcherAst.match();
-                                } catch (NullPointerException e) {
-                                    System.out.println(e.getMessage());
+                                TreeContext src=null;
+                                TreeContext dst=null;
+
+                                ASTGenerator generator = null;
+
+                                if (version.toLowerCase().equals("abstract")) {
+                                    generator = new CachedASTGenerator(  new NamesASTNormalizer() );
+                                }else{
+                                    generator = new CachedASTGenerator(  new BasicASTNormalizer() );
                                 }
 
-                                System.out.println("Build AST");
+                                src = generator.buildTreeContext(fromSolution);
+                                System.out.println("SRC tree size=" + src.getRoot().getSize());
 
-                                ActionGenerator actionGenerator = new ActionGenerator(src.getRoot(), dst.getRoot(), matcherAst.getMappings());
-                                try{
-                                    actionGenerator.generate();
-                                } catch (Exception e){
-                                    System.out.println( e.getMessage());
-                                    e.printStackTrace();
-                                }
-                        
+                                
+                                
+                                TreeIoUtils.toXml(src ).writeTo(pathToSaveRepresentations.toString()+"\\ast\\src_" + defectId );
+                                        
+                                if(isB) {
+
+                                    dst = generator.buildTreeContext(toSolution);
+                                    System.out.println("DST tree size=" + dst.getRoot().getSize());
+                                    TreeIoUtils.toXml(dst ).writeTo(pathToSaveRepresentations.toString()+"\\ast\\dst_" + defectId );
                             
-                                final List<Action> actions = actionGenerator.getActions();
+                                    Matcher matcherAst = Matchers.getInstance().getMatcher(src.getRoot(), dst.getRoot());
+                                    System.out.println("Compare trees");
+                                    try {
+                                        matcherAst.match();
+                                    } catch (NullPointerException e) {
+                                        System.out.println(e.getMessage());
+                                    }
 
-                                //srcB = src;
-                                dstB = dst;
-                                // matcherB =matcherAst;
-                                actB = actions;
+                                    System.out.println("Build AST");
+
+                                    ActionGenerator actionGenerator = new ActionGenerator(src.getRoot(), dst.getRoot(), matcherAst.getMappings());
+                                    try{
+                                        actionGenerator.generate();
+                                    } catch (Exception e){
+                                        System.out.println( e.getMessage());
+                                        e.printStackTrace();
+                                    }
+                            
+                                
+                                    final List<Action> actions = actionGenerator.getActions();
+
+                                    //srcB = src;
+                                    dstB = dst;
+                                    // matcherB =matcherAst;
+                                    actB = actions;
+                                }else{
+                                    srcA = src;
+                                    //dstA = dst;
+                                    //matcherA =matcherAst;
+                                    //actA = actions;
+                                    //isB = true;
+
+                                }
+
+
+                                fromSolution = null;
+                                toSolution = null;
+
+                                
+                                }
+                                System.out.println(getDiff(baseTime) + ": defect processed");
                             }else{
-                                srcA = src;
-                                //dstA = dst;
-                                //matcherA =matcherAst;
-                                //actA = actions;
-                                //isB = true;
-
+                                System.out.println(getDiff(baseTime) + ": Skip Defect id: " +  defectId +" Very large file  size." ); 
                             }
 
-
-                            fromSolution = null;
-                            toSolution = null;
-
-                            
                         }
-                        System.out.println(getDiff(baseTime) + ": defect processed");
-                    }else{
-                        System.out.println(getDiff(baseTime) + ": Skip Defect id: " +  defectId +" Very large file  size." ); 
-                    }
-
-                }
                         
                         toFile = null;
                         fromFile = null;
@@ -612,6 +612,173 @@ public class ApplicationLASE extends ApplicationMethods {
             e.printStackTrace();
         }
 
+    }
+
+
+    public static void scanCluster(Path pathToDataset, Path pathToClusterFile,  Path pathToMatrix, String version) throws IOException {
+        List<String> clusters = Files.readAllLines(pathToClusterFile);
+        int clusterNum=0;
+
+         // check directory structure
+         File directory = new File(pathToMatrix.toString() );
+         if(!directory.exists()){
+             directory.mkdir();
+         }
+                           
+        
+        String badFolderName =  pathToDataset.toString() + "\\bad";                          
+        String goodFolderName =  pathToDataset.toString() + "\\good";   
+
+        try  {
+
+            for(String cluster: clusters){
+                String[] defects = cluster.split(" ");
+                clusterNum++;
+                System.out.println("processing cluster:" + cluster + " (" + clusterNum +")");
+
+                if(defects.length >1){
+
+                    List<String> result = Files.walk(Paths.get(badFolderName)).filter(Files::isRegularFile)
+                    .map(x -> x.toString()).collect(Collectors.toList());
+      
+                    List<String> defectFiles = new ArrayList<>();
+
+
+                    // collect all files for defect to build matrix
+                    for (String fName : result) {
+                        boolean useFile =false;
+                        
+                        for(String defect : defects){
+                           
+                            if(fName.contains("\\"+defect+"\\")){
+                                useFile = true;
+                                break;
+                            }
+                        }
+                        if (useFile){
+                            defectFiles.add(fName);
+                        }
+                    }
+                   
+                    // defect files is a colleaction of bad files
+                    if(defectFiles.size() >0){
+                   
+                        // collect common actions for cluster here
+                        int[][] weightMatrix = new int[defectFiles.size()][defectFiles.size()];
+
+                        ASTGenerator generator = null;
+                
+                        if (version.toLowerCase().equals("abstract")) {
+                            generator = new CachedASTGenerator(  new NamesASTNormalizer() );
+                        }else{
+                            generator = new CachedASTGenerator(  new BasicASTNormalizer() );
+                        }
+
+
+                        for(int i=0;i<defectFiles.size();i++){
+                            for(int j=0;j<defectFiles.size();j++){
+                                weightMatrix[i][j]=0;
+                                if( i != j) {
+                                    String defectA = defectFiles.get(i);
+                                    String defectB = defectFiles.get(j);
+                                   
+                                    TreeContext srcA = null;
+                                    TreeContext dstB = null ;
+                                    List<Action> actB = null;
+                        
+                                    try{
+
+
+                                        var fromCodeA = Files.readString(Paths.get(defectA));
+                                        var fromSolutionA = new Solution(fromCodeA, "A_BAD" , "A_BAD", FAIL);
+                                        srcA = generator.buildTreeContext(fromSolutionA);
+
+                                        var fromCode = Files.readString(Paths.get(defectB));
+                                        var toCode = Files.readString(Paths.get(defectB.replace(badFolderName,goodFolderName)));
+        
+                                        var fromSolution = new Solution(fromCode, "B_BAD", "B_BAD", FAIL);
+                                        var toSolution = new Solution(toCode, "B_GOOD", "B_GOOD", OK);
+        
+                                        TreeContext srcB=null;
+        
+                                        srcB = generator.buildTreeContext(fromSolution);
+                                        dstB = generator.buildTreeContext(toSolution);
+                                        
+                                        Matcher matcherAst = Matchers.getInstance().getMatcher(srcB.getRoot(), dstB.getRoot());
+                                        System.out.println("Compare trees");
+                                        try {
+                                            matcherAst.match();
+                                        } catch (NullPointerException e) {
+                                            System.out.println(e.getMessage());
+                                        }
+        
+                                        ActionGenerator actionGenerator = new ActionGenerator(srcB.getRoot(), dstB.getRoot(), matcherAst.getMappings());
+                                        try{
+                                            actionGenerator.generate();
+                                        } catch (Exception e){
+                                            System.out.println( e.getMessage());
+                                            e.printStackTrace();
+                                        }
+                                        
+                                        actB = actionGenerator.getActions();
+            
+                                        fromSolutionA = null;
+                                        fromSolution = null;
+                                        toSolution = null;
+                
+                                                
+                                        if(srcA != null && dstB != null  && actB !=null ){
+
+                                            if(  actB.size() >0) {
+                                                testMatcher matcher = new testMatcher(srcA.getRoot(), dstB.getRoot(),new MappingStore());
+                                                                    
+                                                try {
+                                                    matcher.match();
+                                                } catch (NullPointerException e) {
+                                                    System.out.println(e.getMessage());
+                                                }
+                            
+                                                ITree minSrc = matcher.GetLongestSrcSubtree(actB);
+                                                weightMatrix[i][j] =minSrc.getSize();
+                                            }
+                                        }
+                                        
+
+                
+                                    }catch(Exception any)
+                                    {
+                                        System.out.println( any.getMessage());
+                                        any.printStackTrace();
+                                    }
+
+                                }
+                            }
+                        }
+                    
+                      
+                        String matrixFile =     pathToMatrix.toString() + "\\matrix_" + clusterNum +".txt";
+                        BufferedWriter writer = new BufferedWriter(new FileWriter(matrixFile));
+
+                        writer.write(cluster);
+                        writer.write("\r\n" );
+                        for(int i=0;i<defectFiles.size();i++){
+                            for(int j=0;j<defectFiles.size();j++){
+                                writer.write("\t" + weightMatrix[i][j] );
+                            }
+                            writer.write("\r\n" );
+                        }
+                        writer.close();
+
+                    }
+
+                   
+                }
+
+            } 
+                    
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 }
