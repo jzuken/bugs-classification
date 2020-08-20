@@ -676,57 +676,61 @@ public class ApplicationLASE extends ApplicationMethods {
 
 
                         for(int i=0;i<defectFiles.size();i++){
+
+
+                            String defectB = defectFiles.get(i);
+                            TreeContext dstB = null ;
+                            List<Action> actB = null;
+                            try{
+                                var fromCode = Files.readString(Paths.get(defectB));
+                                var toCode = Files.readString(Paths.get(defectB.replace(badFolderName,goodFolderName)));
+
+                                var fromSolution = new Solution(fromCode, "B_BAD", "B_BAD", FAIL);
+                                var toSolution = new Solution(toCode, "B_GOOD", "B_GOOD", OK);
+
+                                TreeContext srcB=null;
+
+                                srcB = generator.buildTreeContext(fromSolution);
+                                dstB = generator.buildTreeContext(toSolution);
+                                
+                                Matcher matcherAst = Matchers.getInstance().getMatcher(srcB.getRoot(), dstB.getRoot());
+                                System.out.println("Compare trees");
+                                try {
+                                    matcherAst.match();
+                                } catch (NullPointerException e) {
+                                    System.out.println(e.getMessage());
+                                }
+
+                                ActionGenerator actionGenerator = new ActionGenerator(srcB.getRoot(), dstB.getRoot(), matcherAst.getMappings());
+                                try{
+                                    actionGenerator.generate();
+                                } catch (Exception e){
+                                    System.out.println( e.getMessage());
+                                    e.printStackTrace();
+                                }
+                                
+                                actB = actionGenerator.getActions();
+    
+                                fromSolution = null;
+                                toSolution = null;
+                            }catch(Exception any){
+                                System.out.println( any.getMessage());
+                                any.printStackTrace();
+                            }
+
+
                             for(int j=0;j<defectFiles.size();j++){
                                 weightMatrix[i][j]=0;
                                 if( i != j) {
-                                    String defectA = defectFiles.get(i);
-                                    String defectB = defectFiles.get(j);
-                                   
+                                    String defectA = defectFiles.get(j);
                                     TreeContext srcA = null;
-                                    TreeContext dstB = null ;
-                                    List<Action> actB = null;
                         
                                     try{
-
-
                                         var fromCodeA = Files.readString(Paths.get(defectA));
                                         var fromSolutionA = new Solution(fromCodeA, "A_BAD" , "A_BAD", FAIL);
                                         srcA = generator.buildTreeContext(fromSolutionA);
-
-                                        var fromCode = Files.readString(Paths.get(defectB));
-                                        var toCode = Files.readString(Paths.get(defectB.replace(badFolderName,goodFolderName)));
-        
-                                        var fromSolution = new Solution(fromCode, "B_BAD", "B_BAD", FAIL);
-                                        var toSolution = new Solution(toCode, "B_GOOD", "B_GOOD", OK);
-        
-                                        TreeContext srcB=null;
-        
-                                        srcB = generator.buildTreeContext(fromSolution);
-                                        dstB = generator.buildTreeContext(toSolution);
-                                        
-                                        Matcher matcherAst = Matchers.getInstance().getMatcher(srcB.getRoot(), dstB.getRoot());
-                                        System.out.println("Compare trees");
-                                        try {
-                                            matcherAst.match();
-                                        } catch (NullPointerException e) {
-                                            System.out.println(e.getMessage());
-                                        }
-        
-                                        ActionGenerator actionGenerator = new ActionGenerator(srcB.getRoot(), dstB.getRoot(), matcherAst.getMappings());
-                                        try{
-                                            actionGenerator.generate();
-                                        } catch (Exception e){
-                                            System.out.println( e.getMessage());
-                                            e.printStackTrace();
-                                        }
-                                        
-                                        actB = actionGenerator.getActions();
-            
                                         fromSolutionA = null;
-                                        fromSolution = null;
-                                        toSolution = null;
-                
-                                                
+      
                                         if(srcA != null && dstB != null  && actB !=null ){
 
                                             if(  actB.size() >0) {
@@ -755,15 +759,54 @@ public class ApplicationLASE extends ApplicationMethods {
                             }
                         }
                     
-                      
-                        String matrixFile =     pathToMatrix.toString() + "\\matrix_" + clusterNum +".txt";
+                        // calculate tipical defect for cluster
+                        int[] baseSum = new int[defectFiles.size()];
+                        for(int i=0;i<defectFiles.size();i++){
+                            baseSum[i]=0;
+
+                            for(int j=0;j<defectFiles.size();j++){
+                                if(weightMatrix[i][j] > 1 )
+                                    baseSum[i]++;
+                                    
+                                //baseSum[i]+=weightMatrix[i][j];
+                            }
+                        }
+
+                        String matrixFile =     pathToMatrix.toString() + "\\matrix_" + clusterNum +".csv";
                         BufferedWriter writer = new BufferedWriter(new FileWriter(matrixFile));
 
-                        writer.write(cluster);
+                        writer.write("\"base\""  );
+                        for(int j=0;j<defectFiles.size();j++){
+                           
+                            for(String defect : defects){
+                                if(defectFiles.get(j).contains("\\"+defect+"\\")){
+                                    writer.write(",\"" +defect +"\"");
+                                    break;
+                                }
+                            }
+                        }
                         writer.write("\r\n" );
+
+
+                        int maxIdx=0;
                         for(int i=0;i<defectFiles.size();i++){
+                            if(baseSum[i] > baseSum[maxIdx])
+                                maxIdx = i;
+                        }
+                        for(int i=0;i<defectFiles.size();i++){
+                            
+                            
+                            for(String defect : defects){
+                                if(defectFiles.get(i).contains("\\"+defect+"\\")){
+                                    if(i == maxIdx)
+                                        writer.write("\"* " +defect +"\"");
+                                    else
+                                        writer.write("\"" +defect +"\"");
+                                    break;
+                                }
+                            }
                             for(int j=0;j<defectFiles.size();j++){
-                                writer.write("\t" + weightMatrix[i][j] );
+                                writer.write("," + weightMatrix[i][j] );
                             }
                             writer.write("\r\n" );
                         }
