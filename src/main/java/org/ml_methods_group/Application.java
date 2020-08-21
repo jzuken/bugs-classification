@@ -289,6 +289,23 @@ public class Application {
                 }
                 ApplicationMethods.prepare(Paths.get(args[1]), Paths.get(args[2]), Paths.get(args[3]));
                 break;
+            case "jaccardTreeWeight":
+                if (args.length != 5) {
+                    System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
+                            "    Path to MaxTree folder" + System.lineSeparator() +
+                            "    First Defect ID" + System.lineSeparator() +
+                            "    Second Defect ID" + System.lineSeparator() +
+                            "    LASE variant (conctrete,  abstract) " + System.lineSeparator());
+                    return;
+                }
+                ApplicationMethods.jaccardTreeWeight(
+                        Paths.get(args[1]),
+                        args[2],
+                        args[3],
+                        args[4]
+                );
+                break;
+
             default:
                 System.out.println("Undefined command!");
         }

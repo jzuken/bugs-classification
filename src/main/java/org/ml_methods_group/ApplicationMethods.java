@@ -374,5 +374,94 @@ public class ApplicationMethods {
         doClustering(storage, baseTime, changes, algorithm, distanceLimit, minClustersCount);
     }
 
+    public static void jaccardTreeWeight(Path pathToMaxTreeDir, String DefectA, String DefectB, String version) throws IOException {
 
+        try {
+//            get all the files in MaxTree directory
+            List<String> result = Files.walk(Paths.get(pathToMaxTreeDir.toString())).filter(Files::isRegularFile)
+                    .map(x -> x.toString()).collect(Collectors.toList());
+
+            String defectAPath = "";
+            String defectBPath = "";
+            String maxTreePath = "";
+
+            for (String fName : result) {
+//                System.out.println(fName);
+//                C:\Users\kWX910209\Documents\gumtree_csv\maxtree\ast\dst_DTS2016121309461_conctrete_link_egress.c
+//                C:\Users\kWX910209\Documents\gumtree_csv\maxtree\ast\maxTree_DTS2016120602239_to_DTS2016121309461.xml
+//                C:\Users\kWX910209\Documents\gumtree_csv\maxtree\ast\src_DTS2016120602239_conctrete_tnl-neigh-cache.c
+//                C:\Users\kWX910209\Documents\gumtree_csv\maxtree\ast\src_DTS2016121309461_conctrete_link_egress.c
+
+//                get filenames
+                String[] pathParts = fName.split("\\\\");
+                String filename = pathParts[pathParts.length - 1];
+                filename = filename.substring(0, filename.lastIndexOf('.'));
+                String[] filenameParts = filename.split("_");
+
+
+                if (filenameParts[0].equals("src")) {
+                    if (filenameParts[1].equals(DefectA)) {
+                        defectAPath = fName;
+                    } else if (filenameParts[1].equals(DefectB)) {
+                        defectBPath = fName;
+                    }
+
+                }
+//              should they be reversable?
+                if (filenameParts[0].equals("maxTree") && filenameParts[1].equals(DefectA) && filenameParts[3].equals(DefectB)) {
+                    maxTreePath = fName;
+                }
+            }
+
+
+//            Code with sets
+
+            Set<String> maxTreeSet = new HashSet();
+            Set<String> defectASet = new HashSet();
+            Set<String> defectBSet = new HashSet();
+
+            if (!defectAPath.equals("") && !defectBPath.equals("")) {
+                Scanner defectAInput = new Scanner(new File(defectAPath));
+                while (defectAInput.hasNextLine())
+                {
+                    defectASet.add(defectAInput.nextLine());
+                }
+                Scanner defectBInput = new Scanner(new File(defectBPath));
+                while (defectBInput.hasNextLine())
+                {
+                    defectBSet.add(defectBInput.nextLine());
+                }
+            }
+
+            if (!maxTreePath.equals("")) {
+                Scanner maxTreeInput = new Scanner(new File(maxTreePath));
+                while (maxTreeInput.hasNextLine())
+                {
+                    maxTreeSet.add(maxTreeInput.nextLine());
+                }
+
+            }
+
+            if (!maxTreeSet.isEmpty() && !defectASet.isEmpty() && !defectBSet.isEmpty()) {
+
+
+                Set<String> unionSet = new HashSet<>(defectASet);
+                unionSet.addAll(defectBSet);
+
+                int c = maxTreeSet.size() * 2;
+                int ab = unionSet.size();
+
+                System.out.println("---");
+                System.out.println((float) c / ab);
+            }
+
+
+
+        } catch (IOException e) {
+            System.out.println( e.getMessage());
+            e.printStackTrace();
+        }
+
+
+    }
 }
