@@ -179,6 +179,7 @@ public class testMatcher  extends Matcher {
         }
 
         boolean itemFound = false;
+        int forestSize=0;
         do{
             itemFound = false;
             int maxIdx=0;
@@ -190,11 +191,11 @@ public class testMatcher  extends Matcher {
 
             if(c[maxIdx] > 0){
                 itemFound =true;
-                System.out.println("longest matches: " + c[maxIdx] );
-                System.out.println("longest node id: " + srcSeq.get(maxIdx).getId() );
+                //System.out.println("longest matches: " + c[maxIdx] );
+                //System.out.println("longest node id: " + srcSeq.get(maxIdx).getId() );
             
                 ITree longestRoot = srcSeq.get(maxIdx);
-                System.out.println("longest subtree size before clean: " + longestRoot.getSize() );
+                //System.out.println("longest subtree size before clean: " + longestRoot.getSize() );
             
                 // надо убрать все  узлы, которые не входят в искомое дерево
                 longestRoot= removeUnmappedSrcNodes(longestRoot, dstDescendants);
@@ -202,14 +203,16 @@ public class testMatcher  extends Matcher {
                 longestRoot.setParent(null);
                 longestRoot.refresh();
                 
-                System.out.println("longest subtree size after clean: " + longestRoot.getSize() );
+                //System.out.println("longest subtree size after clean: " + longestRoot.getSize() );
+
 
                 forest.add(longestRoot.deepCopy());
 
                 c[maxIdx] =0;
-                
+
                 // try to clean child-count array 
                 List<ITree> dc =longestRoot.getDescendants();
+                forestSize+= (dc.size()+1);
 
                 for (int i = 0; i < srcSeq.size(); i++){
                     for(ITree d:dc){
@@ -222,6 +225,7 @@ public class testMatcher  extends Matcher {
             }
         }while(itemFound);
 
+        System.out.println("found: " + forest.size() +" trees, contains " + forestSize +" nodes" );
         return forest;
     }
 

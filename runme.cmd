@@ -19,5 +19,6 @@ rem java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.ja
 rem java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.jar make.maxtree  .\test\dataset  .\test\dataset\maxtree 50 70 concrete 
 rem java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.jar make.maxtree  .\test\dataset  .\test\dataset\maxtree 80 70 concrete 
 
-java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.jar matrix.maxtree  .\test\dataset .\test\dataset\cluster_code_jac.txt .\test\dataset\matrix concrete
- 
+rem java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.jar matrix.maxtree  .\test\dataset .\test\dataset\cluster_code_jac.txt .\test\dataset\matrix concrete
+
+java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.jar top10.maxtree  .\test\dataset .\test\dataset\list.txt .\test\dataset\top10 concrete 
