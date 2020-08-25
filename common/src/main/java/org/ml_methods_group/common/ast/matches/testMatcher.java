@@ -159,4 +159,72 @@ public class testMatcher  extends Matcher {
 
     }
 
+
+
+    public List<ITree> GetLongestForest(List<Action> actions){
+        List<ITree> forest = new ArrayList<ITree>();
+        List<ITree> srcSeq = TreeUtils.preOrder(src);
+        Set<ITree> dstDescendants = new HashSet<>(dst.getDescendants());
+        int[] c = new int[srcSeq.size() + 1];
+        
+
+        // считаем количество общих потомков для каждого узла
+        for (int i = 0; i < srcSeq.size(); i++){
+            c[i]=numberOfCommonChildren(srcSeq.get(i), dstDescendants);
+        }
+
+        for (int i = 0; i < srcSeq.size(); i++){
+            if(!NodeInActions( srcSeq.get(i), actions))
+                c[i]=0;
+        }
+
+        boolean itemFound = false;
+        do{
+            itemFound = false;
+            int maxIdx=0;
+
+            // находим узел с максимальным количеством совпадений
+            for (int i = 1; i < srcSeq.size(); i++){
+                if(c[maxIdx] <= c[i]) maxIdx= i;
+            }
+
+            if(c[maxIdx] > 0){
+                itemFound =true;
+                System.out.println("longest matches: " + c[maxIdx] );
+                System.out.println("longest node id: " + srcSeq.get(maxIdx).getId() );
+            
+                ITree longestRoot = srcSeq.get(maxIdx);
+                System.out.println("longest subtree size before clean: " + longestRoot.getSize() );
+            
+                // надо убрать все  узлы, которые не входят в искомое дерево
+                longestRoot= removeUnmappedSrcNodes(longestRoot, dstDescendants);
+
+                longestRoot.setParent(null);
+                longestRoot.refresh();
+                
+                System.out.println("longest subtree size after clean: " + longestRoot.getSize() );
+
+                forest.add(longestRoot.deepCopy());
+
+                c[maxIdx] =0;
+                
+                // try to clean child-count array 
+                List<ITree> dc =longestRoot.getDescendants();
+
+                for (int i = 0; i < srcSeq.size(); i++){
+                    for(ITree d:dc){
+                        if(d.getId() == srcSeq.get(i).getId()){
+                            c[i]=0;
+                            break;
+                        }
+                    }
+                }
+            }
+        }while(itemFound);
+
+        return forest;
+    }
+
+
+
 }

@@ -202,6 +202,26 @@ public class Application {
                 break;
 
 
+                case "make.maxforest":
+                if (args.length != 6 ) {
+                    System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
+                            "    Path to code dataset" + System.lineSeparator() +
+                            "    Path to store representation" + System.lineSeparator() +
+                            "    Id of defect to test (bad only file)" + System.lineSeparator() +
+                            "    Id of defect used as template (bad + good)" + System.lineSeparator() +
+                            "    LASE variant (conctrete,  abstract)" + System.lineSeparator() 
+                            );
+                    return;
+                }
+                ApplicationLASE.MakeMaxForest(
+                        Paths.get(args[1]),
+                        Paths.get(args[2]),
+                        args[3],
+                        args[4],
+                        args[5]
+                );
+                break;
+
                 case "matrix.maxtree":
                 if (args.length != 5 ) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
