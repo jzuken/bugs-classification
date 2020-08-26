@@ -1311,5 +1311,221 @@ public class ApplicationLASE extends ApplicationMethods {
     }
 
 
+    public static void lookLike(Path pathToDataset1, Path pathToListFile1, Path pathToDataset2, Path pathToListFile2,  Path pathToMatrix, String version) throws IOException {
+       
+        // check directory structure
+        File directory = new File(pathToMatrix.toString() );
+        if(!directory.exists()){
+            directory.mkdir();
+        }
+        
+        
+        // first dataset - test (bad files only)
+        List<String> defects1 = Files.readAllLines(pathToListFile1);
+        List<String> defectFiles1 = new ArrayList<String>();
+        
+        String badFolderName1 =  pathToDataset1.toString() + "\\bad";                          
+        // String goodFolderName1 =  pathToDataset1.toString() + "\\good";   
+
+        try  {
+
+            List<String> result1 = Files.walk(Paths.get(badFolderName1)).filter(Files::isRegularFile)
+            .map(x -> x.toString()).collect(Collectors.toList());
+
+    
+            // collect all files for defect to build matrix
+            for (String fName : result1) {
+                boolean useFile =false;
+                
+                for(String defect : defects1){
+                    
+                    if(fName.contains("\\"+defect+"\\")){
+                        useFile = true;
+                        break;
+                    }
+                }
+                if (useFile){
+                    defectFiles1.add(fName);
+                }
+            }
+
+            // second dataset - template ( bad + good files)
+            List<String> defects2 = Files.readAllLines(pathToListFile2);
+       
+            List<String> defectFiles2 = new ArrayList<String>();
+            
+            String badFolderName2 =  pathToDataset2.toString() + "\\bad";                          
+            String goodFolderName2 =  pathToDataset2.toString() + "\\good";   
+    
+            List<String> result2 = Files.walk(Paths.get(badFolderName2)).filter(Files::isRegularFile)
+            .map(x -> x.toString()).collect(Collectors.toList());
+    
+        
+                // collect all files for defect to build matrix
+                for (String fName : result2) {
+                    boolean useFile =false;
+                    
+                    for(String defect : defects2){
+                        
+                        if(fName.contains("\\"+defect+"\\")){
+                            useFile = true;
+                            break;
+                        }
+                    }
+                    if (useFile){
+                        defectFiles2.add(fName);
+                    }
+                }
+
+
+                   
+            // defect files is a collection of bad files
+            if(defectFiles1.size() >0 && defectFiles2.size() >0){
+                   
+                // collect common actions for cluster here
+                int[][] weightMatrix = new int[defectFiles2.size()][defectFiles1.size()];
+
+                ASTGenerator generator = null;
+        
+                if (version.toLowerCase().equals("abstract")) {
+                    generator = new CachedASTGenerator(  new NamesASTNormalizer() );
+                }else{
+                    generator = new CachedASTGenerator(  new BasicASTNormalizer() );
+                }
+
+
+                for(int i=0;i<defectFiles2.size();i++){
+
+                    // get template defects from second dataset
+                    String defectB = defectFiles2.get(i);
+                    TreeContext dstB = null ;
+                    List<Action> actB = null;
+                    try{
+                        var fromCode = Files.readString(Paths.get(defectB));
+                        var toCode = Files.readString(Paths.get(defectB.replace(badFolderName2,goodFolderName2)));
+                        if(fromCode.length() <= MAX_FILE_SIZE && toCode.length() <= MAX_FILE_SIZE ){
+
+                            var fromSolution = new Solution(fromCode, "B_BAD", "B_BAD", FAIL);
+                            var toSolution = new Solution(toCode, "B_GOOD", "B_GOOD", OK);
+
+                            TreeContext srcB=null;
+
+                            srcB = generator.buildTreeContext(fromSolution);
+                            dstB = generator.buildTreeContext(toSolution);
+                            
+                            Matcher matcherAst = Matchers.getInstance().getMatcher(srcB.getRoot(), dstB.getRoot());
+                            System.out.println("Compare trees");
+                            try {
+                                matcherAst.match();
+                            } catch (NullPointerException e) {
+                                System.out.println(e.getMessage());
+                            }
+
+                            ActionGenerator actionGenerator = new ActionGenerator(srcB.getRoot(), dstB.getRoot(), matcherAst.getMappings());
+                            try{
+                                actionGenerator.generate();
+                            } catch (Exception e){
+                                System.out.println( e.getMessage());
+                                e.printStackTrace();
+                            }
+                            
+                            actB = actionGenerator.getActions();
+
+                            fromSolution = null;
+                            toSolution = null;
+                        }
+                    }catch(Exception any){
+                        System.out.println( any.getMessage());
+                        any.printStackTrace();
+                    }
+
+                    // scan all dataset 1 for test with template item from dataset 2
+                    for(int j=0;j<defectFiles1.size();j++){
+                        weightMatrix[i][j]=0;
+                        if( i != j) {
+                            String defectA = defectFiles1.get(j);
+                            TreeContext srcA = null;
+                
+                            try{
+                                srcA = null;
+                                var fromCodeA = Files.readString(Paths.get(defectA));
+                                if(fromCodeA.length() <= MAX_FILE_SIZE){
+                                    var fromSolutionA = new Solution(fromCodeA, "A_BAD" , "A_BAD", FAIL);
+                                    srcA = generator.buildTreeContext(fromSolutionA);
+                                    fromSolutionA = null;
+                                }
+
+                                if(srcA != null && dstB != null  && actB !=null ){
+
+                                    if(  actB.size() >0) {
+                                        testMatcher matcher = new testMatcher(srcA.getRoot(), dstB.getRoot(),new MappingStore());
+                                                            
+                                        try {
+                                            matcher.match();
+                                        } catch (NullPointerException e) {
+                                            System.out.println(e.getMessage());
+                                        }
+                    
+                                        List<ITree> forest = matcher.GetLongestForest(actB);
+                                        for(ITree minSrc:forest){
+                                            weightMatrix[i][j] += minSrc.getSize();
+                                        }
+
+                                    }
+                                }
+                                
+
+        
+                            }catch(Exception any)
+                            {
+                                System.out.println( any.getMessage());
+                                any.printStackTrace();
+                            }
+
+                        }
+                    }
+                }
+                    
+
+                String matrixFile =     pathToMatrix.toString() + "\\looklike.csv";
+                BufferedWriter writer = new BufferedWriter(new FileWriter(matrixFile));
+
+                // first row - list of defects to test
+                writer.write("\"template to defect\"" );
+                for(int j=0;j<defectFiles1.size();j++){
+
+                    for(String defect : defects1){
+                        if(defectFiles1.get(j).contains("\\"+defect+"\\")){
+                            writer.write(",\"" +defect +"\"");
+                            break;
+                        }
+                    }
+                }
+                writer.write("\r\n" );
+                
+                // other rows one per template defect
+                for(int i=0;i<defectFiles2.size();i++){
+
+                    for(String defect : defects2){
+                        if(defectFiles2.get(i).contains("\\"+defect+"\\")){
+                            writer.write("\"" +defect +"\"");
+                            break;
+                        }
+                    }
+                    for(int j=0;j<defectFiles1.size();j++){
+                        writer.write("," + weightMatrix[i][j] );
+                    }
+                    writer.write("\r\n" );
+                }
+                writer.close();
+
+            }
+                 
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
 
 }

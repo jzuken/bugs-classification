@@ -259,6 +259,29 @@ public class Application {
                 );
                 break;
 
+
+                case "looklike":
+                if (args.length != 7 ) {
+                    System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
+                            "    Path to dataset with test data" + System.lineSeparator() +
+                            "    Path to file with list of defect to test" + System.lineSeparator() +
+                            "    Path to dataset with template defects" + System.lineSeparator() +
+                            "    Path to file with list of template defects" + System.lineSeparator() +
+                            "    Path to folder to store matrix" + System.lineSeparator() +
+                            "    LASE variant (conctrete,  abstract)" + System.lineSeparator() 
+                            );
+                    return;
+                }
+                ApplicationLASE.lookLike(
+                        Paths.get(args[1]),
+                        Paths.get(args[2]),
+                        Paths.get(args[3]),
+                        Paths.get(args[4]),
+                        Paths.get(args[5]),
+                        args[6]
+                );
+                break;
+
             case "parse":
                 if (args.length != 3) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
