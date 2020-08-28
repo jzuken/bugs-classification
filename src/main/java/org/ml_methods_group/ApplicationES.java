@@ -84,7 +84,9 @@ public class ApplicationES extends ApplicationMethods {
                 Boolean useFile = false;
                 for( String defect: defects) {
                     if(fName.contains(defect)){
-                        useFile = true;
+                        var f = new File(fName);
+                        if(f.length() <= MAX_FILE_SIZE)
+                            useFile = true;
                         break;
                     }
                 }
@@ -282,8 +284,11 @@ public class ApplicationES extends ApplicationMethods {
                 String defectId ="";
                 for( String defect: defects) {
                     if(fName.contains(defect)){
-                        useFile = true;
-                        defectId= defect;
+                        var f = new File(fName);
+                        if(f.length() <= MAX_FILE_SIZE){
+                            useFile = true;
+                            defectId= defect;
+                        }
                         break;
                     }
                 }
