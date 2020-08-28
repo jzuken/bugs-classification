@@ -1191,6 +1191,7 @@ public class ApplicationLASE extends ApplicationMethods {
 
                             // calculate for  file
                             for(int j=0;j<defectFiles.size();j++){
+                                System.out.println(">>>>" + i +" x " +j +"(" + defectFiles.size() +")");
                                 weightMatrix[i][j]=0;
                                 if( i != j) {
                                     String defectA = defectFiles.get(j);
@@ -1491,6 +1492,7 @@ public class ApplicationLASE extends ApplicationMethods {
 
                     // scan all dataset 1 for test with template item from dataset 2
                     for(int j=0;j<defectFiles1.size();j++){
+                        System.out.println(">>>>" + i +"(" + defectFiles2.size() +")"+" x " +j +"(" + defectFiles1.size() +")");
                         weightMatrix[i][j]=0;
                         if( i != j) {
                             String defectA = defectFiles1.get(j);
