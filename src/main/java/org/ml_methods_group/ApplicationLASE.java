@@ -1189,7 +1189,7 @@ public class ApplicationLASE extends ApplicationMethods {
                                 any.printStackTrace();
                             }
 
-
+                            // calculate for  file
                             for(int j=0;j<defectFiles.size();j++){
                                 weightMatrix[i][j]=0;
                                 if( i != j) {
@@ -1237,6 +1237,56 @@ public class ApplicationLASE extends ApplicationMethods {
 
                                 }
                             }
+
+                            // write csv result for given (each) defectB
+                            {
+                                
+                                int Size=0,Cnt=0;
+                                String calcDefect ="";
+                                for(int j=0;j<defectFiles.size();j++){
+                                    if(weightMatrix[i][j] > 1 )
+                                        Cnt++;
+                                        Size+=weightMatrix[i][j];
+                                }
+
+                                for(String defect : defects){
+                                    if(defectFiles.get(i).contains("\\"+defect+"\\")){
+                                       
+                                        calcDefect =defect;
+                                        break;
+                                    }
+                                }
+
+                                String matrixFile =     pathToMatrix.toString() + "\\";
+                                matrixFile+= Cnt +"_"+ Size + "_(" +calcDefect  +").csv";
+                                BufferedWriter writer = new BufferedWriter(new FileWriter(matrixFile));
+                                writer.write("\"" + calcDefect +"\"," + Cnt +","+ Size  +"\r\n");
+                                {
+        
+                                    writer.write("\"base\"");
+                                    for(int j=0;j<defectFiles.size();j++){
+                                        for(String defect : defects){
+                                            if(defectFiles.get(j).contains("\\"+defect+"\\")){
+                                                writer.write(",\"" +defect +"\"");
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    writer.write("\r\n\"" + calcDefect +"\"");
+                                    for(int j=0;j<defectFiles.size();j++){
+                                        writer.write("," + weightMatrix[i][j] );
+                                    }
+                                    writer.write("\r\n" );
+                                }
+                                writer.close();
+
+                            }
+
+
+
+
+
+
                         }
                     
                         
@@ -1484,6 +1534,53 @@ public class ApplicationLASE extends ApplicationMethods {
 
                         }
                     }
+
+
+                // write csv result for given (each) defectB
+                {
+                                                
+                    int Size=0,Cnt=0;
+                    String calcDefect ="";
+                    for(int j=0;j<defectFiles1.size();j++){
+                        if(weightMatrix[i][j] > 1 )
+                            Cnt++;
+                            Size+=weightMatrix[i][j];
+                    }
+
+                    for(String defect : defects1){
+                        if(defectFiles1.get(i).contains("\\"+defect+"\\")){
+                        
+                            calcDefect =defect;
+                            break;
+                        }
+                    }
+
+                    String matrixFile =     pathToMatrix.toString() + "\\";
+                    matrixFile+= Cnt +"_"+ Size + "_(" +calcDefect  +").csv";
+                    BufferedWriter writer = new BufferedWriter(new FileWriter(matrixFile));
+                    writer.write("\"" + calcDefect +"\"," + Cnt +","+ Size  +"\r\n");
+                    {
+
+                        writer.write("\"base\"");
+                        for(int j=0;j<defectFiles1.size();j++){
+                            for(String defect : defects1){
+                                if(defectFiles1.get(j).contains("\\"+defect+"\\")){
+                                    writer.write(",\"" +defect +"\"");
+                                    break;
+                                }
+                            }
+                        }
+                        writer.write("\r\n\"" + calcDefect +"\"");
+                        for(int j=0;j<defectFiles1.size();j++){
+                            writer.write("," + weightMatrix[i][j] );
+                        }
+                        writer.write("\r\n" );
+                    }
+                    writer.close();
+
+                }
+
+
                 }
                     
 
