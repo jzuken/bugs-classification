@@ -124,7 +124,9 @@ public class ApplicationLASE extends ApplicationMethods {
                 Boolean useFile =false;
                 for( String defect: defects) {
                     if(fName.contains(defect)){
-                        useFile = true;
+                        var f = new File(fName);
+                        if(f.length() <= MAX_FILE_SIZE)
+                            useFile = true;
                         break;
                     }
                 }
@@ -339,11 +341,14 @@ public class ApplicationLASE extends ApplicationMethods {
                 Boolean useFile =false;
                 for( String defect: defects) {
                     if(fName.contains(defect)){
-                        useFile = true;
-                        if(defect == DefectA) 
-                            isB=false;
-                        else
-                            isB=true;
+                        var f = new File(fName);
+                        if(f.length() <= MAX_FILE_SIZE){
+                            useFile = true;
+                            if(defect == DefectA) 
+                                isB=false;
+                            else
+                                isB=true;
+                        }
                         break;
                     }
                 }
@@ -545,7 +550,9 @@ public class ApplicationLASE extends ApplicationMethods {
                         for(String defect : defects){
                            
                             if(fName.contains(defect+"_"+version)){
-                                useFile = true;
+                                var f = new File(fName);
+                                if(f.length() <= MAX_FILE_SIZE)
+                                    useFile = true;
                                 break;
                             }
                         }
@@ -655,7 +662,9 @@ public class ApplicationLASE extends ApplicationMethods {
                         for(String defect : defects){
                            
                             if(fName.contains("\\"+defect+"\\")){
-                                useFile = true;
+                                var f = new File(fName);
+                                if(f.length() <= MAX_FILE_SIZE)
+                                    useFile = true;
                                 break;
                             }
                         }
@@ -900,11 +909,14 @@ public class ApplicationLASE extends ApplicationMethods {
                 Boolean useFile =false;
                 for( String defect: defects) {
                     if(fName.contains(defect)){
-                        useFile = true;
-                        if(defect == DefectA) 
-                            isB=false;
-                        else
-                            isB=true;
+                        var f = new File(fName);
+                        if(f.length() <= MAX_FILE_SIZE){
+                            useFile = true;
+                            if(defect == DefectA) 
+                                isB=false;
+                            else
+                                isB=true;
+                        }
                         break;
                     }
                 }
@@ -1120,8 +1132,8 @@ public class ApplicationLASE extends ApplicationMethods {
                 for(String defect : defects){
                     
                     if(fName.contains("\\"+defect+"\\")){
-                        var Code = Files.readString(Paths.get(fName));
-                        if(Code.length() <= MAX_FILE_SIZE)
+                        var f = new File(fName);
+                        if(f.length() <= MAX_FILE_SIZE)
                             useFile = true;
                         break;
                     }
@@ -1393,8 +1405,8 @@ public class ApplicationLASE extends ApplicationMethods {
                 for(String defect : defects1){
                     
                     if(fName.contains("\\"+defect+"\\")){
-                        var Code = Files.readString(Paths.get(fName));
-                        if(Code.length() <= MAX_FILE_SIZE)
+                        var f = new File(fName);
+                        if(f.length() <= MAX_FILE_SIZE)
                             useFile = true;
                         break;
                     }
@@ -1423,8 +1435,8 @@ public class ApplicationLASE extends ApplicationMethods {
                     for(String defect : defects2){
                         
                         if(fName.contains("\\"+defect+"\\")){
-                            var Code = Files.readString(Paths.get(fName));
-                            if(Code.length() <= MAX_FILE_SIZE)
+                            var f = new File(fName);
+                            if(f.length() <= MAX_FILE_SIZE)
                                 useFile = true;
                             break;
                         }
