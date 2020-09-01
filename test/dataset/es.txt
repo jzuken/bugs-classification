@@ -1,141 +1,226 @@
-INS C_OPERATOR ( to C_EXPR
-INS C_OPERATOR ( to C_EXPR
-INS C_OPERATOR ( to C_EXPR
-INS C_NAME CE_L12CF_EG to C_EXPR
-INS C_OPERATOR == to C_EXPR
-MOV C_CALL to C_EXPR
-INS C_OPERATOR ) to C_EXPR
-INS C_OPERATOR || to C_EXPR
-INS C_OPERATOR ( to C_EXPR
-INS C_NAME CE_L04CF_EA to C_EXPR
-INS C_OPERATOR == to C_EXPR
-MOV C_CALL to C_EXPR
-INS C_OPERATOR ) to C_EXPR
-INS C_OPERATOR || to C_EXPR
-INS C_OPERATOR ( to C_EXPR
-INS C_NAME CE_L04CF_EF to C_EXPR
-INS C_OPERATOR == to C_EXPR
-MOV C_CALL to C_EXPR
-INS C_OPERATOR ) to C_EXPR
-INS C_OPERATOR ) to C_EXPR
-INS C_OPERATOR && to C_EXPR
-INS C_OPERATOR ( to C_EXPR
-INS C_OPERATOR ) to C_EXPR
-INS C_OPERATOR ) to C_EXPR
-INS C_OPERATOR || to C_EXPR
-INS C_OPERATOR ( to C_EXPR
-INS C_OPERATOR ( to C_EXPR
-INS C_NAME CE_L24LQ_EC1 to C_EXPR
-INS C_OPERATOR == to C_EXPR
-INS C_CALL to C_EXPR
-INS C_OPERATOR ) to C_EXPR
-INS C_OPERATOR || to C_EXPR
-INS C_OPERATOR ( to C_EXPR
-INS C_NAME CE_L36LQ_EG to C_EXPR
-INS C_OPERATOR == to C_EXPR
-INS C_CALL to C_EXPR
-INS C_OPERATOR ) to C_EXPR
-INS C_OPERATOR ) to C_EXPR
-INS C_OPERATOR ( to C_EXPR
-INS C_OPERATOR ( to C_EXPR
-INS C_OPERATOR ( to C_EXPR
-INS C_NAME CE_L12CF_EG to C_EXPR
-INS C_OPERATOR == to C_EXPR
-MOV C_CALL to C_EXPR
-INS C_OPERATOR ) to C_EXPR
-INS C_OPERATOR || to C_EXPR
-INS C_OPERATOR ( to C_EXPR
-INS C_NAME CE_L04CF_EA to C_EXPR
-INS C_OPERATOR == to C_EXPR
-MOV C_CALL to C_EXPR
-INS C_OPERATOR ) to C_EXPR
-INS C_OPERATOR || to C_EXPR
-INS C_OPERATOR ( to C_EXPR
-INS C_NAME CE_L04CF_EF to C_EXPR
-INS C_OPERATOR == to C_EXPR
-MOV C_CALL to C_EXPR
-INS C_OPERATOR ) to C_EXPR
-INS C_OPERATOR ) to C_EXPR
-INS C_OPERATOR && to C_EXPR
-INS C_OPERATOR ( to C_EXPR
-INS C_OPERATOR ) to C_EXPR
-INS C_OPERATOR ) to C_EXPR
-INS C_OPERATOR || to C_EXPR
-INS C_OPERATOR ( to C_EXPR
-INS C_OPERATOR ( to C_EXPR
-INS C_NAME CE_L24LQ_EC1 to C_EXPR
-INS C_OPERATOR == to C_EXPR
-INS C_CALL to C_EXPR
-INS C_OPERATOR ) to C_EXPR
-INS C_OPERATOR || to C_EXPR
-INS C_OPERATOR ( to C_EXPR
-INS C_NAME CE_L36LQ_EG to C_EXPR
-INS C_OPERATOR == to C_EXPR
-INS C_CALL to C_EXPR
-INS C_OPERATOR ) to C_EXPR
-INS C_OPERATOR ) to C_EXPR
-INS C_NAME FE_DUNE_GET_BOARD_TYPE to C_CALL
-INS C_ARGUMENT_LIST to C_CALL
-INS C_NAME FE_DUNE_GET_BOARD_TYPE to C_CALL
-INS C_ARGUMENT_LIST to C_CALL
-INS C_NAME FE_DUNE_GET_BOARD_TYPE to C_CALL
-INS C_ARGUMENT_LIST to C_CALL
-INS C_NAME FE_DUNE_GET_BOARD_TYPE to C_CALL
-INS C_ARGUMENT_LIST to C_CALL
-DEL C_OPERATOR ( to C_EXPR
-DEL C_OPERATOR ( to C_EXPR
-DEL C_NAME CE_L12CF_EG to C_EXPR
-DEL C_OPERATOR == to C_EXPR
-DEL C_OPERATOR ) to C_EXPR
-DEL C_OPERATOR || to C_EXPR
-DEL C_OPERATOR ( to C_EXPR
-DEL C_NAME CE_L04CF_EA to C_EXPR
-DEL C_OPERATOR == to C_EXPR
-DEL C_OPERATOR ) to C_EXPR
-DEL C_OPERATOR || to C_EXPR
-DEL C_OPERATOR ( to C_EXPR
-DEL C_NAME CE_L04CF_EF to C_EXPR
-DEL C_OPERATOR == to C_EXPR
-DEL C_OPERATOR ) to C_EXPR
-DEL C_OPERATOR ) to C_EXPR
-DEL C_OPERATOR && to C_EXPR
-DEL C_OPERATOR ( to C_EXPR
-DEL C_OPERATOR ) to C_EXPR
-DEL C_OPERATOR ( to C_EXPR
-DEL C_OPERATOR ( to C_EXPR
-DEL C_NAME CE_L12CF_EG to C_EXPR
-DEL C_OPERATOR == to C_EXPR
-DEL C_OPERATOR ) to C_EXPR
-DEL C_OPERATOR || to C_EXPR
-DEL C_OPERATOR ( to C_EXPR
-DEL C_NAME CE_L04CF_EA to C_EXPR
-DEL C_OPERATOR == to C_EXPR
-DEL C_OPERATOR ) to C_EXPR
-DEL C_OPERATOR || to C_EXPR
-DEL C_OPERATOR ( to C_EXPR
-DEL C_NAME CE_L04CF_EF to C_EXPR
-DEL C_OPERATOR == to C_EXPR
-DEL C_OPERATOR ) to C_EXPR
-DEL C_OPERATOR ) to C_EXPR
-DEL C_OPERATOR && to C_EXPR
-DEL C_OPERATOR ( to C_EXPR
-DEL C_OPERATOR ) to C_EXPR
-
-
-------------------------------
-"base","#012807124","#110803632","#101600478","#022803410","#041409098","#053003205","#070400737","#072006775","#120306215","#120310001","#123006048","#070703751","#100801173","#120109232","#061908402"
-"#012807124",0,176,7,0,5,7,3,0,5,5,0,7,0,60,176
-"#110803632",441,0,6,0,16,9,13,0,35,34,0,8,0,1,1
-"#101600478",1,1,0,0,8,54,20,0,12,12,0,18,0,1,1
-"#022803410",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-"#041409098",1,1,62,0,0,21,15,0,214,196,0,108,0,1,1
-"#053003205",1,1,33,0,114,0,652,0,135,328,0,29,0,1,1
-"#070400737",3,3,11,0,15,34,0,0,12,12,0,20,0,3,3
-"#072006775",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-"#120306215",213,1,29,0,25,19,380,0,0,839,0,14,0,1,1
-"#120310001",213,1,21,0,25,19,81,0,839,0,0,14,0,1,1
-"#123006048",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-"#070703751",1,1,18,0,59,27,44,0,69,39,0,0,0,1,1
-"#100801173",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-"#120109232",60,56,6,0,7,11,20,0,4,4,0,7,0,0,56
-"#061908402",1,1,23,0,6,28,286,0,201,25,0,28,0,1,0
+--- src/osal/core/osal_notify.c	Fri Feb 28 16:58:40 2020
++++ src/osal/core/osal_notify.c	Fri Feb 28 16:58:40 2020
+@@ -109,3 +109,3 @@
+ 
+-
++    rte_rwlock_init(&notify->ntf_lock);
+ 
+@@ -147,6 +147,6 @@
+       */
+-
++    rte_rwlock_read_lock(&notify->ntf_lock);
+     if (rte_atomic32_cmpset(&notify->state, NOTIFY_WAIT, NOTIFY_RUN)) {
+         ret = (notify_info->triger)(notifyid);
+-
++        rte_rwlock_read_unlock(&notify->ntf_lock);
+         if (osal_unlikely(OSAL_OK != ret)) {
+@@ -155,4 +155,4 @@
+         }
+-
+-
++    } else {
++        rte_rwlock_read_unlock(&notify->ntf_lock);
+     }
+@@ -170,9 +170,9 @@
+       */
+-
++    rte_rwlock_write_lock(&notify->ntf_lock);
+     if (rte_atomic32_cmpset(&notify->state, NOTIFY_RUN, NOTIFY_WAIT)) {
+         sched_work_deactive(notify->lcoreid,notify->work);
+-
++        rte_rwlock_write_unlock(&notify->ntf_lock);
+         return OSAL_OK;
+-
+-
++    } else {
++        rte_rwlock_write_unlock(&notify->ntf_lock);
+     }
+--- src/cap.c	Fri Feb 28 17:01:23 2020
++++ src/cap.c	Fri Feb 28 17:01:23 2020
+@@ -114,5 +114,5 @@
+         goto EXIT;
++    
++
+ 
+-    if (0 != fwd_init())
+-        goto EXIT;
+ 
+@@ -123,4 +123,4 @@
+ 
+-    /*start run after startup*/
+-    (void)lcore_start();
++
++
+ 
+@@ -130,9 +130,9 @@
+         goto EXIT;
++    
++    if (0 != fwd_init())
++        goto EXIT;
+ 
+ 
+-
+-
+-
+-
+-
++    /*start run after startup*/
++    (void)lcore_start();
+ 
+--- src/lib/tnl-neigh-cache.c	Fri Feb 28 16:58:40 2020
++++ src/lib/tnl-neigh-cache.c	Fri Feb 28 16:58:40 2020
+@@ -134,14 +134,14 @@
+     cmap_insert(&table, &neigh->cmap_node, tnl_neigh_hash(&neigh->ip));
+-#ifdef OVS_HUAWEI_TAG
+-    /* NO.OVS-VSWITCHD-PORT-002,  trigger revalidate refresh*/
+-    struct in_addr in4;
+-    struct in6_addr in6;
+-    
+-    (void)netdev_get_in4_by_name(neigh->br_name, &in4);
+-    in6 = in6_addr_mapped_ipv4(in4.s_addr);
+-    
+-    if (ipv6_addr_equals(&neigh->ip, &in6)) {
+-        seq_change(tnl_conf_seq);
+-    }
+-#endif
++
++
++
++
++
++
++
++
++
++    seq_change(tnl_conf_seq);
++
++
+     ovs_mutex_unlock(&mutex);
+--- src/lib/tnl-neigh-cache.c	Fri Feb 28 17:01:33 2020
++++ src/lib/tnl-neigh-cache.c	Fri Feb 28 17:01:33 2020
+@@ -134,3 +134,3 @@
+     cmap_insert(&table, &neigh->cmap_node, tnl_neigh_hash(&neigh->ip));
+-    seq_change(tnl_conf_seq);
++
+     ovs_mutex_unlock(&mutex);
+--- src/fwd/link/link_egress.c	Fri Feb 28 17:03:02 2020
++++ src/fwd/link/link_egress.c	Fri Feb 28 17:03:02 2020
+@@ -42,4 +42,4 @@
+         || (osal_likely(NULL != infwdif ) && osal_likely(infwdif->link_egr_svc.svcdata.databits.isecuregroup)))
+-    {
+-        LOG_INFO("infwdif:%d, enfwdif:%d.\n",infwdif->if_index,outfwdif->if_index);        
++    {    
++
+         ret = proto_sg_pro(pkt, infwdif, outfwdif);
+--- src/lib/dpif-cap.c	Fri Feb 28 17:00:00 2020
++++ src/lib/dpif-cap.c	Fri Feb 28 17:00:00 2020
+@@ -116,3 +116,3 @@
+ void register_set_stats_timer(set_stats_timer_hook_func func);
+-
++#define DEFAULT_MTU 1500
+ #endif //OVS_HUAWEI_TAG
+@@ -1189,3 +1189,3 @@
+     else if((!strcmp(type,"dpdk")) || (!strcmp(type,"dpdkvhostuser"))){
+-        data.mtu = 1500;
++        data.mtu = DEFAULT_MTU;
+     }
+@@ -2244,8 +2244,8 @@
+ 
+-		//Added by l00370678 2016-12-02 Desc: DTS2016120110078 call the registered function
+-		#ifdef OVS_HUAWEI_TAG
+-		if(set_stats_timer)
+-		{
+-			set_stats_timer();
+-		}
++	//Added by l00370678 2016-12-02 Desc: DTS2016120110078 call the registered function
++	#ifdef OVS_HUAWEI_TAG
++	if(set_stats_timer)
++	{
++	    set_stats_timer();
++	}
+ 
+@@ -2253,5 +2253,5 @@
+         set_clear_stats_timer(time_msec());
+-        VLOG_INFO("%s:%d:%s clear stats call set_clear_stats_timer",__FILE__,__LINE__,__FUNCTION__);
+-		#endif
+-		//End
++
++	#endif
++	//End
+ 
+--- bcm/sdk_dune/src/soc/dpp/ARAD/ARAD_PP/arad_pp_general.c	Fri Feb 28 15:58:22 2020
++++ bcm/sdk_dune/src/soc/dpp/ARAD/ARAD_PP/arad_pp_general.c	Fri Feb 28 15:58:22 2020
+@@ -1015,11 +1015,11 @@
+   /* 18 encoding is used toward IRE, use 18 encoding only for debug for IRE dest */
++#ifdef SDK_EXCLUDE_TAG
++/*Modify by */
++  if (dest_buffer == ARAD_PP_ENCODE_DEST_PREFIX_VALUE_19_DROP || ((dest_buffer == ARAD_PP_ENCODE_DEST_PREFIX_VALUE_18_DROP) && (!SOC_IS_JERICHO(unit))))
++  {
+ 
+-
+-
+-
+-
+-
++#else
+   if (dest_buffer == ARAD_PP_ENCODE_DEST_PREFIX_VALUE_19_DROP || dest_buffer == ARAD_PP_ENCODE_DEST_PREFIX_VALUE_18_DROP)
+   {
+-
++#endif
+     *decision_type = SOC_PPC_FRWRD_DECISION_TYPE_DROP;
+--- bcm/sdk_xgs/src/soc/esw/trident3/flexport/trident3_ep_flexport.c	Fri Feb 28 16:04:37 2020
++++ bcm/sdk_xgs/src/soc/esw/trident3/flexport/trident3_ep_flexport.c	Fri Feb 28 16:04:37 2020
+@@ -884,3 +884,3 @@
+                           physical_port, entry));
+-		/* coverity[callee_ptr_arith : FALSE] */
++        /* coverity[callee_ptr_arith : FALSE] */
+         soc_mem_field_get(unit, mem, entry, LEVELf, &util);
+@@ -888,9 +888,9 @@
+ 
+-		/*Needed to avoid infinite loop while performing slam read in DV*/
+-		sal_usleep(10);
+-
+-
+-
+-
+-
++        /*Needed to avoid infinite loop while performing slam read in DV*/
++        sal_usleep(10);
++        
++/*Begin: modify by  */
++#ifdef SDK_EXCLUDE_TAG
++        iter++;
++#endif
+     }
+--- source/fe/soc_np/adaf.c	Fri Feb 28 16:24:51 2020
++++ source/fe/soc_np/adaf.c	Fri Feb 28 16:24:51 2020
+@@ -66,3 +66,3 @@
+         ulOpenResult->ulOpenResult[ulIndex] = 1;  
+-
++        FE_NP_SET_ADAF_LINK_OPENED(ulUnit, ulOpenResult->ulLink[ulIndex],0);
+     }  
+@@ -104,3 +104,3 @@
+     }
+-    FE_ModuleDiagLogPrint( FE_DIAG_LOG_TYPE_INFO, "[adaf]open serdes tx/rx, unit=%d,tx/rx:%, link=%s\n\t",ulUnit,ulOpenResult->ulTxRx,ucLinkArray);   
++    FE_LOG_INFO(FE_FMEA, "[adaf]open serdes tx/rx, unit=%d,tx/rx:%d, link=%s\n\r",ulUnit,ulOpenResult->ulTxRx,ucLinkArray);
+ 
+@@ -166,8 +166,8 @@
+             }
+-
+-            
+-            sleep(2); /**/
++        }
+             
+-
+-
++        sleep(1); /**/
++        
++        for(ulIndex = 0; ulIndex &lt; ulOpenResult->ulArraySize; ulIndex++)
++        {
+             stKey.chip_id = ulUnit;
+@@ -187,3 +187,3 @@
+     }
+-
++    FE_LOG_INFO(FE_FMEA, "[adaf]open serdes tx/rx end, unit=%d,\n\r",ulUnit);
+ #endif
+
