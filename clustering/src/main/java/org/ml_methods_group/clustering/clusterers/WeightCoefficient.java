@@ -12,9 +12,9 @@ import org.ml_methods_group.common.ast.changes.Changes;
 import org.ml_methods_group.common.ast.generation.ASTGenerator;
 import org.ml_methods_group.common.ast.generation.CachedASTGenerator;
 import org.ml_methods_group.common.ast.matches.testMatcher;
-import org.ml_methods_group.common.ast.normalization.BasicASTNormalizer;
 import org.ml_methods_group.common.ast.normalization.NamesASTNormalizer;
 
+import java.util.Hashtable;
 import java.util.List;
 
 import static org.ml_methods_group.common.Solution.Verdict.FAIL;
@@ -25,9 +25,14 @@ public class WeightCoefficient {
     Changes defectA;
     Changes defectB;
 
+    static Hashtable<String, TreeContext> contexts;
+    static Hashtable<String, List<Action>> actionsTable;
+
     public WeightCoefficient(Changes defectA, Changes defectB) {
         this.defectA = defectA;
         this.defectB = defectB;
+        if (contexts == null) contexts = new Hashtable<>();
+        if (actionsTable == null) actionsTable = new Hashtable<>();
     }
 
     public double calculate() {
@@ -43,35 +48,64 @@ public class WeightCoefficient {
 
         var toSolution = new Solution(fixACode, defectAID, defectAID + "_" + OK.ordinal(), OK);
 
-        ASTGenerator generator = new CachedASTGenerator(  new NamesASTNormalizer() ); // abstract
+        ASTGenerator generator = new CachedASTGenerator(new NamesASTNormalizer()); // abstract
 //        ASTGenerator generator = new CachedASTGenerator( new BasicASTNormalizer() ); // conctrete
 
-        TreeContext srcA = generator.buildTreeContext(fromSolutionA);
-        TreeContext srcB = generator.buildTreeContext(fromSolutionB);
-        TreeContext dstB = generator.buildTreeContext(toSolution);
+        boolean containsA = contexts.contains(fromSolutionA.getId());
+        TreeContext srcA = containsA
+                ? contexts.get(fromSolutionA.getId())
+                : generator.buildTreeContext(fromSolutionA);
+        if (!containsA) contexts.put(fromSolutionA.getId(), srcA);
+
+        boolean containsB = contexts.contains(fromSolutionB.getId());
+        TreeContext srcB = containsB
+                ? contexts.get(fromSolutionB.getId())
+                : generator.buildTreeContext(fromSolutionB);
+        if (!containsB) contexts.put(fromSolutionB.getId(), srcB);
+
+        boolean containsС = contexts.contains(toSolution.getId());
+        TreeContext dstB = containsС
+                ? contexts.get(toSolution.getId())
+                : generator.buildTreeContext(toSolution);
+        if (!containsС) contexts.put(toSolution.getId(), dstB);
 
         TreeContext mSrc = new TreeContext();
 
-        Matcher matcherAst = Matchers.getInstance().getMatcher(srcA.getRoot(), dstB.getRoot());
-        try {
-            matcherAst.match();
-        } catch (NullPointerException e) {
-            System.out.println(e.getMessage());
+        final List<Action> actions;
+        String target = fromSolutionA.getId() + "__" + toSolution.getId();
+        if (actionsTable.contains(target)) {
+            actions = actionsTable.get(target);
+        } else {
+
+            Matcher matcherAst = Matchers.getInstance().getMatcher(srcA.getRoot(), dstB.getRoot());
+            try {
+                matcherAst.match();
+            } catch (NullPointerException e) {
+                System.out.println(e.getMessage());
+            }
+
+            ActionGenerator actionGenerator = new ActionGenerator(srcA.getRoot(), dstB.getRoot(), matcherAst.getMappings());
+            try {
+                actionGenerator.generate();
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+                e.printStackTrace();
+            }
+
+            actions = actionGenerator.getActions();
+            actionsTable.put(target, actions);
         }
 
-        ActionGenerator actionGenerator = new ActionGenerator(srcA.getRoot(), dstB.getRoot(), matcherAst.getMappings());
-        try{
-            actionGenerator.generate();
-        } catch (Exception e){
-            System.out.println( e.getMessage());
-            e.printStackTrace();
-        }
+        // uncomment if memory becomes an issue
+        // if (actionsTable.size() > 1000) {
+        //     actionsTable.clear();
+        // }
+        // if (contexts.size() > 2000) {
+        //     contexts.clear();
+        // }
 
-
-        final List<Action> actions = actionGenerator.getActions();
-
-        if(srcA != null && dstB != null  && actions !=null ){
-            if(  actions.size() >0) {
+        if (srcA != null && dstB != null && actions != null) {
+            if (actions.size() > 0) {
                 testMatcher matcher = new testMatcher(srcA.getRoot(), dstB.getRoot(), new MappingStore());
 
                 try {
@@ -95,16 +129,12 @@ public class WeightCoefficient {
                 double result = 0;
                 int srcASize = srcA.getRoot().getSize();
                 int srcBSize = srcB.getRoot().getSize();
-                int dstBSize = dstB.getRoot().getSize();
+                // int dstBSize = dstB.getRoot().getSize();
 
                 int mSrcSize = mSrc.getRoot().getSize();
 
-                result = (double)(mSrcSize * 2) / (srcASize + srcBSize);
+                result = (double) (mSrcSize * 2) / (srcASize + srcBSize);
 
-                mSrc = new TreeContext();
-                srcA = new TreeContext();
-                srcB = new TreeContext();
-                dstB = new TreeContext();
                 return result;
             } catch (NullPointerException e) {
                 System.out.println(e.getMessage());
