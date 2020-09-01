@@ -1,9 +1,7 @@
 package org.ml_methods_group.clustering.clusterers;
 
-import org.ml_methods_group.common.Clusterer;
-import org.ml_methods_group.common.Clusters;
-import org.ml_methods_group.common.Cluster;
-import org.ml_methods_group.common.DistanceFunction;
+import org.ml_methods_group.common.*;
+import org.ml_methods_group.common.ast.changes.Changes;
 import org.ml_methods_group.common.parallel.ParallelContext;
 import org.ml_methods_group.common.parallel.ParallelUtils;
 
@@ -47,11 +45,23 @@ public class HAC<T> implements Clusterer<T> {
 
     private List<Triple> findTriples(Community community, List<Triple> accumulator) {
         final T representative = community.entities.get(0);
+
         for (Community another : communities) {
             if (another == community) {
                 break;
             }
             final double distance = metric.distance(representative, another.entities.get(0), distanceLimit);
+
+//            calculate new weight coefficient
+            Wrapper anotherWrapper = (Wrapper) another.entities.get(0);
+            Changes anotherChanges = (Changes) anotherWrapper.getMeta();
+
+            Wrapper communityWrapper = (Wrapper) community.entities.get(0);
+            Changes communityChanges = (Changes) communityWrapper.getMeta();
+
+            double c = new WeightCoefficient(anotherChanges, communityChanges).calculate();
+            double newDistance = distance * c;
+
             if (distance < distanceLimit) {
                 accumulator.add(new Triple(distance, community, another));
             }
@@ -63,6 +73,9 @@ public class HAC<T> implements Clusterer<T> {
     public Clusters<T> buildClusters(List<T> values) {
         init(values);
         while (!heap.isEmpty() && communities.size() > minClustersCount) {
+//            this.counter++;
+//            System.out.println("==========================================");
+//            System.out.println("COUNTER: " + this.counter);
             final Triple minTriple = heap.first();
             invalidateTriple(minTriple);
             final Community first = minTriple.first;
