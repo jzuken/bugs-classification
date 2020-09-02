@@ -1,5 +1,11 @@
 package org.ml_methods_group.common.ast.matches;
 
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+// import org.apache.commons.lang.StringUtils;
+
 import org.ml_methods_group.common.ast.NodeType;
 
 import java.util.ArrayList;
@@ -19,7 +25,7 @@ public final class testStringAlgoritm {
         if(A.hasSameType(B)) return true;
         if(A.getType() ==-1 && B.getType()==-1) return true;
         if(A.getType() ==-1 || B.getType()==-1) return false;
-        
+        /*
         NodeType tA = NodeType.valueOf(A.getType());
         NodeType tB = NodeType.valueOf(A.getType());
         if(
@@ -56,16 +62,27 @@ public final class testStringAlgoritm {
             (tB == NodeType.C_TYPE || tB == NodeType.C_STRUCT_DECL ||  tB == NodeType.C_UNION  )
         )
             return true; 
-
+*/
         return false;
     }
     
     public static boolean isEql(ITree a, ITree b){
         if(isSimilarType(a,b)){
-            if(a.hasLabel() && b.hasLabel()) 
-               return true;
             if(!a.hasLabel() && !b.hasLabel()) 
                 return true;
+            if(a.hasLabel() && b.hasLabel()) {
+                return true;
+                /*
+                if (a.getLabel().toLowerCase().contains(b.getLabel().toLowerCase()))
+                    return true;
+                if (b.getLabel().toLowerCase().contains(a.getLabel().toLowerCase()))
+                    return true;
+                if(longestSubString(a.getLabel().toLowerCase(),b.getLabel().toLowerCase())>3)
+                    return true;
+
+                     int distance = StringUtils.getLevenshteinDistance(a.getLabel().toLowerCase(),b.getLabel().toLowerCase());
+                */
+            }
         }
         return false;
     }
@@ -93,6 +110,23 @@ public final class testStringAlgoritm {
         Collections.reverse(indexes);
         return indexes;
     }
+
+
+    public static int longestSubString(String s0, String s1) {
+        int maxLen=0;
+        int[][] lengths = new int[s0.length() + 1][s1.length() + 1];
+        for (int i = 0; i < s0.length(); i++){
+            for (int j = 0; j < s1.length(); j++){
+            if (s0.charAt(i)==s1.charAt(j))    
+                lengths[i + 1][j + 1] = lengths[i][j] + 1;
+            if(lengths[i + 1][j + 1] >maxLen)
+                maxLen=lengths[i + 1][j + 1];
+            }
+        }
+        return maxLen;
+
+    }
+
 
     
 }
