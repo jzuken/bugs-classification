@@ -10,9 +10,11 @@ import com.github.gumtreediff.matchers.Matchers;
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.Tree;
 import com.github.gumtreediff.utils.Pair;
+import com.github.gumtreediff.gen.Generators;
 import com.github.gumtreediff.gen.TreeGenerator;
 import com.github.gumtreediff.gen.srcml.SrcmlCTreeGenerator;
 import com.github.gumtreediff.tree.TreeContext;
+import com.github.gumtreediff.tree.TreeUtils;
 import com.github.gumtreediff.io.TreeIoUtils;
 import org.ml_methods_group.common.*;
 import org.ml_methods_group.common.ast.NodeType;
@@ -40,6 +42,7 @@ import org.ml_methods_group.parsing.ParsingUtils;
 import org.ml_methods_group.testing.extractors.CachedFeaturesExtractor;
 import org.ml_methods_group.common.ast.matches.testMatcher;
 import org.ml_methods_group.ApplicationMethods;
+import org.ml_methods_group.common.ast.srcmlGenerator;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -839,6 +842,7 @@ public class ApplicationLASE extends ApplicationMethods {
 
         String badFolderName = pathToDataset.toString() + "\\bad";
         String goodFolderName = pathToDataset.toString() + "\\good";
+        String checkSrc ="";
 
         List<String> defects = new ArrayList<String>();
         defects.add(DefectA);
@@ -901,8 +905,8 @@ public class ApplicationLASE extends ApplicationMethods {
 
                         File actionsFile = new File(pathToSaveRepresentations.toString() + "\\" + defectId);
 
-                        String rightSolutionId = defectId + "_" + OK.ordinal();
-                        String wrongSolutionId = defectId + "_" + FAIL.ordinal();
+                        //String rightSolutionId = defectId + "_" + OK.ordinal();
+                        //String wrongSolutionId = defectId + "_" + FAIL.ordinal();
 
                         if (fromFile.length() > 0 && toFile.length() > 0) {
                             System.out.println("Sizes: " + fromFile.length() + " ->" + toFile.length());
@@ -913,15 +917,19 @@ public class ApplicationLASE extends ApplicationMethods {
                                     var fromCode = Files.readString(methodBeforePath);
                                     var toCode = Files.readString(methodAfterPath);
 
+                                    if(!isB){
+                                        checkSrc = toCode;
+                                    }
+
                                     System.out.println(getDiff(baseTime) + ": Files loaded");
 
-                                    var fromSolution = new Solution(fromCode, defectId, wrongSolutionId, FAIL);
-                                    var toSolution = new Solution(toCode, defectId, rightSolutionId, OK);
+                                    //var fromSolution = new Solution(fromCode, defectId, wrongSolutionId, FAIL);
+                                    //var toSolution = new Solution(toCode, defectId, rightSolutionId, OK);
 
                                     TreeContext src = null;
                                     TreeContext dst = null;
 
-                                    ASTGenerator generator = null;
+                                   /* ASTGenerator generator = null;
 
                                     if (version.toLowerCase().equals("abstract")) {
                                         generator = new CachedASTGenerator(new NamesASTNormalizer());
@@ -930,6 +938,10 @@ public class ApplicationLASE extends ApplicationMethods {
                                     }
 
                                     src = generator.buildTreeContext(fromSolution);
+                                    */
+                                    
+                                    src = new srcmlGenerator().generateFromString(fromCode);
+
                                     System.out.println("SRC tree size=" + src.getRoot().getSize());
 
                                     TreeIoUtils.toXml(src)
@@ -937,10 +949,12 @@ public class ApplicationLASE extends ApplicationMethods {
 
                                     if (isB) {
 
-                                        dst = generator.buildTreeContext(toSolution);
+                                        //dst = generator.buildTreeContext(toSolution);
+
+                                        dst =  new srcmlGenerator().generateFromString(toCode);
+
                                         System.out.println("DST tree size=" + dst.getRoot().getSize());
-                                        TreeIoUtils.toXml(dst).writeTo(
-                                                pathToSaveRepresentations.toString() + "\\ast\\dst_" + defectId);
+                                       
 
                                         Matcher matcherAst = Matchers.getInstance().getMatcher(src.getRoot(),
                                                 dst.getRoot());
@@ -951,14 +965,15 @@ public class ApplicationLASE extends ApplicationMethods {
                                             System.out.println(e.getMessage());
                                         }
 
+                                        TreeIoUtils.toAnnotatedXml(dst, false,  matcherAst.getMappings()).writeTo(
+                                            pathToSaveRepresentations.toString() + "\\ast\\dst_" + defectId);
+
+                                        TreeIoUtils.toAnnotatedXml(src, true,  matcherAst.getMappings()).writeTo(
+                                                pathToSaveRepresentations.toString() + "\\ast\\dst_" + defectId);    
+
                                         System.out.println("Build AST");
 
-                                        TreeIoUtils.toAnnotatedXml(dst, false,matcherAst.getMappings()).writeTo(
-                                                pathToSaveRepresentations.toString() + "\\ast\\dst2_" + defectId);
-
-                                        TreeIoUtils.toAnnotatedXml(src, true,matcherAst.getMappings()).writeTo(
-                                                    pathToSaveRepresentations.toString() + "\\ast\\src2_" + defectId);
-            
+                                    
 
                                         ActionGenerator actionGenerator = new ActionGenerator(src.getRoot(),
                                                 dst.getRoot(), matcherAst.getMappings());
@@ -984,8 +999,8 @@ public class ApplicationLASE extends ApplicationMethods {
 
                                     }
 
-                                    fromSolution = null;
-                                    toSolution = null;
+                                    //fromSolution = null;
+                                    //toSolution = null;
 
                                 }
                                 System.out.println(getDiff(baseTime) + ": defect processed");
@@ -1007,6 +1022,9 @@ public class ApplicationLASE extends ApplicationMethods {
 
             }
 
+
+           
+
             System.out.println(getDiff(baseTime) + ": Try to build maxtree");
 
             if (srcA != null && dstB != null && actB != null) {
@@ -1021,20 +1039,7 @@ public class ApplicationLASE extends ApplicationMethods {
 
                     }
 
-                    /*
-                     * // single node fro max length tree ITree minSrc =
-                     * matcher.GetLongestSrcSubtree(actB);
-                     * 
-                     * TreeContext mSrc = new TreeContext(); mSrc.importTypeLabels(dstB);
-                     * mSrc.setRoot(minSrc); mSrc.getRoot().refresh();
-                     * 
-                     * try { TreeIoUtils.toXml(mSrc
-                     * ).writeTo(pathToSaveRepresentations.toString()+"\\ast\\maxTree_" + DefectA +
-                     * "_to_"+ DefectB + ".xml" ); } catch (Exception e) {
-                     * System.out.println(e.getMessage()); }
-                     * 
-                     */
-
+                
                     // try to get common forest instead common tree
                     List<ITree> forest = matcher.GetLongestForest(actB);
                     int forestIdx = 0;
@@ -1046,12 +1051,17 @@ public class ApplicationLASE extends ApplicationMethods {
                         mSrc.getRoot().refresh();
 
                         try {
-                            TreeIoUtils.toXml(mSrc).writeTo(pathToSaveRepresentations.toString() + "\\ast\\maxTree."
+                            TreeIoUtils.toAnnotatedXml(mSrc,true,matcher.getMappings()).writeTo(pathToSaveRepresentations.toString() + "\\ast\\maxTree."
                                     + forestIdx + "_" + DefectA + "_to_" + DefectB + ".xml");
 
+                            if(minSrc.getLength()>0){
+                                System.out.println("tree " + forestIdx + " from " + minSrc.getPos() + " to " + minSrc.getEndPos());
+                                System.out.println(checkSrc.substring( minSrc.getPos(), minSrc.getEndPos() ));
+                                System.out.println("end tree " + forestIdx);
+                            }
+                            
 
-                            TreeIoUtils.toAnnotatedXml(mSrc,true, matcher.getMappings()).writeTo(pathToSaveRepresentations.toString() + "\\ast\\maxTree2."
-                                    + forestIdx + "_" + DefectA + "_to_" + DefectB + ".xml");
+                            
 
                         } catch (Exception e) {
                             System.out.println(e.getMessage());

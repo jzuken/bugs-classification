@@ -244,7 +244,7 @@ public class Application {
                 case "top10.maxtree":
                 if (args.length != 5 ) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
-                            "    Path to lase dataset" + System.lineSeparator() +
+                            "    Path to dataset" + System.lineSeparator() +
                             "    Path to defect list file" + System.lineSeparator() +
                             "    Path to store matrix" + System.lineSeparator() +
                             "    LASE variant (conctrete,  abstract)" + System.lineSeparator() 
