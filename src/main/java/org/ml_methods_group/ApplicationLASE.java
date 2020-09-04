@@ -1090,6 +1090,8 @@ public class ApplicationLASE extends ApplicationMethods {
         List<String> defects = Files.readAllLines(pathToListFile);
 
         List<String> defectFiles = new ArrayList<String>();
+        List<String> defectIds = new ArrayList<String>();
+
         // check directory structure
         File directory = new File(pathToMatrix.toString());
         if (!directory.exists()) {
@@ -1107,6 +1109,7 @@ public class ApplicationLASE extends ApplicationMethods {
             // collect all files for defect to build matrix
             for (String fName : result) {
                 boolean useFile = false;
+                String defectId="";
 
                 for (String defect : defects) {
 
@@ -1114,11 +1117,13 @@ public class ApplicationLASE extends ApplicationMethods {
                         var Code = Files.readString(Paths.get(fName));
                         if (Code.length() <= MAX_FILE_SIZE)
                             useFile = true;
+                            defectId = defect;
                         break;
                     }
                 }
                 if (useFile) {
                     defectFiles.add(fName);
+                    defectIds.add(defectId);
                 }
             }
 
@@ -1214,9 +1219,22 @@ public class ApplicationLASE extends ApplicationMethods {
                                         // weightMatrix[i][j] =minSrc.getSize();
 
                                         List<ITree> forest = matcher.GetLongestForest(actB);
+                                        int forestIdx=0;
                                         for (ITree minSrc : forest) {
                                             weightMatrix[i][j] += minSrc.getSize();
+                                            forestIdx++;
+                                            if(minSrc.getLength()>0){
+                                                BufferedWriter writer = new BufferedWriter(
+                                                    new FileWriter(pathToMatrix.toString() + "\\from_"
+                                                    +  defectIds.get(i) + "_to_" +defectIds.get(j) + "_t_" + forestIdx  + ".txt"));
+                                                writer.write(fromCodeA.substring( minSrc.getPos(), minSrc.getEndPos() ));
+                                                writer.close();
+                
+                                            }
+
                                         }
+
+                                        
 
                                     }
                                 }
