@@ -36,7 +36,7 @@ public class testMatcher  extends Matcher {
     }
 
 
-    protected boolean NodeInActions(ITree src,  List<Action> actions){
+    /* protected boolean NodeInActions(ITree src,  List<Action> actions){
         boolean yes =false;
         ITree m = mappings.getDst(src);
         if(m != null){
@@ -49,6 +49,28 @@ public class testMatcher  extends Matcher {
                     ITree n = mappings.getDst(c);
                     if(n!=null){
                         if(a.getNode().getId() == n.getId())
+                            return true;
+                    }
+                }
+            }
+        }
+        return yes;
+    } */
+    
+
+
+    protected boolean NodeInActions(ITree src,  List<Action> actions){
+        boolean yes =false;
+    
+        if(src != null){
+            for(Action a : actions){
+
+                if(a.getNode().getId() == src.getId())
+                    return true;
+
+                for( ITree c : src.getDescendants()){
+                    if(c!=null){
+                        if(a.getNode().getId() == c.getId())
                             return true;
                     }
                 }

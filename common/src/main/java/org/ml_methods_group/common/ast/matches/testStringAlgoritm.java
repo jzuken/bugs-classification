@@ -117,10 +117,10 @@ public final class testStringAlgoritm {
         int[][] lengths = new int[s0.length() + 1][s1.length() + 1];
         for (int i = 0; i < s0.length(); i++){
             for (int j = 0; j < s1.length(); j++){
-            if (s0.charAt(i)==s1.charAt(j))    
-                lengths[i + 1][j + 1] = lengths[i][j] + 1;
-            if(lengths[i + 1][j + 1] >maxLen)
-                maxLen=lengths[i + 1][j + 1];
+                if (s0.charAt(i)==s1.charAt(j))    
+                    lengths[i + 1][j + 1] = lengths[i][j] + 1;
+                if(lengths[i + 1][j + 1] >maxLen)
+                    maxLen=lengths[i + 1][j + 1];
             }
         }
         return maxLen;
