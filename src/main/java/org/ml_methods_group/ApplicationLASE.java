@@ -13,6 +13,7 @@ import com.github.gumtreediff.utils.Pair;
 import com.github.gumtreediff.gen.Generators;
 import com.github.gumtreediff.gen.TreeGenerator;
 import com.github.gumtreediff.gen.srcml.SrcmlCTreeGenerator;
+import org.ml_methods_group.common.ast.srcmlGenerator;
 import com.github.gumtreediff.tree.TreeContext;
 import com.github.gumtreediff.tree.TreeUtils;
 import com.github.gumtreediff.io.TreeIoUtils;
@@ -1055,9 +1056,12 @@ public class ApplicationLASE extends ApplicationMethods {
                                     + forestIdx + "_" + DefectA + "_to_" + DefectB + ".xml");
 
                             if(minSrc.getLength()>0){
-                                System.out.println("tree " + forestIdx + " from " + minSrc.getPos() + " to " + minSrc.getEndPos());
-                                System.out.println(checkSrc.substring( minSrc.getPos(), minSrc.getEndPos() ));
-                                System.out.println("end tree " + forestIdx);
+                                BufferedWriter writer = new BufferedWriter(
+                                    new FileWriter(pathToSaveRepresentations.toString() + "\\ast\\src."
+                                    + forestIdx + "_" + DefectA + "_to_" + DefectB + ".txt"));
+                                writer.write(checkSrc.substring( minSrc.getPos(), minSrc.getEndPos() ));
+                                writer.close();
+
                             }
                             
 

@@ -197,6 +197,24 @@ public class testMatcher  extends Matcher {
                 ITree longestRoot = srcSeq.get(maxIdx);
                 //System.out.println("longest subtree size before clean: " + longestRoot.getSize() );
             
+                // exclude found node
+                c[maxIdx] =0;
+
+                // try to clean child-count array 
+                List<ITree> dc =longestRoot.getDescendants();
+               
+
+                for (int i = 0; i < srcSeq.size(); i++){
+                    int nId = srcSeq.get(i).getId();
+                    for(ITree d:dc){
+                        if( nId== d.getId() ){
+                            c[i]=0;   
+                            break;
+                        }
+                    }
+                }
+
+
                 // надо убрать все  узлы, которые не входят в искомое дерево
                 longestRoot= removeUnmappedSrcNodes(longestRoot, dstDescendants);
 
@@ -205,23 +223,12 @@ public class testMatcher  extends Matcher {
                 
                 //System.out.println("longest subtree size after clean: " + longestRoot.getSize() );
 
+                
 
                 forest.add(longestRoot.deepCopy());
-
-                c[maxIdx] =0;
-
-                // try to clean child-count array 
-                List<ITree> dc =longestRoot.getDescendants();
-                forestSize+= (dc.size()+1);
-
-                for (int i = 0; i < srcSeq.size(); i++){
-                    for(ITree d:dc){
-                        if(d.getId() == srcSeq.get(i).getId()){
-                            c[i]=0;
-                            break;
-                        }
-                    }
-                }
+                
+                forestSize+= (longestRoot.getSize());
+               
             }
         }while(itemFound);
 
