@@ -1098,6 +1098,18 @@ public class ApplicationLASE extends ApplicationMethods {
             directory.mkdir();
         }
 
+
+        File directory2 = new File(pathToMatrix.toString() +"\\src");
+        if (!directory2.exists()) {
+            directory2.mkdir();
+        }
+
+
+        File directory3 = new File(pathToMatrix.toString() +"\\tree");
+        if (!directory3.exists()) {
+            directory3.mkdir();
+        }
+
         String badFolderName = pathToDataset.toString() + "\\bad";
         String goodFolderName = pathToDataset.toString() + "\\good";
 
@@ -1225,12 +1237,19 @@ public class ApplicationLASE extends ApplicationMethods {
                                             forestIdx++;
                                             if(minSrc.getLength()>0){
                                                 BufferedWriter writer = new BufferedWriter(
-                                                    new FileWriter(pathToMatrix.toString() + "\\from_"
+                                                    new FileWriter(pathToMatrix.toString() + "\\src\\from_"
                                                     +  defectIds.get(i) + "_to_" +defectIds.get(j) + "_t_" + forestIdx  + ".txt"));
                                                 writer.write(fromCodeA.substring( minSrc.getPos(), minSrc.getEndPos() ));
                                                 writer.close();
-                
+
+                                                TreeContext mSrc = new TreeContext();
+                                                mSrc.importTypeLabels(dstB);
+                                                mSrc.setRoot(minSrc);
+                                                mSrc.getRoot().refresh();
+                                                TreeIoUtils.toXml(mSrc).writeTo(pathToMatrix.toString() + "\\tree\\from_"
+                                                +  defectIds.get(i) + "_to_" +defectIds.get(j) + "_t_" + forestIdx  + ".xml" );
                                             }
+                                            
 
                                         }
 
