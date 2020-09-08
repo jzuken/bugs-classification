@@ -58,12 +58,16 @@ public class HAC<T> implements Clusterer<T> {
 
             Wrapper communityWrapper = (Wrapper) community.entities.get(0);
             Changes communityChanges = (Changes) communityWrapper.getMeta();
-
-            double c = new WeightCoefficient(anotherChanges, communityChanges).calculate();
-            double newDistance = distance * c;
-
-            if (distance < distanceLimit) {
-                accumulator.add(new Triple(distance, community, another));
+//
+//            double c = new WeightCoefficient(anotherChanges, communityChanges).calculate();
+//            double newDistance = distance * c;
+            System.out.println("--- Start weight calc");
+            double c = new WeightCoefficient(anotherChanges, communityChanges).calculate2();
+            System.out.println("End weight calc. Old Distance:" + distance + " weight: " + c);
+            double newDistance = distance / c;
+            System.out.println("New Distance: " + newDistance);
+            if (newDistance < distanceLimit) {
+                accumulator.add(new Triple(newDistance, community, another));
             }
         }
         return accumulator;

@@ -14,8 +14,12 @@ import org.ml_methods_group.common.ast.generation.CachedASTGenerator;
 import org.ml_methods_group.common.ast.matches.testMatcher;
 import org.ml_methods_group.common.ast.normalization.NamesASTNormalizer;
 
-import java.util.Hashtable;
-import java.util.List;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.ml_methods_group.common.Solution.Verdict.FAIL;
 import static org.ml_methods_group.common.Solution.Verdict.OK;
@@ -27,14 +31,35 @@ public class WeightCoefficient {
 
     static Hashtable<String, TreeContext> contexts;
     static Hashtable<String, List<Action>> actionsTable;
+    static List<String> result;
+    String pathToMaxTreeDir;
+    String version;
+
 
     public WeightCoefficient(Changes defectA, Changes defectB) {
         this.defectA = defectA;
         this.defectB = defectB;
         if (contexts == null) contexts = new Hashtable<>();
         if (actionsTable == null) actionsTable = new Hashtable<>();
+
+        this.pathToMaxTreeDir = "C:\\Users\\kWX910209\\Documents\\gumtree_csv\\maxtreeAllJavaConctrete";
+        this.version = "conctrete";
+
+        if (result == null) {
+            try {
+                //            get all the files in MaxTree directory
+                this.result = Files.walk(Paths.get(pathToMaxTreeDir.toString())).filter(Files::isRegularFile)
+                        .map(x -> x.toString()).collect(Collectors.toList());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+
+
     }
 
+//    calculate from scratch
     public double calculate() {
         String defectAID = defectA.getOrigin().getId();
         String defectBID = defectB.getOrigin().getId();
@@ -142,6 +167,99 @@ public class WeightCoefficient {
             }
         }
 
+        return 1;
+    }
+// calculate from pre-generated files
+    public double calculate2() {
+
+        String DefectA = defectA.getOrigin().getId();
+        String DefectB = defectB.getOrigin().getId();
+
+        try {
+
+            String defectAPath = "";
+            String defectBPath = "";
+            String maxTreePath = "";
+
+            for (String fName : result) {
+//                System.out.println(fName);
+//                C:\Users\kWX910209\Documents\gumtree_csv\maxtree\ast\dst_DTS2016121309461_conctrete_link_egress.c
+//                C:\Users\kWX910209\Documents\gumtree_csv\maxtree\ast\maxTree_DTS2016120602239_to_DTS2016121309461.xml
+//                C:\Users\kWX910209\Documents\gumtree_csv\maxtree\ast\src_DTS2016120602239_conctrete_tnl-neigh-cache.c
+//                C:\Users\kWX910209\Documents\gumtree_csv\maxtree\ast\src_DTS2016121309461_conctrete_link_egress.c
+
+//                get filenames
+                String[] pathParts = fName.split("\\\\");
+                String filename = pathParts[pathParts.length - 1];
+                filename = filename.substring(0, filename.lastIndexOf('.'));
+                String[] filenameParts = filename.split("_");
+
+
+                if (filenameParts[0].equals("src") && filenameParts[2].equals(version)) {
+                    if (filenameParts[1].equals(DefectA)) {
+                        defectAPath = fName;
+                    } else if (filenameParts[1].equals(DefectB)) {
+                        defectBPath = fName;
+                    }
+
+                }
+
+                if (filenameParts[0].equals("maxTree") && filenameParts[1].equals(DefectA) && filenameParts[3].equals(DefectB)) {
+                    maxTreePath = fName;
+                }
+            }
+
+//            Code with sets
+
+            Set<String> maxTreeSet = new HashSet();
+            Set<String> defectASet = new HashSet();
+            Set<String> defectBSet = new HashSet();
+
+            if (!defectAPath.equals("") && !defectBPath.equals("")) {
+                Scanner defectAInput = new Scanner(new File(defectAPath));
+                while (defectAInput.hasNextLine())
+                {
+                    defectASet.add(defectAInput.nextLine());
+                }
+                Scanner defectBInput = new Scanner(new File(defectBPath));
+                while (defectBInput.hasNextLine())
+                {
+                    defectBSet.add(defectBInput.nextLine());
+                }
+            }
+
+            if (!maxTreePath.equals("")) {
+                Scanner maxTreeInput = new Scanner(new File(maxTreePath));
+                while (maxTreeInput.hasNextLine())
+                {
+                    maxTreeSet.add(maxTreeInput.nextLine());
+                }
+
+            }
+
+            if (!maxTreeSet.isEmpty() && !defectASet.isEmpty() && !defectBSet.isEmpty()) {
+
+                Set<String> unionSet = new HashSet<>(defectASet);
+                unionSet.addAll(defectBSet);
+
+                int c = maxTreeSet.size() * 2;
+                int ab = unionSet.size();
+
+//                System.out.println("---");
+//                System.out.println((float) c / ab);
+
+                return (float) c / ab;
+            }
+
+
+            return 1;
+
+        } catch (IOException e) {
+            System.out.println( e.getMessage());
+            e.printStackTrace();
+        }
+
+// return 1 by default which won't affect initial value on multiplication
         return 1;
     }
 
