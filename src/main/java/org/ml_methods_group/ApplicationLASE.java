@@ -51,6 +51,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -1681,6 +1682,191 @@ public class ApplicationLASE extends ApplicationMethods {
                     writer.write("\r\n");
                 }
                 writer.close();
+
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public static void saveAllMaxTrees(Path pathToDataset, Path pathToListFile,  Path pathToSave, String version) throws IOException {
+        List<String> defects = Files.readAllLines(pathToListFile);
+
+        List<String> defectFiles = new ArrayList<String>();
+        // check directory structure
+        File directory = new File(pathToSave.toString() );
+        if(!directory.exists()){
+            directory.mkdir();
+        }
+
+        File directory2 = new File(pathToSave.toString() +"\\ast" );
+        if(!directory2.exists()){
+            directory2.mkdir();
+        }
+
+
+
+        String badFolderName =  pathToDataset.toString() + "\\bad";
+        String goodFolderName =  pathToDataset.toString() + "\\good";
+
+        try  {
+
+            List<String> result = Files.walk(Paths.get(badFolderName)).filter(Files::isRegularFile)
+                    .map(x -> x.toString()).collect(Collectors.toList());
+
+
+            // collect all files for defect to build matrix
+            for (String fName : result) {
+                boolean useFile =false;
+
+                for(String defect : defects){
+
+                    if(fName.contains("\\"+defect+"\\")){
+                        var f = new File(fName);
+                        if(f.length() <= MAX_FILE_SIZE)
+                            useFile = true;
+                        break;
+                    }
+                }
+                if (useFile){
+                    defectFiles.add(fName);
+                }
+            }
+            System.out.println(defectFiles.size());
+            // defect files is a collection of bad files
+            if(defectFiles.size() >0){
+
+                // collect common actions for cluster here
+                int[][] weightMatrix = new int[defectFiles.size()][defectFiles.size()];
+
+                ASTGenerator generator = null;
+
+                if (version.toLowerCase().equals("abstract")) {
+                    generator = new CachedASTGenerator(  new NamesASTNormalizer() );
+                }else{
+                    generator = new CachedASTGenerator(  new BasicASTNormalizer() );
+                }
+
+
+                for(int i=0;i<defectFiles.size();i++){
+
+
+                    String defectB = defectFiles.get(i);
+//                    dataset provided always have defect name as second from the end position in the sting split by "/"
+                    String defectBId = defectB.split(Pattern.quote("\\"))[defectB.split(Pattern.quote("\\")).length - 2];
+                    String fileName = defectB.split(Pattern.quote("\\"))[defectB.split(Pattern.quote("\\")).length - 1];
+                    TreeContext dstB = null ;
+                    List<Action> actB = null;
+                    try{
+                        var fromCode = Files.readString(Paths.get(defectB));
+                        var toCode = Files.readString(Paths.get(defectB.replace(badFolderName,goodFolderName)));
+                        if(fromCode.length() <= MAX_FILE_SIZE && toCode.length() <= MAX_FILE_SIZE ){
+
+                            var fromSolution = new Solution(fromCode, "B_BAD", "B_BAD", FAIL);
+                            var toSolution = new Solution(toCode, "B_GOOD", "B_GOOD", OK);
+
+                            TreeContext srcB=null;
+
+                            srcB = generator.buildTreeContext(fromSolution);
+                            dstB = generator.buildTreeContext(toSolution);
+
+                            String fileNameToSave = defectBId + "_" + version.toLowerCase() + "_" + fileName;
+                            TreeIoUtils.toXml(srcB).writeTo(pathToSave.toString()+"\\ast\\src_" + fileNameToSave );
+                            TreeIoUtils.toXml(dstB).writeTo(pathToSave.toString()+"\\ast\\dst_" + fileNameToSave );
+
+                            Matcher matcherAst = Matchers.getInstance().getMatcher(srcB.getRoot(), dstB.getRoot());
+                            System.out.println("Compare trees");
+                            try {
+                                matcherAst.match();
+                            } catch (NullPointerException e) {
+                                System.out.println(e.getMessage());
+                            }
+
+                            ActionGenerator actionGenerator = new ActionGenerator(srcB.getRoot(), dstB.getRoot(), matcherAst.getMappings());
+                            try{
+                                actionGenerator.generate();
+                            } catch (Exception e){
+                                System.out.println( e.getMessage());
+                                e.printStackTrace();
+                            }
+
+                            actB = actionGenerator.getActions();
+
+                            fromSolution = null;
+                            toSolution = null;
+                        }
+                    }catch(Exception any){
+                        System.out.println( any.getMessage());
+                        any.printStackTrace();
+                    }
+
+                    // calculate for  file
+                    for(int j=0;j<defectFiles.size();j++){
+                        System.out.println(">>>>" + i +" x " +j +"(" + defectFiles.size() +")");
+                        weightMatrix[i][j]=0;
+                        if( i != j) {
+                            String defectA = defectFiles.get(j);
+//                           dataset provided always have defect name as second from the end position in the sting split by "/"
+                            String defectAId = defectA.split(Pattern.quote("\\"))[defectA.split(Pattern.quote("\\")).length - 2];
+                            TreeContext srcA = null;
+
+                            try{
+                                srcA = null;
+                                var fromCodeA = Files.readString(Paths.get(defectA));
+                                if(fromCodeA.length() <= MAX_FILE_SIZE){
+                                    var fromSolutionA = new Solution(fromCodeA, "A_BAD" , "A_BAD", FAIL);
+                                    srcA = generator.buildTreeContext(fromSolutionA);
+                                    fromSolutionA = null;
+                                }
+
+                                if(srcA != null && dstB != null  && actB !=null ){
+
+                                    if(  actB.size() >0) {
+                                        testMatcher matcher = new testMatcher(srcA.getRoot(), dstB.getRoot(),new MappingStore());
+
+                                        try {
+                                            matcher.match();
+                                        } catch (NullPointerException e) {
+                                            System.out.println(e.getMessage());
+                                        }
+
+                                        //ITree minSrc = matcher.GetLongestSrcSubtree(actB);
+                                        //weightMatrix[i][j] =minSrc.getSize();
+
+//                                        List<ITree> forest = matcher.GetLongestForest(actB);
+//                                        for(ITree minSrc:forest){
+//                                            weightMatrix[i][j] += minSrc.getSize();
+//                                        }
+
+                                        // single node fro max length tree
+                                        ITree minSrc = matcher.GetLongestSrcSubtree(actB);
+
+                                        TreeContext mSrc = new TreeContext();
+                                        mSrc.importTypeLabels(dstB);
+                                        mSrc.setRoot(minSrc);
+                                        mSrc.getRoot().refresh();
+
+                                        try {
+                                            TreeIoUtils.toXml(mSrc ).writeTo(pathToSave.toString()+"\\ast\\maxTree_" + defectAId + "_to_"+ defectBId + ".xml" );
+                                        } catch (Exception e) {
+                                            System.out.println(e.getMessage());
+                                        }
+
+                                    }
+                                }
+
+                            }catch(Exception any)
+                            {
+                                System.out.println( any.getMessage());
+                                any.printStackTrace();
+                            }
+
+                        }
+                    }
+
+                }
 
             }
 

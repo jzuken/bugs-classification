@@ -283,6 +283,25 @@ public class Application {
                 );
                 break;
 
+
+            case "saveAllMaxTrees.maxtree":
+                if (args.length != 5 ) {
+                    System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
+                            "    Path to lase dataset" + System.lineSeparator() +
+                            "    Path to defect list file" + System.lineSeparator() +
+                            "    Path to store files" + System.lineSeparator() +
+                            "    LASE variant (conctrete,  abstract)" + System.lineSeparator()
+                    );
+                    return;
+                }
+                ApplicationLASE.saveAllMaxTrees(
+                        Paths.get(args[1]),
+                        Paths.get(args[2]),
+                        Paths.get(args[3]),
+                        args[4]
+                );
+                break;
+
             case "parse":
                 if (args.length != 3) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
