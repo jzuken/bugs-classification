@@ -868,7 +868,7 @@ public class ApplicationLASE extends ApplicationMethods {
             var baseTime = System.currentTimeMillis();
             boolean isB = false;
             TreeContext srcA = null;
-            // TreeContext srcB= null;
+            TreeContext srcB= null;
             // TreeContext dstA = null;
             TreeContext dstB = null;
             // Matcher matcherA = null;
@@ -987,7 +987,7 @@ public class ApplicationLASE extends ApplicationMethods {
 
                                         final List<Action> actions = actionGenerator.getActions();
 
-                                        // srcB = src;
+                                        srcB = src;
                                         dstB = dst;
                                         // matcherB =matcherAst;
                                         actB = actions;
@@ -1028,10 +1028,10 @@ public class ApplicationLASE extends ApplicationMethods {
 
             System.out.println(getDiff(baseTime) + ": Try to build maxtree");
 
-            if (srcA != null && dstB != null && actB != null) {
+            if (srcA != null && dstB != null && actB != null && srcB != null) {
 
                 if (actB.size() > 0) {
-                    testMatcher matcher = new testMatcher(srcA.getRoot(), dstB.getRoot(), new MappingStore());
+                    testMatcher matcher = new testMatcher(srcA.getRoot(), srcB.getRoot(), new MappingStore());
 
                     try {
                         matcher.match();
@@ -1156,17 +1156,19 @@ public class ApplicationLASE extends ApplicationMethods {
                 for (int i = 0; i < defectFiles.size(); i++) {
 
                     String defectB = defectFiles.get(i);
+                    TreeContext srcB = null;
                     TreeContext dstB = null;
                     List<Action> actB = null;
+                    String fromCode="";
+                    String toCode="";
+
                     try {
-                        var fromCode = Files.readString(Paths.get(defectB));
-                        var toCode = Files.readString(Paths.get(defectB.replace(badFolderName, goodFolderName)));
+                        fromCode = Files.readString(Paths.get(defectB));
+                        toCode = Files.readString(Paths.get(defectB.replace(badFolderName, goodFolderName)));
                         if (fromCode.length() <= MAX_FILE_SIZE && toCode.length() <= MAX_FILE_SIZE) {
 
                             var fromSolution = new Solution(fromCode, "B_BAD", "B_BAD", FAIL);
                             var toSolution = new Solution(toCode, "B_GOOD", "B_GOOD", OK);
-
-                            TreeContext srcB = null;
 
                             srcB = generator.buildTreeContext(fromSolution);
                             dstB = generator.buildTreeContext(toSolution);
@@ -1218,7 +1220,7 @@ public class ApplicationLASE extends ApplicationMethods {
                                 if (srcA != null && dstB != null && actB != null) {
 
                                     if (actB.size() > 0) {
-                                        testMatcher matcher = new testMatcher(srcA.getRoot(), dstB.getRoot(),
+                                        testMatcher matcher = new testMatcher(srcA.getRoot(), srcB.getRoot(),
                                                 new MappingStore());
 
                                         try {
@@ -1236,18 +1238,40 @@ public class ApplicationLASE extends ApplicationMethods {
                                             weightMatrix[i][j] += minSrc.getSize();
                                             forestIdx++;
                                             if(minSrc.getLength()>0){
+                                                ITree nfa =matcher.GetNFA(minSrc.getId());
+                                                Integer up=0;
+
+                                                while (up <3 && nfa!= null && nfa.getParent() != null){
+                                                    nfa=nfa.getParent();
+                                                    up++;
+                                                }
+                                                
+                                                /*
                                                 BufferedWriter writer = new BufferedWriter(
                                                     new FileWriter(pathToMatrix.toString() + "\\src\\from_"
                                                     +  defectIds.get(i) + "_to_" +defectIds.get(j) + "_t_" + forestIdx  + ".txt"));
-                                                writer.write(fromCodeA.substring( minSrc.getPos(), minSrc.getEndPos() ));
-                                                writer.close();
+                                                
+                                                    if(nfa.getLength() >0){
+                                                        writer.write("----------- Code from template defect -----------------------------\r\n");
+                                                        writer.write(fromCode.substring( nfa.getPos()-1, nfa.getEndPos()-1 ));    
+                                                        writer.write("\r\n-------------------------------------------------------------------\r\n\r\n");
+                                                        writer.write("----------- Code from examinated file -----------------------------\r\n");
+                                                    }
+                                                
+                                                    writer.write(fromCodeA.substring( minSrc.getPos()-1, minSrc.getEndPos()-1 ));
 
-                                                TreeContext mSrc = new TreeContext();
+
+                                                writer.close();
+                                                */
+
+                                               /* 
+                                               TreeContext mSrc = new TreeContext();
                                                 mSrc.importTypeLabels(dstB);
                                                 mSrc.setRoot(minSrc);
                                                 mSrc.getRoot().refresh();
                                                 TreeIoUtils.toXml(mSrc).writeTo(pathToMatrix.toString() + "\\tree\\from_"
                                                 +  defectIds.get(i) + "_to_" +defectIds.get(j) + "_t_" + forestIdx  + ".xml" );
+                                                */
                                             }
                                             
 

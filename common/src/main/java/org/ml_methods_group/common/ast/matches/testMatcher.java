@@ -2,6 +2,7 @@ package org.ml_methods_group.common.ast.matches;
 
 // import com.github.gumtreediff.utils.StringAlgorithms;
 // import org.ml_methods_group.common.ast.matches.testStringAlgoritm;
+import com.github.gumtreediff.actions.model.Insert;
 import com.github.gumtreediff.matchers.MappingStore;
 import com.github.gumtreediff.matchers.Matcher;
 import com.github.gumtreediff.actions.model.Action;
@@ -13,6 +14,8 @@ import java.util.HashSet;
 
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.ArrayList;
 
 public class testMatcher  extends Matcher {
@@ -36,14 +39,19 @@ public class testMatcher  extends Matcher {
     }
 
 
-    /* protected boolean NodeInActions(ITree src,  List<Action> actions){
+    protected boolean NodeInActions(ITree src,  List<Action> actions){
         boolean yes =false;
         ITree m = mappings.getDst(src);
         if(m != null){
             for(Action a : actions){
 
-                if(a.getNode().getId() == m.getId())
-                    return true;
+                if(a.getNode().getId() == m.getId()){
+                    System.out.println("SrcNode=" + src.toShortString() +" action:" +a.toString());
+                    //if(a.getClass() != Insert.class){
+                        return true;
+                    //}
+                }
+                    
 
                 for( ITree c : src.getDescendants()){
                     ITree n = mappings.getDst(c);
@@ -55,10 +63,33 @@ public class testMatcher  extends Matcher {
             }
         }
         return yes;
-    } */
-    
+    } 
 
 
+    protected ITree NodeForAction(ITree src,  List<Action> actions){
+        ITree m = src; //mappings.getDst(src);
+        if(m != null){
+            for(Action a : actions){
+
+                if(a.getNode().getId() == m.getId()){
+                        return a.getNode();
+                }
+
+                for( ITree c : src.getDescendants()){
+                    ITree n = c; // mappings.getDst(c);
+                    if(n!=null){
+                        if(a.getNode().getId() == n.getId())
+                            return a.getNode();
+                    }
+                }
+            }
+        }
+        return null;
+    } 
+
+       
+
+/*
     protected boolean NodeInActions(ITree src,  List<Action> actions){
         boolean yes =false;
     
@@ -78,6 +109,9 @@ public class testMatcher  extends Matcher {
         }
         return yes;
     }
+  
+    */
+
 
     protected int numberOfCommonChildren(ITree src, Set<ITree> dstDescendants ) {
         // Set<ITree> dstDescendants = new HashSet<>(dst.getDescendants());
@@ -100,6 +134,17 @@ public class testMatcher  extends Matcher {
     }
 
   
+    private Map <Integer, ITree> NodeFromActions=null;
+
+    public ITree GetNFA( Integer ID){
+        if(NodeFromActions==null)
+            return null;
+        if(NodeFromActions.containsKey(ID))
+            return NodeFromActions.get(ID);
+        return null;
+
+    }
+
   
     public ITree GetLongestSrcSubtree(List<Action> actions){
         List<ITree> srcSeq = TreeUtils.preOrder(src);
@@ -112,8 +157,14 @@ public class testMatcher  extends Matcher {
             c[i]=numberOfCommonChildren(srcSeq.get(i), dstDescendants);
         }
 
+        NodeFromActions = new HashMap<Integer,ITree>();
+
         for (int i = 0; i < srcSeq.size(); i++){
-            if(!NodeInActions( srcSeq.get(i), actions))
+            ITree m = mappings.getDst(srcSeq.get(i));
+            ITree nfa =NodeForAction(m, actions);
+            if(nfa !=null) 
+                NodeFromActions.put(srcSeq.get(i).getId(),nfa);
+            else
                 c[i]=0;
         }
 
@@ -188,7 +239,8 @@ public class testMatcher  extends Matcher {
         List<ITree> srcSeq = TreeUtils.preOrder(src);
         Set<ITree> dstDescendants = new HashSet<>(dst.getDescendants());
         int[] c = new int[srcSeq.size() + 1];
-        
+        NodeFromActions = new HashMap<Integer,ITree>();
+
 
         // считаем количество общих потомков для каждого узла
         for (int i = 0; i < srcSeq.size(); i++){
@@ -196,8 +248,16 @@ public class testMatcher  extends Matcher {
         }
 
         for (int i = 0; i < srcSeq.size(); i++){
-            if(!NodeInActions( srcSeq.get(i), actions))
+            ITree m = mappings.getDst(srcSeq.get(i));
+            if(m != null){
+            ITree nfa =NodeForAction(m, actions);
+            if(nfa !=null) 
+                NodeFromActions.put(srcSeq.get(i).getId(),nfa);
+            else
                 c[i]=0;
+            }else{
+                c[i]=0;
+            }
         }
 
         boolean itemFound = false;

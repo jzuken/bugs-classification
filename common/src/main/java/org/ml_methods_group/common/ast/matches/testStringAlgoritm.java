@@ -25,7 +25,7 @@ public final class testStringAlgoritm {
         if(A.hasSameType(B)) return true;
         if(A.getType() ==-1 && B.getType()==-1) return true;
         if(A.getType() ==-1 || B.getType()==-1) return false;
-        /*
+        
         NodeType tA = NodeType.valueOf(A.getType());
         NodeType tB = NodeType.valueOf(A.getType());
         if(
@@ -62,26 +62,93 @@ public final class testStringAlgoritm {
             (tB == NodeType.C_TYPE || tB == NodeType.C_STRUCT_DECL ||  tB == NodeType.C_UNION  )
         )
             return true; 
-*/
+
         return false;
     }
     
+
+    private static boolean InArray( String test, String[] array){
+        List<String> list = Arrays.asList(array);
+
+        if(list.contains(test)){
+            return true;
+        }
+        return false;
+    }
+
+    private static final String[] compareOP = new String[]{"<", ">", "==",">=", "<="};
+    private static final String[] logicalOP = new String[]{"&&", "||","&","|","^"};
+    private static final String[] mathOP = new String[]{"+", "-", "*", "/"};
+    private static final String[] mathUnaryOP = new String[]{"++", "--"};
+    private static final String[] setOP = new String[]{"=", "+=","-=","*=","/="};
+    private static final String[] braceOP = new String[]{"{", "}","(",")","[","]"};
+    private static final String[] structOP = new String[]{".", "->"};
+
     public static boolean isEql(ITree a, ITree b){
         if(isSimilarType(a,b)){
+
             if(!a.hasLabel() && !b.hasLabel()) 
+            return true;
+
+            NodeType tA = NodeType.valueOf(a.getType());
+
+            if(tA == NodeType.C_COMMENT )
                 return true;
+
+            
             if(a.hasLabel() && b.hasLabel()) {
-                return true;
-                /*
-                if (a.getLabel().toLowerCase().contains(b.getLabel().toLowerCase()))
-                    return true;
-                if (b.getLabel().toLowerCase().contains(a.getLabel().toLowerCase()))
-                    return true;
-                if(longestSubString(a.getLabel().toLowerCase(),b.getLabel().toLowerCase())>3)
+
+                String la =a.getLabel().toLowerCase();
+                String lb =b.getLabel().toLowerCase();
+
+
+                if(tA ==NodeType.C_OPERATOR){
+                    if(InArray(la, compareOP) && InArray(lb, compareOP))   
+                        return true;
+                    if(InArray(la, logicalOP) && InArray(lb, logicalOP))   
+                        return true;
+    
+                    if(InArray(la, mathOP) && InArray(lb, mathOP))   
+                        return true;
+                    if(InArray(la, mathUnaryOP) && InArray(lb, mathUnaryOP))   
+                        return true;
+                    if(InArray(la, setOP) && InArray(lb, setOP))   
+                        return true;
+                    if(InArray(la, braceOP) && InArray(lb, braceOP))   
+                        return true;
+                    if(InArray(la, structOP) && InArray(lb, structOP))   
+                        return true;
+                }
+
+                
+                if(  tA ==NodeType.C_NAMESPACE ||  tA ==NodeType.C_LABEL  ){
+                    if (la.contains(lb))
+                        return true;
+                    if (lb.contains(la))
+                        return true;
+                   
+                }
+
+                if( tA ==NodeType.C_NAME){
+                    if(longestSubString(la,lb) >=5)
+                        return true;
+                }
+
+
+               if( tA ==NodeType.C_LITERAL ){
+                 return true;
+               }
+
+                if(tA ==NodeType.C_SPECIFIER)
                     return true;
 
-                     int distance = StringUtils.getLevenshteinDistance(a.getLabel().toLowerCase(),b.getLabel().toLowerCase());
-                */
+
+                if(tA !=NodeType.C_OPERATOR &&  tA !=NodeType.C_NAME ){
+                   // System.out.println("!=  -> " + tA.name()+" a:" + a.getLabel() + " b:" + b.getLabel());
+                }
+
+               
+                
             }
         }
         return false;
