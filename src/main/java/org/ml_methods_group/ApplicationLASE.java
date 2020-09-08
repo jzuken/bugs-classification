@@ -924,13 +924,13 @@ public class ApplicationLASE extends ApplicationMethods {
 
                                     System.out.println(getDiff(baseTime) + ": Files loaded");
 
-                                    //var fromSolution = new Solution(fromCode, defectId, wrongSolutionId, FAIL);
-                                    //var toSolution = new Solution(toCode, defectId, rightSolutionId, OK);
+                                    var fromSolution = new Solution(fromCode, defectId, "bad_1", FAIL);
+                                    var toSolution = new Solution(toCode, defectId, "good_1", OK);
 
                                     TreeContext src = null;
                                     TreeContext dst = null;
 
-                                   /* ASTGenerator generator = null;
+                                    ASTGenerator generator = null;
 
                                     if (version.toLowerCase().equals("abstract")) {
                                         generator = new CachedASTGenerator(new NamesASTNormalizer());
@@ -939,9 +939,9 @@ public class ApplicationLASE extends ApplicationMethods {
                                     }
 
                                     src = generator.buildTreeContext(fromSolution);
-                                    */
                                     
-                                    src = new srcmlGenerator().generateFromString(fromCode);
+                                    
+                                    // src = new srcmlGenerator().generateFromString(fromCode);
 
                                     System.out.println("SRC tree size=" + src.getRoot().getSize());
 
@@ -950,9 +950,9 @@ public class ApplicationLASE extends ApplicationMethods {
 
                                     if (isB) {
 
-                                        //dst = generator.buildTreeContext(toSolution);
+                                        dst = generator.buildTreeContext(toSolution);
 
-                                        dst =  new srcmlGenerator().generateFromString(toCode);
+                                        //dst =  new srcmlGenerator().generateFromString(toCode);
 
                                         System.out.println("DST tree size=" + dst.getRoot().getSize());
                                        
@@ -1085,7 +1085,7 @@ public class ApplicationLASE extends ApplicationMethods {
 
     }
 
-    public static void getTop10(Path pathToDataset, Path pathToListFile, Path pathToMatrix, String version)
+    public static void getTop10(Path pathToDataset, Path pathToListFile, Path pathToMatrix, String version, String Verbose)
             throws IOException {
         List<String> defects = Files.readAllLines(pathToListFile);
 
@@ -1098,16 +1098,17 @@ public class ApplicationLASE extends ApplicationMethods {
             directory.mkdir();
         }
 
+        if(Verbose.equals("yes")){
+            File directory2 = new File(pathToMatrix.toString() +"\\src");
+            if (!directory2.exists()) {
+                directory2.mkdir();
+            }
 
-        File directory2 = new File(pathToMatrix.toString() +"\\src");
-        if (!directory2.exists()) {
-            directory2.mkdir();
-        }
 
-
-        File directory3 = new File(pathToMatrix.toString() +"\\tree");
-        if (!directory3.exists()) {
-            directory3.mkdir();
+            File directory3 = new File(pathToMatrix.toString() +"\\tree");
+            if (!directory3.exists()) {
+                directory3.mkdir();
+            }
         }
 
         String badFolderName = pathToDataset.toString() + "\\bad";
@@ -1159,6 +1160,7 @@ public class ApplicationLASE extends ApplicationMethods {
                     TreeContext srcB = null;
                     TreeContext dstB = null;
                     List<Action> actB = null;
+                    Matcher matcherAst =null;
                     String fromCode="";
                     String toCode="";
 
@@ -1173,7 +1175,7 @@ public class ApplicationLASE extends ApplicationMethods {
                             srcB = generator.buildTreeContext(fromSolution);
                             dstB = generator.buildTreeContext(toSolution);
 
-                            Matcher matcherAst = Matchers.getInstance().getMatcher(srcB.getRoot(), dstB.getRoot());
+                            matcherAst = Matchers.getInstance().getMatcher(srcB.getRoot(), dstB.getRoot());
                             System.out.println("Compare trees");
                             try {
                                 matcherAst.match();
@@ -1237,41 +1239,52 @@ public class ApplicationLASE extends ApplicationMethods {
                                         for (ITree minSrc : forest) {
                                             weightMatrix[i][j] += minSrc.getSize();
                                             forestIdx++;
-                                            if(minSrc.getLength()>0){
-                                                ITree nfa =matcher.GetNFA(minSrc.getId());
-                                                Integer up=0;
+                                            if(Verbose.equals("yes")){
+                                                if(minSrc.getLength()>0){
+                                                    ITree nfa =matcher.GetNFA(minSrc.getId());
+                                                    ITree nfaDst =null;
+                                                    Integer up=0;
 
-                                                while (up <3 && nfa!= null && nfa.getParent() != null){
-                                                    nfa=nfa.getParent();
-                                                    up++;
-                                                }
-                                                
-                                                /*
-                                                BufferedWriter writer = new BufferedWriter(
-                                                    new FileWriter(pathToMatrix.toString() + "\\src\\from_"
-                                                    +  defectIds.get(i) + "_to_" +defectIds.get(j) + "_t_" + forestIdx  + ".txt"));
-                                                
-                                                    if(nfa.getLength() >0){
-                                                        writer.write("----------- Code from template defect -----------------------------\r\n");
-                                                        writer.write(fromCode.substring( nfa.getPos()-1, nfa.getEndPos()-1 ));    
-                                                        writer.write("\r\n-------------------------------------------------------------------\r\n\r\n");
-                                                        writer.write("----------- Code from examinated file -----------------------------\r\n");
+                                                    while (up <=5 && nfa!= null && nfa.getParent() != null){
+                                                        nfa=nfa.getParent();
+                                                        if(matcherAst.getMappings().getDst(nfa) != null){
+                                                            nfaDst = matcherAst.getMappings().getDst(nfa);
+                                                        }
+                                                        up++;
                                                     }
+
+                                                    BufferedWriter writer = new BufferedWriter(
+                                                        new FileWriter(pathToMatrix.toString() + "\\src\\from_"
+                                                        +  defectIds.get(i) + "_to_" +defectIds.get(j) + "_t_" + forestIdx  + ".txt"));
+                                                    
+                                                        if(nfa != null && nfa.getLength() >0){
+                                                            writer.write("----------- Code from template source -----------------------------\r\n");
+                                                            writer.write(fromCode.substring( nfa.getPos()-1, nfa.getEndPos()-1 ));    
+                                                            writer.write("\r\n-------------------------------------------------------------------\r\n");
+                                                        }
+
+                                                        if(nfaDst != null && nfaDst.getLength() >0){
+                                                            writer.write("----------- Code from template dest -----------------------------\r\n");
+                                                            writer.write(toCode.substring( nfaDst.getPos()-1, nfaDst.getEndPos()-1 ));    
+                                                            writer.write("\r\n-------------------------------------------------------------------\r\n");
+                                                        }
+
+                                                        writer.write("----------- Code from examinated file -----------------------------\r\n");
+                                                        writer.write(fromCodeA.substring( minSrc.getPos()-1, minSrc.getEndPos()-1 ));
+                                                        writer.write("\r\n-------------------------------------------------------------------\r\n");
+
+                                                    writer.close();
+                                                    
+
                                                 
-                                                    writer.write(fromCodeA.substring( minSrc.getPos()-1, minSrc.getEndPos()-1 ));
-
-
-                                                writer.close();
-                                                */
-
-                                               /* 
-                                               TreeContext mSrc = new TreeContext();
-                                                mSrc.importTypeLabels(dstB);
-                                                mSrc.setRoot(minSrc);
-                                                mSrc.getRoot().refresh();
-                                                TreeIoUtils.toXml(mSrc).writeTo(pathToMatrix.toString() + "\\tree\\from_"
-                                                +  defectIds.get(i) + "_to_" +defectIds.get(j) + "_t_" + forestIdx  + ".xml" );
-                                                */
+                                                    TreeContext mSrc = new TreeContext();
+                                                    mSrc.importTypeLabels(dstB);
+                                                    mSrc.setRoot(minSrc);
+                                                    mSrc.getRoot().refresh();
+                                                    TreeIoUtils.toXml(mSrc).writeTo(pathToMatrix.toString() + "\\tree\\from_"
+                                                    +  defectIds.get(i) + "_to_" +defectIds.get(j) + "_t_" + forestIdx  + ".xml" );
+                                                    
+                                                }
                                             }
                                             
 

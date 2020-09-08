@@ -300,16 +300,27 @@ public class testMatcher  extends Matcher {
                 // надо убрать все  узлы, которые не входят в искомое дерево
                 longestRoot= removeUnmappedSrcNodes(longestRoot, dstDescendants);
 
-                longestRoot.setParent(null);
-                longestRoot.refresh();
-                
-                //System.out.println("longest subtree size after clean: " + longestRoot.getSize() );
+                dc =longestRoot.getDescendants();
 
-                
+                boolean UseTree =false;
+                if(longestRoot.hasLabel()){
+                    UseTree = true;   
+                }else{
+                    for(ITree d:dc){
+                        if( d.hasLabel() ){
+                            UseTree = true;   
+                            break;
+                        }
+                    }
+                }
 
-                forest.add(longestRoot.deepCopy());
-                
-                forestSize+= (longestRoot.getSize());
+                if(UseTree){
+                    longestRoot.setParent(null);
+                    longestRoot.refresh();
+                    //System.out.println("longest subtree size after clean: " + longestRoot.getSize() );
+                    forest.add(longestRoot.deepCopy());
+                    forestSize+= (longestRoot.getSize());
+                }
                
             }
         }while(itemFound);

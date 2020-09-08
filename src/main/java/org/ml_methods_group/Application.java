@@ -243,12 +243,13 @@ public class Application {
 
 
                 case "top10.maxtree":
-                if (args.length != 5 ) {
+                if (args.length < 5 ) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
                             "    Path to dataset" + System.lineSeparator() +
                             "    Path to defect list file" + System.lineSeparator() +
                             "    Path to store matrix" + System.lineSeparator() +
-                            "    LASE variant (conctrete,  abstract)" + System.lineSeparator() 
+                            "    LASE variant (conctrete,  abstract)" + System.lineSeparator() +
+                            "    [Optional] --verbose=yes  for detail output" + System.lineSeparator() 
                             );
                     return;
                 }
@@ -256,7 +257,8 @@ public class Application {
                         Paths.get(args[1]),
                         Paths.get(args[2]),
                         Paths.get(args[3]),
-                        args[4]
+                        args[4],  
+                        getVerboseFromArgs(args)
                 );
                 break;
 
@@ -402,6 +404,16 @@ public class Application {
         }
 
         return Integer.parseInt(param.get().toLowerCase().replace("--ngramsize=", ""));
+    }
+
+    private static String getVerboseFromArgs(String[] args) {
+        var param = Arrays.stream(args).filter(x -> x.toLowerCase().startsWith("--verbose")).findFirst();
+
+        if (param.isEmpty()) {
+            return "no";
+        }
+
+        return param.get().toLowerCase().replace("--verbose=", "");
     }
     
     private static ClusteringAlgorithm getAlgorithmFromArgs(String[] args) {

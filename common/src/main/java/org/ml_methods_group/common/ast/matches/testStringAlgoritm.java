@@ -26,6 +26,7 @@ public final class testStringAlgoritm {
         if(A.getType() ==-1 && B.getType()==-1) return true;
         if(A.getType() ==-1 || B.getType()==-1) return false;
         
+        
         NodeType tA = NodeType.valueOf(A.getType());
         NodeType tB = NodeType.valueOf(A.getType());
         if(
@@ -62,7 +63,7 @@ public final class testStringAlgoritm {
             (tB == NodeType.C_TYPE || tB == NodeType.C_STRUCT_DECL ||  tB == NodeType.C_UNION  )
         )
             return true; 
-
+        
         return false;
     }
     
@@ -82,7 +83,7 @@ public final class testStringAlgoritm {
     private static final String[] mathUnaryOP = new String[]{"++", "--"};
     private static final String[] setOP = new String[]{"=", "+=","-=","*=","/="};
     private static final String[] braceOP = new String[]{"{", "}","(",")","[","]"};
-    private static final String[] structOP = new String[]{".", "->"};
+    private static final String[] structOP = new String[]{".", "->", ";"};
 
     public static boolean isEql(ITree a, ITree b){
         if(isSimilarType(a,b)){
@@ -126,17 +127,25 @@ public final class testStringAlgoritm {
                         return true;
                     if (lb.contains(la))
                         return true;
-                   
+                    //if(longestSubString(la,lb) >=5)
+                    //    return true;
+
                 }
 
                 if( tA ==NodeType.C_NAME){
-                    if(longestSubString(la,lb) >=5)
+                    if (la.contains(lb))
                         return true;
+                    if (lb.contains(la))
+                        return true;
+                    //if(longestSubString(la,lb) >=5)
+                    //    return true;
                 }
 
 
                if( tA ==NodeType.C_LITERAL ){
-                 return true;
+                
+                  if(longestSubString(la,lb) >=3)
+                       return true;
                }
 
                 if(tA ==NodeType.C_SPECIFIER)
