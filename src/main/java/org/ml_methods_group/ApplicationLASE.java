@@ -1695,16 +1695,20 @@ public class ApplicationLASE extends ApplicationMethods {
         List<String> defects = Files.readAllLines(pathToListFile);
 
         List<String> defectFiles = new ArrayList<String>();
+        List<String> defectIds = new ArrayList<String>();
+
         // check directory structure
         File directory = new File(pathToSave.toString() );
         if(!directory.exists()){
             directory.mkdir();
         }
 
-        File directory2 = new File(pathToSave.toString() +"\\ast" );
-        if(!directory2.exists()){
+        File directory2 = new File(pathToSave.toString() +"\\ast");
+        if (!directory2.exists()) {
             directory2.mkdir();
         }
+
+
 
 
 
@@ -1720,21 +1724,24 @@ public class ApplicationLASE extends ApplicationMethods {
             // collect all files for defect to build matrix
             for (String fName : result) {
                 boolean useFile =false;
+                String defectId="";
 
                 for(String defect : defects){
 
                     if(fName.contains("\\"+defect+"\\")){
-                        var f = new File(fName);
-                        if(f.length() <= MAX_FILE_SIZE)
+                        var Code = Files.readString(Paths.get(fName));
+                        if (Code.length() <= MAX_FILE_SIZE)
                             useFile = true;
+                        defectId = defect;
                         break;
                     }
                 }
                 if (useFile){
                     defectFiles.add(fName);
+                    defectIds.add(defectId);
                 }
             }
-            System.out.println(defectFiles.size());
+
             // defect files is a collection of bad files
             if(defectFiles.size() >0){
 
@@ -1750,13 +1757,14 @@ public class ApplicationLASE extends ApplicationMethods {
                 }
 
 
-                for(int i=0;i<defectFiles.size();i++){
+                for(int i = 0; i < defectFiles.size(); i++){
 
 
                     String defectB = defectFiles.get(i);
 //                    dataset provided always have defect name as second from the end position in the sting split by "/"
                     String defectBId = defectB.split(Pattern.quote("\\"))[defectB.split(Pattern.quote("\\")).length - 2];
                     String fileName = defectB.split(Pattern.quote("\\"))[defectB.split(Pattern.quote("\\")).length - 1];
+                    TreeContext srcB = null ;
                     TreeContext dstB = null ;
                     List<Action> actB = null;
                     try{
@@ -1767,7 +1775,7 @@ public class ApplicationLASE extends ApplicationMethods {
                             var fromSolution = new Solution(fromCode, "B_BAD", "B_BAD", FAIL);
                             var toSolution = new Solution(toCode, "B_GOOD", "B_GOOD", OK);
 
-                            TreeContext srcB=null;
+                            srcB=null;
 
                             srcB = generator.buildTreeContext(fromSolution);
                             dstB = generator.buildTreeContext(toSolution);
@@ -1824,7 +1832,7 @@ public class ApplicationLASE extends ApplicationMethods {
                                 if(srcA != null && dstB != null  && actB !=null ){
 
                                     if(  actB.size() >0) {
-                                        testMatcher matcher = new testMatcher(srcA.getRoot(), dstB.getRoot(),new MappingStore());
+                                        testMatcher matcher = new testMatcher(srcA.getRoot(), srcB.getRoot(),new MappingStore());
 
                                         try {
                                             matcher.match();
