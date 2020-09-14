@@ -4,6 +4,7 @@ package org.ml_methods_group.common.ast.editactions;
 import org.ml_methods_group.common.ast.NodeType;
 
 import com.github.gumtreediff.actions.model.Action;
+import com.github.gumtreediff.actions.model.Addition;
 
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.TreeContext;
@@ -15,33 +16,22 @@ public class ActionContext {
    
     String curName="";
     if(n != null){
-        curName += n.toPrettyString(ctx); //.replace("\r"," ").replace("\n"," ").replace("\t"," ")  ;
-        /*
-        if(n.getType()!=-1){
-            try{
-                curName = NodeType.valueOf(n.getType()).name() ;
-                if(withLabel && n.hasLabel())
-                    //curName += n.toShortString() ;
-                    curName += "{"+ n.getLabel().replace("\r"," ").replace("\n"," ") +"}" ;
-                
-            }catch(Exception e){
-                curName = "" + n.getType();
-                if(withLabel  && n.hasLabel())
-                    //curName += n.toShortString()  ;
-                    curName +="{"+ n.getLabel().replace("\r"," ").replace("\n"," ") +"}";
-            }
-        }else{
-            if(withLabel && n.hasLabel())
-                //curName += n.toShortString()  ;
-                curName = "{"+ n.getLabel().replace("\r"," ").replace("\n"," ") +"}" ;
-        }
-        */
+        curName += n.toPrettyString(ctx); 
     }
     return curName;
    }
 
+
+   private static ITree BaseNodeFromAction( Action a){
+        if(a.getName()=="MOV" || a.getName()=="INS" ){
+            Addition ad = (Addition) a;
+            return  ad.getParent();
+        }
+        return a.getNode();
+   }
+
     public static String GetContextPath(Action a, Boolean withLabel, TreeContext ctx){
-        ITree n = a.getNode();
+        ITree n = BaseNodeFromAction(a);
         String nodePath = GetNodeName(n,withLabel,ctx);
         
         while( ! IsContextRoot(n) ){
@@ -51,8 +41,20 @@ public class ActionContext {
         return nodePath;
     }
 
+    public static String GetNodePath(ITree n, Boolean withLabel, TreeContext ctx){
+        if(n.hasLabel()){
+            String nodePath = GetNodeName(n,withLabel,ctx);
+            while( ! IsContextRoot(n) ){
+                n = n.getParent();
+                nodePath =GetNodeName(n,withLabel,ctx) +"\\" + nodePath;
+            }
+            return nodePath;
+        }
+        return "";
+    }
+
     public static ITree GetContextRoot(Action a){
-        ITree n = a.getNode();
+        ITree n = BaseNodeFromAction(a);
         while( ! IsContextRoot(n) ){
             n = n.getParent();
         }
@@ -75,6 +77,18 @@ public class ActionContext {
             return false;
 
         NodeType nt  =  NodeType.valueOf(n.getType());
+        /*
+        if(nt == NodeType.C_FUNCTION_DECL 
+        || nt == NodeType.C_MACRO 
+        || nt == NodeType.C_UNIT 
+        || nt == NodeType.C_NAMESPACE
+        || nt == NodeType.C_STRUCT_DECL
+        || nt == NodeType.C_TYPEDEF
+        || nt == NodeType.C_UNION
+        )
+            return true;
+        return false;
+*/
         if(
             nt == NodeType.C_DECL_STMT || 
             nt == NodeType.C_IF_STMT || 
@@ -84,8 +98,8 @@ public class ActionContext {
             nt == NodeType.C_WHILE ||
             nt == NodeType.C_FUNCTION_DECL ||
             // nt == NodeType.C_FUNCTION ||
-            // nt == NodeType.C_INCLUDE ||
-            // nt == NodeType.C_STRUCT ||
+            nt == NodeType.C_INCLUDE ||
+            nt == NodeType.C_STRUCT ||
             nt == NodeType.C_IFDEF ||
             nt == NodeType.C_IFNDEF ||
             nt == NodeType.C_UNDEF ||

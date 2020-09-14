@@ -70,7 +70,6 @@ public class testMatcher  extends Matcher {
         ITree m = src; //mappings.getDst(src);
         if(m != null){
             for(Action a : actions){
-
                 if(a.getNode().getId() == m.getId()){
                         return a.getNode();
                 }
