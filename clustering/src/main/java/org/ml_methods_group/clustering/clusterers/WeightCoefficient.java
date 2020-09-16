@@ -42,7 +42,7 @@ public class WeightCoefficient {
         if (contexts == null) contexts = new Hashtable<>();
         if (actionsTable == null) actionsTable = new Hashtable<>();
 
-        this.pathToMaxTreeDir = "C:\\Users\\kWX910209\\Documents\\gumtree_csv\\maxtreeAllJavaConctrete";
+        this.pathToMaxTreeDir = "C:\\Users\\kWX910209\\Documents\\gumtree_csv\\maxtreeAllJavaConctreteNew";
         this.version = "conctrete";
 
         if (result == null) {
@@ -54,8 +54,6 @@ public class WeightCoefficient {
                 e.printStackTrace();
             }
         }
-
-
 
     }
 
@@ -102,14 +100,14 @@ public class WeightCoefficient {
             actions = actionsTable.get(target);
         } else {
 
-            Matcher matcherAst = Matchers.getInstance().getMatcher(srcA.getRoot(), dstB.getRoot());
+            Matcher matcherAst = Matchers.getInstance().getMatcher(srcA.getRoot(), srcB.getRoot());
             try {
                 matcherAst.match();
             } catch (NullPointerException e) {
                 System.out.println(e.getMessage());
             }
 
-            ActionGenerator actionGenerator = new ActionGenerator(srcA.getRoot(), dstB.getRoot(), matcherAst.getMappings());
+            ActionGenerator actionGenerator = new ActionGenerator(srcA.getRoot(), srcB.getRoot(), matcherAst.getMappings());
             try {
                 actionGenerator.generate();
             } catch (Exception e) {
