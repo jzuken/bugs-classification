@@ -41,6 +41,7 @@ import org.ml_methods_group.testing.extractors.CachedFeaturesExtractor;
 import org.ml_methods_group.common.ast.matches.testMatcher;
 import org.ml_methods_group.ApplicationMethods;
 import org.ml_methods_group.ApplicationLASE;
+import org.ml_methods_group.ApplicationSuggest;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -298,13 +299,35 @@ public class Application {
                             );
                     return;
                 }
-                ApplicationLASE.LaseLookLike(
+                ApplicationSuggest.LaseLookLike(
                         Paths.get(args[1]),
                         Paths.get(args[2]),
                         Paths.get(args[3]),
                         Paths.get(args[4]),
                         Paths.get(args[5]),
                         args[6],  
+                        getVerboseFromArgs(args)
+                        
+                );
+                break;
+
+
+            case "suggestion":
+                if (args.length < 5 ) {
+                    System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
+                            "    Path to file for test" + System.lineSeparator() +
+                            "    Path to bug library " + System.lineSeparator() +
+                            "    Path to file with list of bug library defects" + System.lineSeparator() +
+                            "    Path to folder to store suggestion" + System.lineSeparator() +
+                            "    [Optional] --verbose=yes  for detail output" + System.lineSeparator() 
+                            );
+                    return;
+                }
+                ApplicationSuggest.Suggestion(
+                        Paths.get(args[1]),
+                        Paths.get(args[2]),
+                        Paths.get(args[3]),
+                        Paths.get(args[4]),
                         getVerboseFromArgs(args)
                         
                 );
