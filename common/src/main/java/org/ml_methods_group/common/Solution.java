@@ -4,6 +4,9 @@ package org.ml_methods_group.common;
 import java.io.Serializable;
 
 public class Solution implements Serializable {
+
+    static final long serialVersionUID=1;
+    
     private final String code;
     private final String id;
     private final String solutionId;

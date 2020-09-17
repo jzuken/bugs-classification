@@ -1,6 +1,7 @@
 
 package org.ml_methods_group;
 
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.github.gumtreediff.actions.ActionGenerator;
 import com.github.gumtreediff.actions.model.Action;
 import com.github.gumtreediff.actions.model.Addition;
@@ -49,6 +50,8 @@ import org.ml_methods_group.testing.extractors.CachedFeaturesExtractor;
 import org.ml_methods_group.common.ast.matches.testMatcher;
 import org.ml_methods_group.ApplicationMethods;
 import org.ml_methods_group.common.ast.srcmlGenerator;
+import org.ml_methods_group.common.ast.suggestionItem;
+import org.ml_methods_group.common.ast.suggestion;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -480,6 +483,7 @@ public class ApplicationSuggest  extends ApplicationMethods {
         }
 
         String testFileName = pathToFile.toString() ;
+        List<suggestion> sugList = new ArrayList<suggestion>();
 
         try {
 
@@ -517,6 +521,8 @@ public class ApplicationSuggest  extends ApplicationMethods {
         
             if (testFileName.length() > 0 && defectFiles2.size() > 0) {
 
+               
+
                 // collect common actions for cluster here
                 double[] weightMatrix = new double[defectFiles2.size()];
                 int[] sizes = new int[defectFiles2.size()];
@@ -553,6 +559,9 @@ public class ApplicationSuggest  extends ApplicationMethods {
                 
 
                     try {
+
+                        
+
                         var fromCode = Files.readString(Paths.get(defectB));
                         var toCode = Files.readString(Paths.get(defectB.replace(badFolderName2, goodFolderName2)));
                         if (fromCode.length() <= MAX_FILE_SIZE && toCode.length() <= MAX_FILE_SIZE) {
@@ -710,19 +719,30 @@ public class ApplicationSuggest  extends ApplicationMethods {
 
                                 if (seekCode.size() >= 5) {
                                 
+                                    suggestion sug = new suggestion(defectB_Name);
+
                                     List<ITree> po = TreeUtils.preOrder( srcA.getRoot());
                                     for(ITree n: po){
                                         String c = ActionContext.GetNodePath(n, true, srcA)  ;
                                         if(c.length()>0){
                                             if (seekCode.contains(c) ){
-                                                if(!seekCheck.contains(c))
+                                                if(!seekCheck.contains(c)){
                                                     seekCheck.add(c);
+                                                    suggestionItem sugItem = new suggestionItem(n.getId(),n.getPos(), n.getLength(), "???", c);
+                                                    sug.suggestions.add(sugItem);
+                                                }
+                                                    
                                             }
                                                 
                                         }
                                         // if all strings are found we can stop checking
                                         if(seekCheck.size() == seekCode.size())
                                             break;
+                                    }
+
+                                    if(seekCheck.size() == seekCode.size()){
+                                        sugList.add(sug);
+                                        sug=null;
                                     }
                                     
                                     weightMatrix[i] = 100.0 *  seekCheck.size() / seekCode.size();
@@ -765,6 +785,14 @@ public class ApplicationSuggest  extends ApplicationMethods {
                     writer.write("\r\n");
                 }
                 writer.close();
+
+
+                FileOutputStream outputStream = new FileOutputStream( pathToSuggestion.toString() + "\\suggestions.data");
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
+         
+                //  save suggestions
+                objectOutputStream.writeObject(sugList);
+                objectOutputStream.close();
             }
 
             } catch (IOException e) {
