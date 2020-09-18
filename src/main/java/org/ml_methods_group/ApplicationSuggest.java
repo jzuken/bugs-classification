@@ -52,6 +52,7 @@ import org.ml_methods_group.ApplicationMethods;
 import org.ml_methods_group.common.ast.srcmlGenerator;
 import org.ml_methods_group.common.ast.suggestionItem;
 import org.ml_methods_group.common.ast.suggestion;
+import org.ml_methods_group.common.ast.seekItem;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -173,7 +174,8 @@ public class ApplicationSuggest  extends ApplicationMethods {
 
                         TreeContext dstB = null;
                         List<Action> actB = null;
-                        List<String> seekCode= new ArrayList<String>();
+                        //List<String> seekCode= new ArrayList<String>();
+                        Map<String, seekItem> seekCode = new  HashMap<String, seekItem>();
                         String emuCode="";
 
                         
@@ -196,7 +198,7 @@ public class ApplicationSuggest  extends ApplicationMethods {
                                 dstB = generator.buildTreeContext(toSolution);
 
                                 Matcher matcherAst = Matchers.getInstance().getMatcher(srcB.getRoot(), dstB.getRoot());
-                                System.out.println("Compare trees");
+                                // System.out.println("Compare trees");
                                 try {
                                     matcherAst.match();
                                 } catch (NullPointerException e) {
@@ -281,8 +283,8 @@ public class ApplicationSuggest  extends ApplicationMethods {
 
                                         emuCode += actString + "\n";
                                         if(seekString.length()>0 ){
-                                            if(! seekCode.contains(seekString))
-                                                seekCode.add(seekString);
+                                            if(! seekCode.containsKey(seekString))
+                                                seekCode.put(seekString, new seekItem(seekString, actString) );
                                         }
                                             
 
@@ -302,8 +304,8 @@ public class ApplicationSuggest  extends ApplicationMethods {
 
                                             writer = null;
                                             writer = new BufferedWriter(new FileWriter(seekFile.getAbsolutePath()));
-                                            for(String sc: seekCode){
-                                                writer.write(sc +"\r\n");
+                                            for(seekItem si: seekCode.values()){
+                                                writer.write(si.seekString +"\r\n");
                                             }
                                             writer.close();
                                             writer = null;
@@ -351,7 +353,7 @@ public class ApplicationSuggest  extends ApplicationMethods {
                                         for(ITree n: po){
                                             String c = ActionContext.GetNodePath(n, true, srcA)  ;
                                             if(c.length()>0){
-                                                if (seekCode.contains(c) ){
+                                                if (seekCode.containsKey(c) ){
                                                     if(!seekCheck.contains(c))
                                                         seekCheck.add(c);
                                                 }
@@ -549,7 +551,8 @@ public class ApplicationSuggest  extends ApplicationMethods {
 
                     TreeContext dstB = null;
                     List<Action> actB = null;
-                    List<String> seekCode= new ArrayList<String>();
+                    //List<String> seekCode= new ArrayList<String>();
+                    Map<String, seekItem> seekCode = new HashMap<String, seekItem>();
                     String emuCode="";
 
                     
@@ -575,7 +578,7 @@ public class ApplicationSuggest  extends ApplicationMethods {
                             dstB = generator.buildTreeContext(toSolution);
 
                             Matcher matcherAst = Matchers.getInstance().getMatcher(srcB.getRoot(), dstB.getRoot());
-                            System.out.println("Compare trees");
+                            System.out.print(".");
                             try {
                                 matcherAst.match();
                             } catch (NullPointerException e) {
@@ -660,8 +663,8 @@ public class ApplicationSuggest  extends ApplicationMethods {
 
                                     emuCode += actString + "\n";
                                     if(seekString.length()>0 ){
-                                        if(! seekCode.contains(seekString))
-                                            seekCode.add(seekString);
+                                        if(! seekCode.containsKey(seekString))
+                                            seekCode.put(seekString, new seekItem(seekString, actString));
                                     }
                                         
 
@@ -681,8 +684,8 @@ public class ApplicationSuggest  extends ApplicationMethods {
 
                                         writer = null;
                                         writer = new BufferedWriter(new FileWriter(seekFile.getAbsolutePath()));
-                                        for(String sc: seekCode){
-                                            writer.write(sc +"\r\n");
+                                        for(seekItem si: seekCode.values()){
+                                            writer.write(si.seekString +"\r\n");
                                         }
                                         writer.close();
                                         writer = null;
@@ -725,10 +728,10 @@ public class ApplicationSuggest  extends ApplicationMethods {
                                     for(ITree n: po){
                                         String c = ActionContext.GetNodePath(n, true, srcA)  ;
                                         if(c.length()>0){
-                                            if (seekCode.contains(c) ){
+                                            if (seekCode.containsKey(c) ){
                                                 if(!seekCheck.contains(c)){
                                                     seekCheck.add(c);
-                                                    suggestionItem sugItem = new suggestionItem(n.getId(),n.getPos(), n.getLength(), "???", c);
+                                                    suggestionItem sugItem = new suggestionItem(n.getId(),n.getPos(), n.getLength(), seekCode.get(c).actionString, seekCode.get(c).seekString );
                                                     sug.suggestions.add(sugItem);
                                                 }
                                                     
@@ -763,6 +766,8 @@ public class ApplicationSuggest  extends ApplicationMethods {
 
                 }
 
+                System.out.println("");
+                System.out.println("Save results");
                 String matrixFile = pathToSuggestion.toString() + "\\";
                 matrixFile +=  "similarity.csv";
                 BufferedWriter writer = new BufferedWriter(new FileWriter(matrixFile));
@@ -787,12 +792,35 @@ public class ApplicationSuggest  extends ApplicationMethods {
                 writer.close();
 
 
-                FileOutputStream outputStream = new FileOutputStream( pathToSuggestion.toString() + "\\suggestions.data");
+                writer = new BufferedWriter(new FileWriter( pathToSuggestion.toString() + "\\suggestions.txt"));
+
+                for (suggestion sug : sugList) {
+
+                    writer.write("\"suggestFrom\":\"" + sug.BugLibraryItem + "\",\"items:[\r\n");
+                    for(suggestionItem sugItem : sug.suggestions){
+                        writer.write("{\r\n");
+                        writer.write("\"start\":" +sugItem.startPosition +",");
+                        writer.write("\"end\":" +sugItem.endPosition +",");
+                        writer.write("\"modification\":" +sugItem.SuggestionContent +",");
+                        writer.write("\"reason\":" + sugItem.reson +",");
+
+                        writer.write("}\r\n");
+                    }
+                    
+                    writer.write("]\r\n");
+                }
+                writer.close();
+
+
+                FileOutputStream outputStream = new FileOutputStream( pathToSuggestion.toString() + "\\suggestions.bin");
                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
          
                 //  save suggestions
                 objectOutputStream.writeObject(sugList);
                 objectOutputStream.close();
+
+
+
             }
 
             } catch (IOException e) {
