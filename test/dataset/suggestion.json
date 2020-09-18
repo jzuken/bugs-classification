@@ -1,0 +1,47 @@
+{"suggestions":[
+{"suggestFrom":"DTS2016112403376","items":
+[
+	{
+"position":3910,"length":5,"modification":"UPD type\\name: UCHAR change to ULONG","reason":"type\\name: UCHAR"}
+,
+	{
+"position":3916,"length":6,"modification":"UPD decl_stmt\\decl\\name: ucLoop change to ulLoop","reason":"decl_stmt\\decl\\name: ucLoop"}
+,
+	{
+"position":4383,"length":6,"modification":"UPD for\\control\\init\\expr\\name: ucLoop change to ulLoop","reason":"for\\control\\init\\expr\\name: ucLoop"}
+,
+	{
+"position":4395,"length":6,"modification":"UPD for\\control\\condition\\expr\\name: ucLoop change to ulLoop","reason":"for\\control\\condition\\expr\\name: ucLoop"}
+,
+	{
+"position":5144,"length":6,"modification":"UPD for\\block\\block_content\\expr_stmt\\expr\\name\\index\\expr\\name: ucLoop change to ulLoop","reason":"for\\block\\block_content\\expr_stmt\\expr\\name\\index\\expr\\name: ucLoop"}
+]
+}
+,{"suggestFrom":"DTS2016113005945","items":
+[
+	{
+"position":3910,"length":5,"modification":"UPD type\\name: UCHAR change to ULONG","reason":"type\\name: UCHAR"}
+,
+	{
+"position":3916,"length":6,"modification":"UPD decl_stmt\\decl\\name: ucLoop change to ulLoop","reason":"decl_stmt\\decl\\name: ucLoop"}
+,
+	{
+"position":4383,"length":6,"modification":"UPD for\\control\\init\\expr\\name: ucLoop change to ulLoop","reason":"for\\control\\init\\expr\\name: ucLoop"}
+,
+	{
+"position":4395,"length":6,"modification":"UPD for\\control\\condition\\expr\\name: ucLoop change to ulLoop","reason":"for\\control\\condition\\expr\\name: ucLoop"}
+,
+	{
+"position":5679,"length":6,"modification":"UPD for\\block\\block_content\\expr_stmt\\expr\\call\\argument_list\\argument\\expr\\name: ucLoop change to ulLoop","reason":"for\\block\\block_content\\expr_stmt\\expr\\call\\argument_list\\argument\\expr\\name: ucLoop"}
+,
+	{
+"position":28078,"length":6,"modification":"UPD if_stmt\\if\\condition\\expr\\name\\index\\expr\\name: ucLoop change to ulLoop","reason":"if_stmt\\if\\condition\\expr\\name\\index\\expr\\name: ucLoop"}
+,
+	{
+"position":43737,"length":6,"modification":"UPD if_stmt\\if\\block\\block_content\\expr_stmt\\expr\\call\\argument_list\\argument\\expr\\name\\index\\expr\\name: ucLoop change to ulLoop","reason":"if_stmt\\if\\block\\block_content\\expr_stmt\\expr\\call\\argument_list\\argument\\expr\\name\\index\\expr\\name: ucLoop"}
+,
+	{
+"position":55181,"length":6,"modification":"UPD if_stmt\\else\\block\\block_content\\expr_stmt\\expr\\name\\index\\expr\\name: ucLoop change to ulLoop","reason":"if_stmt\\else\\block\\block_content\\expr_stmt\\expr\\name\\index\\expr\\name: ucLoop"}
+]
+}
+]}
