@@ -809,7 +809,7 @@ public class ApplicationSuggest  extends ApplicationMethods {
                         writer.write("\"position\":" +sugItem.startPosition +",");
                         writer.write("\"length\":" +sugItem.endPosition +",");
                         writer.write("\"modification\":\"" +sugItem.SuggestionContent.replace("\"","\"\"").replace("\\", "\\\\") +"\",");
-                        writer.write("\"reason\":\"" + sugItem.reson +"\"");
+                        writer.write("\"reason\":\"" + sugItem.reson.replace("\"","\"\"").replace("\\", "\\\\") +"\"");
 
                         writer.write("}\r\n");
                     }
