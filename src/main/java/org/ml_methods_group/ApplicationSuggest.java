@@ -792,32 +792,36 @@ public class ApplicationSuggest  extends ApplicationMethods {
                 writer.close();
 
 
-                writer = new BufferedWriter(new FileWriter( pathToSuggestion.toString() + "\\suggestions.txt"));
-
+                writer = new BufferedWriter(new FileWriter( pathToSuggestion.toString() + "\\suggestions.json"));
+                writer.write("{\"suggestions\":[\r\n");
+                boolean firstSug = true;
                 for (suggestion sug : sugList) {
-
-                    writer.write("\"suggestFrom\":\"" + sug.BugLibraryItem + "\",\"items:[\r\n");
+                    if(!firstSug)
+                        writer.write(",");
+                    firstSug=false;
+                    writer.write("{\"suggestFrom\":\"" + sug.BugLibraryItem + "\",\"items\":\r\n[");
+                    boolean firstItem = true;
                     for(suggestionItem sugItem : sug.suggestions){
-                        writer.write("{\r\n");
-                        writer.write("\"start\":" +sugItem.startPosition +",");
-                        writer.write("\"end\":" +sugItem.endPosition +",");
-                        writer.write("\"modification\":" +sugItem.SuggestionContent +",");
-                        writer.write("\"reason\":" + sugItem.reson +",");
+                        if(!firstItem)
+                            writer.write(",");
+                        firstItem=false;
+                        writer.write("\r\n\t{\r\n");
+                        writer.write("\"position\":" +sugItem.startPosition +",");
+                        writer.write("\"length\":" +sugItem.endPosition +",");
+                        writer.write("\"modification\":\"" +sugItem.SuggestionContent.replace("\"","\"\"").replace("\\", "\\\\") +"\",");
+                        writer.write("\"reason\":\"" + sugItem.reson +"\"");
 
                         writer.write("}\r\n");
                     }
                     
                     writer.write("]\r\n");
+                    writer.write("}\r\n");
                 }
+                writer.write("]}\r\n");
                 writer.close();
 
 
-                FileOutputStream outputStream = new FileOutputStream( pathToSuggestion.toString() + "\\suggestions.bin");
-                ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
-         
-                //  save suggestions
-                objectOutputStream.writeObject(sugList);
-                objectOutputStream.close();
+               
 
 
 
