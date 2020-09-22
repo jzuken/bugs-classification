@@ -59,9 +59,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+
 
 import static org.ml_methods_group.common.Solution.Verdict.FAIL;
 import static org.ml_methods_group.common.Solution.Verdict.OK;
@@ -523,15 +524,21 @@ public class ApplicationSuggest extends ApplicationMethods {
                 int[] sizes = new int[defectFiles2.size()];
 
                 // ------------------ threaded zone
-                List<Thread> Threads = new ArrayList<Thread>();
+                //List<Thread> Threads = new ArrayList<Thread>();
+                List<Runnable> Tasks = new ArrayList<Runnable>();
+
+                ExecutorService es =  Executors.newFixedThreadPool(4);
                
                 for (int i = 0; i < defectFiles2.size(); i++) {
                     final int idx = i;
-                    Thread myThread = new Thread(new Runnable() {
+
+
+                    //Thread myThread = new Thread(new Runnable() {
+                    Tasks.add( new Runnable() {
                         public void run() // Этот метод будет выполняться в побочном потоке
                         {
 
-                            //System.out.println(idx +" start");
+                            System.out.println(idx +" start");
                             final ASTGenerator generator = new CachedASTGenerator(new BasicASTNormalizer());
 
                             // get template defects from second dataset
@@ -696,19 +703,7 @@ public class ApplicationSuggest extends ApplicationMethods {
 
                             if (seekCode.size() >= 5) {
                                 weightMatrix[idx] = 0;
-
-                                //String defectA = testFileName;
-                                //TreeContext srcA = null;
-
                                 try {
-                                    //srcA = null;
-                                    //var fromCodeA = Files.readString(Paths.get(defectA));
-                                    //if (fromCodeA.length() <= MAX_FILE_SIZE) {
-                                    //    var fromSolutionA = new Solution(fromCodeA, "A_BAD", "A_BAD", FAIL);
-                                    //    srcA = generator.buildTreeContext(fromSolutionA);
-                                    //    fromSolutionA = null;
-                                    //}
-
                                     if (srcA != null && dstB != null && actB != null) {
                                         List<String> seekCheck = new ArrayList<String>();
 
@@ -757,16 +752,26 @@ public class ApplicationSuggest extends ApplicationMethods {
                                 }
 
                             }
-                            //System.out.println(idx +" done");
+                            System.out.println(idx +" done");
 
                         }
                         
                     });
-                    Threads.add(myThread);
-                    myThread.start();
+
+
+                    //Threads.add(myThread);
+                    //myThread.start();
 
                 }
 
+                CompletableFuture<?>[] futures = Tasks.stream()
+                               .map(task -> CompletableFuture.runAsync(task, es))
+                               .toArray(CompletableFuture[]::new);
+                CompletableFuture.allOf(futures).join();    
+                es.shutdown();
+
+
+                /*
                 // wait for all threads
                 //System.out.println("Wait while all threads finished");
                 boolean anyAlive = true;
@@ -791,6 +796,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                         e.printStackTrace();
                     }
                 }
+                */
 
                 //System.out.println("");
                 System.out.println("Save results");
