@@ -507,6 +507,17 @@ public class ApplicationSuggest extends ApplicationMethods {
 
             if (testFileName.length() > 0 && defectFiles2.size() > 0) {
 
+                final String defectA = testFileName;
+                     
+                var fromCodeA = Files.readString(Paths.get(defectA));
+                
+                if (fromCodeA.length() <= MAX_FILE_SIZE) {
+                    var fromSolutionA = new Solution(fromCodeA, "A_BAD", "A_BAD", FAIL);
+                    ASTGenerator generator1 = new CachedASTGenerator(new BasicASTNormalizer());  
+                    final TreeContext srcA =  generator1.buildTreeContext(fromSolutionA);
+                    fromSolutionA = null;
+                    generator1 = null;
+
                 // collect common actions for cluster here
                 double[] weightMatrix = new double[defectFiles2.size()];
                 int[] sizes = new int[defectFiles2.size()];
@@ -520,7 +531,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                         public void run() // Этот метод будет выполняться в побочном потоке
                         {
 
-                            System.out.println(idx +" start");
+                            //System.out.println(idx +" start");
                             final ASTGenerator generator = new CachedASTGenerator(new BasicASTNormalizer());
 
                             // get template defects from second dataset
@@ -551,6 +562,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                                         .readString(Paths.get(defectB.replace(badFolderName2, goodFolderName2)));
                                 if (fromCode.length() <= MAX_FILE_SIZE && toCode.length() <= MAX_FILE_SIZE) {
 
+                                    //System.out.println(idx +" sizes: " + fromCode.length() +"->" + toCode.length() );
                                     var fromSolution = new Solution(fromCode, "B_BAD", "B_BAD", FAIL);
                                     var toSolution = new Solution(toCode, "B_GOOD", "B_GOOD", OK);
 
@@ -685,17 +697,17 @@ public class ApplicationSuggest extends ApplicationMethods {
                             if (seekCode.size() >= 5) {
                                 weightMatrix[idx] = 0;
 
-                                String defectA = testFileName;
-                                TreeContext srcA = null;
+                                //String defectA = testFileName;
+                                //TreeContext srcA = null;
 
                                 try {
-                                    srcA = null;
-                                    var fromCodeA = Files.readString(Paths.get(defectA));
-                                    if (fromCodeA.length() <= MAX_FILE_SIZE) {
-                                        var fromSolutionA = new Solution(fromCodeA, "A_BAD", "A_BAD", FAIL);
-                                        srcA = generator.buildTreeContext(fromSolutionA);
-                                        fromSolutionA = null;
-                                    }
+                                    //srcA = null;
+                                    //var fromCodeA = Files.readString(Paths.get(defectA));
+                                    //if (fromCodeA.length() <= MAX_FILE_SIZE) {
+                                    //    var fromSolutionA = new Solution(fromCodeA, "A_BAD", "A_BAD", FAIL);
+                                    //    srcA = generator.buildTreeContext(fromSolutionA);
+                                    //    fromSolutionA = null;
+                                    //}
 
                                     if (srcA != null && dstB != null && actB != null) {
                                         List<String> seekCheck = new ArrayList<String>();
@@ -732,6 +744,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                                             }
 
                                             weightMatrix[idx] = 100.0 * seekCheck.size() / seekCode.size();
+                                            System.out.println("thread["+idx + "] defect:" + defectB_Name+" similarity: " + weightMatrix[idx]);
                                         }
                                         seekCheck.clear();
                                         seekCheck = null;
@@ -744,7 +757,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                                 }
 
                             }
-                            System.out.println(idx +" done");
+                            //System.out.println(idx +" done");
 
                         }
                         
@@ -755,7 +768,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                 }
 
                 // wait for all threads
-                System.out.println("Wait while all threads finished");
+                //System.out.println("Wait while all threads finished");
                 boolean anyAlive = true;
                 while (anyAlive) {
                     anyAlive = false;
@@ -765,7 +778,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                         break;
                     }
                     try {
-                        Thread.currentThread().sleep(10);
+                        Thread.currentThread().sleep(1);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -779,7 +792,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                     }
                 }
 
-                System.out.println("");
+                //System.out.println("");
                 System.out.println("Save results");
                 String matrixFile = pathToSuggestion.toString() + "\\";
                 matrixFile +=  "similarity.csv";
@@ -836,13 +849,13 @@ public class ApplicationSuggest extends ApplicationMethods {
 
                
 
-
+            }
 
             }
 
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         
            
