@@ -17,31 +17,86 @@ export function activate(context: vscode.ExtensionContext) {
 		// The code you place here will be executed every time your command is executed
 
 		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from BugClassification!');
+		vscode.window.showInformationMessage('Hello World from BugClassification is started!');
 
-		const defaults = {
-			cwd: undefined,
-			env: process.env
-		};
+		// Current command is "Hello World"
 
-		const { spawn } = require('child_process');
-		const ls = spawn('dir', ["."], {shell: true});
-		
-		ls.stdout.on('data', (data: any) => {
-			console.log(`stdout: ${data}`);
-		});
-		
-		ls.stderr.on('data', (data: any) => {
-			console.error(`stderr: ${data}`);
-		});
-		
-		ls.on('close', (code: any) => {
-			console.log(`child process exited with code ${code}`);
-		});
 
-		ls.on('error', (err: any) => {
-			console.log('Failed to start subprocess.');
-		});
+		let cfg = vscode.workspace.getConfiguration('bugclassification');
+		// vscode.workspace.workspaceFolders will be undefined if no workspace opened
+		// let currentFilePath = vscode.workspace.workspaceFolders == undefined ? "" : vscode.workspace.workspaceFolders[0].uri.fsPath;
+		let currentFilePath =  vscode.window.activeTextEditor == undefined ? "" : vscode.window.activeTextEditor.document.fileName;
+
+		console.log(cfg.path);
+		console.log(cfg.defectlist);
+		console.log(currentFilePath);
+
+
+		let classificationPath = "";
+		let defectListPath = "";
+
+		if (cfg.path != undefined || cfg.path != ""){
+			classificationPath = cfg.path;
+		} else {
+			vscode.window.showInformationMessage('Path for classification is not set. Please update it in settings.json');
+		}
+
+		if (cfg.defectlist != undefined || cfg.defectlist != ""){
+			defectListPath = cfg.defectlist;
+		} else {
+			vscode.window.showInformationMessage('Path for defect list is not set. Please update it in settings.json');
+		}
+
+		// settings.json should look something like this:
+		// {
+		// 	"terminal.integrated.shell.windows": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+		// 	"window.zoomLevel": 1,
+		// 	"bugclassification.path": "C:\\Users\\kWX910209\\Documents\\bugs-classification",
+		// 	"bugclassification.defectlist": "C:\\temp\\list_CE12800.txt"
+		// }
+
+		// should have paths to bug-classification folder, to defect list and to the current open file
+		if (classificationPath != "" && defectListPath != "" && currentFilePath != "") {
+			const defaults = {
+				cwd: undefined,
+				env: process.env
+			};
+	
+			const { spawn } = require('child_process');
+	
+			const java = spawn('java', [
+				"-Xmx12G", "-Dfile.encoding=UTF-8", "-jar", 
+				classificationPath + "\\build\\libs\\bugs-classification-v1.jar", 
+				"suggestion",
+				currentFilePath,
+				classificationPath + "\\test\\dataset",
+				defectListPath,
+				classificationPath + "\\test\\dataset\\suggestion",
+				"--verbose=yes"
+			]);
+	
+			java.stdout.on('data', (data: any) => {
+				console.log(`stdout: ${data}`);
+				vscode.window.showInformationMessage('Analysis completed');
+			});
+	
+			java.stderr.on('data', (data: any) => {
+				console.error(`stderr: ${data}`);
+				vscode.window.showInformationMessage('Something went wrong');
+			});
+			
+			java.on('close', (code: any) => {
+				console.log(`child process exited with code ${code}`);
+				vscode.window.showInformationMessage('Extention Closed');
+			});
+	
+			java.on('error', (err: any) => {
+				console.log('Failed to start subprocess.');
+				vscode.window.showInformationMessage('Something went wrong 2');
+			});
+		} else {
+			vscode.window.showInformationMessage('Path for classification or defect list is not set or possibly no files open to analyse. Please update it in settings.json');
+		}
 
 	});
 

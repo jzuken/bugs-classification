@@ -19,7 +19,22 @@
 				"command": "bugclassification.helloWorld",
 				"title": "Hello World"
 			}
-		]
+		],
+		"configuration": {
+			"title": "BugClassification",
+			"properties": {
+				"bugclassification.path": {
+					"type": ["string", "null"],
+					"default": null,
+					"description": "Path to bug-classification directory"
+				},
+				"bugclassification.defectlist": {
+					"type": ["string", "null"],
+					"default": null,
+					"description": "Path to defect list file"
+				}
+			}
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
