@@ -10,6 +10,10 @@ export function activate(context: vscode.ExtensionContext) {
 	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "bugclassification" is now active!');
 
+	//  
+	const gDiagnosticsCollection = vscode.languages.createDiagnosticCollection("testdiagnostic");
+	const gDiagnosticsArray = new Array<vscode.Diagnostic>();
+
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
 	// The commandId parameter must match the command field in package.json
@@ -26,11 +30,6 @@ export function activate(context: vscode.ExtensionContext) {
 		// vscode.workspace.workspaceFolders will be undefined if no workspace opened
 		// let currentFilePath = vscode.workspace.workspaceFolders == undefined ? "" : vscode.workspace.workspaceFolders[0].uri.fsPath;
 		let currentFilePath =  vscode.window.activeTextEditor == undefined ? "" : vscode.window.activeTextEditor.document.fileName;
-
-		console.log(cfg.path);
-		console.log(cfg.defectlist);
-		console.log(currentFilePath);
-
 
 		let classificationPath = "";
 		let defectListPath = "";
@@ -58,7 +57,7 @@ export function activate(context: vscode.ExtensionContext) {
 		// should have paths to bug-classification folder, to defect list and to the current open file
 		if (classificationPath != "" && defectListPath != "" && currentFilePath != "") {
 			const defaults = {
-				cwd: undefined,
+				cwd: classificationPath,
 				env: process.env
 			};
 	
@@ -74,6 +73,8 @@ export function activate(context: vscode.ExtensionContext) {
 				classificationPath + "\\test\\dataset\\suggestion",
 				"--verbose=yes"
 			]);
+
+			console.log(java);
 	
 			java.stdout.on('data', (data: any) => {
 				console.log(`stdout: ${data}`);
@@ -96,6 +97,13 @@ export function activate(context: vscode.ExtensionContext) {
 			});
 		} else {
 			vscode.window.showInformationMessage('Path for classification or defect list is not set or possibly no files open to analyse. Please update it in settings.json');
+		}
+
+		// 
+		let diag = new vscode.Diagnostic(new vscode.Range(new vscode.Position(1,10),new vscode.Position(2,20)), "message", vscode.DiagnosticSeverity.Error);
+		gDiagnosticsArray.push(diag);
+		if (vscode.window.activeTextEditor) {
+			gDiagnosticsCollection.set(vscode.window.activeTextEditor.document.uri, gDiagnosticsArray);
 		}
 
 	});
