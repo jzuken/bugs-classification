@@ -74,11 +74,14 @@ export function activate(context: vscode.ExtensionContext) {
 				"--verbose=yes"
 			]);
 
-			console.log(java);
 	
 			java.stdout.on('data', (data: any) => {
 				console.log(`stdout: ${data}`);
-				vscode.window.showInformationMessage('Analysis completed');
+				
+				if (data.toString().trim() == "Save results") {
+					console.log("Calculation completed. Safe to fetch suggestion.json");
+					vscode.window.showInformationMessage('Analysis completed');
+				}
 			});
 	
 			java.stderr.on('data', (data: any) => {
