@@ -73,6 +73,9 @@ public class ApplicationSuggest extends ApplicationMethods {
     public static void LaseLookLike(Path pathToDataset1, Path pathToListFile1, Path pathToDataset2,
             Path pathToListFile2, Path pathToMatrix, String version, String verbose, Integer minCountOfMarkers, Boolean UseAnyNode) throws IOException {
 
+        System.out.println("Markers: " + minCountOfMarkers);    
+        System.out.println("Use any node: " + UseAnyNode);    
+
         // check directory structure
         File directory = new File(pathToMatrix.toString());
         if (!directory.exists()) {
@@ -461,6 +464,10 @@ public class ApplicationSuggest extends ApplicationMethods {
     public static void Suggestion(Path pathToFile, Path pathToBugLib, Path pathToListFile, Path pathToSuggestion,
             String verbose, Integer minCountOfMarkers, Integer minSugestionSimilarityLevel, Boolean UseAnyNode) throws IOException {
 
+        System.out.println("Markers: " + minCountOfMarkers);    
+        System.out.println("Minimal Suggestion level: " + minSugestionSimilarityLevel);    
+        System.out.println("Use any node: " + UseAnyNode);    
+
         // check directory structure
         File directory = new File(pathToSuggestion.toString());
         if (!directory.exists()) {
@@ -684,7 +691,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                                         sizes[idx] = seekCode.size();
 
                                         if (verbose.equals("yes")) {
-                                            if (seekCode.size() >= 5) {
+                                            if (seekCode.size() >= minCountOfMarkers) {
                                                 writer = null;
                                                 writer = new BufferedWriter(
                                                         new FileWriter(actionsFile.getAbsolutePath()));
@@ -716,7 +723,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                                     if (srcA != null && dstB != null && actB != null) {
                                         List<String> seekCheck = new ArrayList<String>();
 
-                                        if (seekCode.size() >= 5) {
+                                        if (seekCode.size() >= minCountOfMarkers) {
 
                                             suggestion sug = new suggestion(defectB_Name);
 

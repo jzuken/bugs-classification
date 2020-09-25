@@ -477,7 +477,7 @@ public class Application {
     private static Integer getNamedIntegerFromArgs(String Name, Integer defaultValue, String[] args) {
         String pName = "--" +Name.toLowerCase()+"=";
         var param = Arrays.stream(args).filter(x -> x.toLowerCase().startsWith(pName)).findFirst();
-
+        System.out.println(pName +"->"+param.get());
         if (param.isEmpty()) {
             return defaultValue;
         }
@@ -487,12 +487,17 @@ public class Application {
 
     private static Boolean getNamedBooleanFromArgs(String Name, Boolean defaultValue, String[] args) {
         String pName = "--" +Name.toLowerCase()+"=";
+
         var param = Arrays.stream(args).filter(x -> x.toLowerCase().startsWith(pName)).findFirst();
 
+        System.out.println(pName +"->"+param.get());
+        
         if (param.isEmpty()) {
             return defaultValue;
         }
-        return param.get().toLowerCase().replace(pName, "")=="true";
+        
+        System.out.println(param.get()  +"-->" + param.get().toLowerCase().replace(pName, ""));
+        return param.get().toLowerCase().replace(pName, "").startsWith("true");
     }
     
     private static ClusteringAlgorithm getAlgorithmFromArgs(String[] args) {
