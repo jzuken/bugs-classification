@@ -71,7 +71,7 @@ import static org.ml_methods_group.common.Solution.Verdict.OK;
 public class ApplicationSuggest extends ApplicationMethods {
 
     public static void LaseLookLike(Path pathToDataset1, Path pathToListFile1, Path pathToDataset2,
-            Path pathToListFile2, Path pathToMatrix, String version, String verbose) throws IOException {
+            Path pathToListFile2, Path pathToMatrix, String version, String verbose, Integer minCountOfMarkers, Boolean UseAnyNode) throws IOException {
 
         // check directory structure
         File directory = new File(pathToMatrix.toString());
@@ -226,7 +226,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                                         Update u = (Update) action;
                                         actNode = u.getNode();
                                         actString += " " + ActionContext.GetContextPath(action, false, srcB);
-                                        if (actNode.hasLabel())
+                                        if (UseAnyNode || actNode.hasLabel())
                                             seekString += ActionContext.GetContextPath(action, false, srcB);
 
                                         actString += " change to " + u.getValue();
@@ -236,7 +236,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                                         Addition ad = (Addition) action;
                                         actNode = ad.getParent();
                                         actString += " " + ActionContext.GetContextPath(action, false, srcB);
-                                        if (actNode.hasLabel())
+                                        if (UseAnyNode ||actNode.hasLabel())
                                             seekString += ActionContext.GetContextPath(action, false, srcB);
 
                                     }
@@ -245,7 +245,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                                         Delete d = (Delete) action;
                                         actNode = d.getNode();
                                         actString += " " + ActionContext.GetContextPath(action, false, srcB);
-                                        if (actNode.hasLabel())
+                                        if (UseAnyNode || actNode.hasLabel())
                                             seekString += ActionContext.GetContextPath(action, false, srcB);
 
                                     }
@@ -289,7 +289,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                                 sizes[i] = seekCode.size();
 
                                 if (verbose.equals("yes")) {
-                                    if (seekCode.size() >= 5) {
+                                    if (seekCode.size() >= minCountOfMarkers) {
                                         writer = null;
                                         writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
                                         writer.write(emuCode);
@@ -314,7 +314,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                         any.printStackTrace();
                     }
 
-                    if (seekCode.size() >= 5) {
+                    if (seekCode.size() >= minCountOfMarkers) {
 
                         // scan all dataset 1 for test with template item from dataset 2
                         for (int j = 0; j < defectFiles1.size(); j++) {
@@ -338,7 +338,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                                 if (srcA != null && dstB != null && actB != null) {
                                     List<String> seekCheck = new ArrayList<String>();
 
-                                    if (seekCode.size() >= 5) {
+                                    if (seekCode.size() >= minCountOfMarkers) {
 
                                         List<ITree> po = TreeUtils.preOrder(srcA.getRoot());
                                         for (ITree n : po) {
@@ -459,7 +459,7 @@ public class ApplicationSuggest extends ApplicationMethods {
     }
 
     public static void Suggestion(Path pathToFile, Path pathToBugLib, Path pathToListFile, Path pathToSuggestion,
-            String verbose) throws IOException {
+            String verbose, Integer minCountOfMarkers, Integer minSugestionSimilarityLevel, Boolean UseAnyNode) throws IOException {
 
         // check directory structure
         File directory = new File(pathToSuggestion.toString());
@@ -621,7 +621,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                                                 Update u = (Update) action;
                                                 actNode = u.getNode();
                                                 actString += " " + ActionContext.GetContextPath(action, false, srcB);
-                                                if (actNode.hasLabel())
+                                                if (UseAnyNode || actNode.hasLabel())
                                                     seekString += ActionContext.GetContextPath(action, false, srcB);
 
                                                 actString += " change to " + u.getValue();
@@ -631,7 +631,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                                                 Addition ad = (Addition) action;
                                                 actNode = ad.getParent();
                                                 actString += " " + ActionContext.GetContextPath(action, false, srcB);
-                                                if (actNode.hasLabel())
+                                                if (UseAnyNode || actNode.hasLabel())
                                                     seekString += ActionContext.GetContextPath(action, false, srcB);
 
                                             }
@@ -640,7 +640,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                                                 Delete d = (Delete) action;
                                                 actNode = d.getNode();
                                                 actString += " " + ActionContext.GetContextPath(action, false, srcB);
-                                                if (actNode.hasLabel())
+                                                if (UseAnyNode || actNode.hasLabel())
                                                     seekString += ActionContext.GetContextPath(action, false, srcB);
 
                                             }
@@ -710,7 +710,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                                 any.printStackTrace();
                             }
 
-                            if (seekCode.size() >= 5) {
+                            if (seekCode.size() >= minCountOfMarkers) {
                                 weightMatrix[idx] = 0;
                                 try {
                                     if (srcA != null && dstB != null && actB != null) {
@@ -742,12 +742,14 @@ public class ApplicationSuggest extends ApplicationMethods {
                                                     break;
                                             }
 
-                                            if (seekCheck.size() == seekCode.size()) {
+                                            weightMatrix[idx] = 100.0 * seekCheck.size() / seekCode.size();
+
+                                            if (weightMatrix[idx] >= minSugestionSimilarityLevel || weightMatrix[idx] == 100.0 ) {
                                                 sugList.add(sug);
                                                 sug = null;
                                             }
 
-                                            weightMatrix[idx] = 100.0 * seekCheck.size() / seekCode.size();
+                                            
                                             System.out.println("thread["+idx + "] defect:" + defectB_Name+" similarity: " + weightMatrix[idx]);
                                         }
                                         seekCheck.clear();
@@ -780,32 +782,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                 es.shutdown();
 
 
-                /*
-                // wait for all threads
-                //System.out.println("Wait while all threads finished");
-                boolean anyAlive = true;
-                while (anyAlive) {
-                    anyAlive = false;
-                    for (Thread t : Threads) {
-                        if (t.isAlive())
-                            anyAlive = true;
-                        break;
-                    }
-                    try {
-                        Thread.currentThread().sleep(1);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                for (Thread t : Threads) {
-                    try {
-                     t.join();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                */
+               
 
                 //System.out.println("");
                 System.out.println("Save results");
@@ -853,11 +830,11 @@ public class ApplicationSuggest extends ApplicationMethods {
                                     int p2=p-1;
                                     if(p2>0){
                                         writer.write("\"line\":" +( p2 + 1 ) +",");            
-                                        writer.write("\"column\":" + (sugItem.startPosition -LinePos[p2] +2) +",");            // + 1 ?
+                                        writer.write("\"column\":" + (sugItem.startPosition - LinePos[p2]) + 2 +",");            // + 1 +\n ?
                                     }
                                     if(p2==0){
                                         writer.write("\"line\":" +( p2 + 1 ) +",");            
-                                        writer.write("\"column\":" + (sugItem.startPosition + 1 ) +",");            // + 1 ?
+                                        writer.write("\"column\":" + (sugItem.startPosition) + 1 +",");            // + 1 
                                     }
                                     break;
                                 }
@@ -867,11 +844,11 @@ public class ApplicationSuggest extends ApplicationMethods {
                             writer.write("\"column\":0,");            // + 1 ?
                         }
 
-                        //sugItem.SuggestionContent+= "\"test only\"";
+
                         writer.write("\"position\":" +sugItem.startPosition +",");
                         writer.write("\"length\":" +sugItem.endPosition +",");
                         writer.write("\"modification\":\"" +sugItem.SuggestionContent.replace("\\", "\\\\").replace("\"","\\\"") +"\",");
-                        writer.write("\"reason\":\"" + sugItem.reson.replace("\\", "\\\\").replace("\"","\\\"") +"\"");
+                        writer.write("\"reason\":\"" + sugItem.reson.replace("\\", "\\\\") .replace("\"","\\\"") +"\"");
 
                         writer.write("}\r\n");
                     }

@@ -295,7 +295,9 @@ public class Application {
                             "    Path to file with list of template defects" + System.lineSeparator() +
                             "    Path to folder to store matrix" + System.lineSeparator() +
                             "    LASE variant (conctrete,  abstract)" + System.lineSeparator() +
-                            "    [Optional] --verbose=yes  for detail output" + System.lineSeparator() 
+                            "    [Optional] --verbose=yes  for detail output" + System.lineSeparator() +
+                            "    [Optional] --markers=N  minimal markers quantity for similarity check, default 5" + System.lineSeparator() +
+                            "    [Optional] --anynode=true|false  use any node for similarity chec ok only node with label, default false" + System.lineSeparator() 
                             );
                     return;
                 }
@@ -306,7 +308,9 @@ public class Application {
                         Paths.get(args[4]),
                         Paths.get(args[5]),
                         args[6],  
-                        getVerboseFromArgs(args)
+                        getVerboseFromArgs(args),
+                        getNamedIntegerFromArgs("markers", 5, args),
+                        getNamedBooleanFromArgs("anynode", false, args)
                         
                 );
                 break;
@@ -319,7 +323,10 @@ public class Application {
                             "    Path to bug library " + System.lineSeparator() +
                             "    Path to file with list of bug library defects" + System.lineSeparator() +
                             "    Path to folder to store suggestion" + System.lineSeparator() +
-                            "    [Optional] --verbose=yes  for detail output" + System.lineSeparator() 
+                            "    [Optional] --verbose=yes  for detail output" + System.lineSeparator() +
+                            "    [Optional] --markers=N  minimal markers quantity for similarity check, default 5" + System.lineSeparator() +
+                            "    [Optional] --similarity=S  similarity level for generate suggestion, default 90" + System.lineSeparator() +
+                            "    [Optional] --anynode=true|false  use any node for similarity chec ok only node with label, default false" + System.lineSeparator() 
                             );
                     return;
                 }
@@ -328,7 +335,10 @@ public class Application {
                         Paths.get(args[2]),
                         Paths.get(args[3]),
                         Paths.get(args[4]),
-                        getVerboseFromArgs(args)
+                        getVerboseFromArgs(args),
+                        getNamedIntegerFromArgs("markers", 5, args),
+                        getNamedIntegerFromArgs("similarity", 90, args),
+                        getNamedBooleanFromArgs("anynode", false, args)
                         
                 );
                 break;
@@ -462,6 +472,27 @@ public class Application {
         }
 
         return param.get().toLowerCase().replace("--verbose=", "");
+    }
+
+    private static Integer getNamedIntegerFromArgs(String Name, Integer defaultValue, String[] args) {
+        String pName = "--" +Name.toLowerCase()+"=";
+        var param = Arrays.stream(args).filter(x -> x.toLowerCase().startsWith(pName)).findFirst();
+
+        if (param.isEmpty()) {
+            return defaultValue;
+        }
+        return Integer.parseInt(param.get().toLowerCase().replace(pName, ""));
+    }
+
+
+    private static Boolean getNamedBooleanFromArgs(String Name, Boolean defaultValue, String[] args) {
+        String pName = "--" +Name.toLowerCase()+"=";
+        var param = Arrays.stream(args).filter(x -> x.toLowerCase().startsWith(pName)).findFirst();
+
+        if (param.isEmpty()) {
+            return defaultValue;
+        }
+        return param.get().toLowerCase().replace(pName, "")=="true";
     }
     
     private static ClusteringAlgorithm getAlgorithmFromArgs(String[] args) {
