@@ -851,9 +851,13 @@ public class ApplicationSuggest extends ApplicationMethods {
                             for (int p=0;p<LinePos.length;p++){
                                 if( LinePos[p] >= sugItem.startPosition ){
                                     int p2=p-1;
-                                    if(p2>=0){
+                                    if(p2>0){
                                         writer.write("\"line\":" +( p2 + 1 ) +",");            
                                         writer.write("\"column\":" + (sugItem.startPosition - LinePos[p2]) + 2 +",");            // + 1 +\n ?
+                                    }
+                                    if(p2==0){
+                                        writer.write("\"line\":" +( p2 + 1 ) +",");            
+                                        writer.write("\"column\":" + (sugItem.startPosition) + 1 +",");            // + 1 
                                     }
                                     break;
                                 }
