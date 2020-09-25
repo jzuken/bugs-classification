@@ -723,7 +723,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                                     if (srcA != null && dstB != null && actB != null) {
                                         List<String> seekCheck = new ArrayList<String>();
 
-                                        if (seekCode.size() >= minCountOfMarkers) {
+                                        //if (seekCode.size() >= minCountOfMarkers) {
 
                                             suggestion sug = new suggestion(defectB_Name);
 
@@ -758,7 +758,7 @@ public class ApplicationSuggest extends ApplicationMethods {
 
                                             
                                             System.out.println("thread["+idx + "] defect:" + defectB_Name+" similarity: " + weightMatrix[idx]);
-                                        }
+                                        //}
                                         seekCheck.clear();
                                         seekCheck = null;
                                     }
@@ -1255,7 +1255,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                     writer.close();
 
                 }else{
-                    System.out.println("Cluster has has only one defect. Skipped");
+                    System.out.println("Cluster has only one defect. Skipped");
                 }
             
 
