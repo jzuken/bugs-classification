@@ -42,15 +42,15 @@ public class ActionContext {
     }
 
     public static String GetNodePath(ITree n, Boolean withLabel, TreeContext ctx){
-        if(n.hasLabel()){
+        //if(n.hasLabel()){
             String nodePath = GetNodeName(n,withLabel,ctx);
             while( ! IsContextRoot(n) ){
                 n = n.getParent();
                 nodePath =GetNodeName(n,withLabel,ctx) +"\\" + nodePath;
             }
             return nodePath;
-        }
-        return "";
+        //}
+        //return "";
     }
 
     public static ITree GetContextRoot(Action a){
