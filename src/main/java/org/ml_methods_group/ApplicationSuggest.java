@@ -20,6 +20,7 @@ import com.github.gumtreediff.gen.Generators;
 import com.github.gumtreediff.gen.TreeGenerator;
 import com.github.gumtreediff.gen.srcml.SrcmlCTreeGenerator;
 import org.ml_methods_group.common.ast.srcmlGenerator;
+import com.github.gumtreediff.io.LineReader;
 import com.github.gumtreediff.tree.TreeContext;
 import com.github.gumtreediff.tree.TreeUtils;
 import com.github.gumtreediff.io.TreeIoUtils;
@@ -511,6 +512,14 @@ public class ApplicationSuggest extends ApplicationMethods {
                 final String defectA = testFileName;
                      
                 var fromCodeA = Files.readString(Paths.get(defectA));
+                String [] lines = fromCodeA.split("\n");
+                int[] LinePos = new int[lines.length];
+                int curPos=0;
+                for(int p=0;p<lines.length;p++){
+                    LinePos[p]=curPos;
+                    curPos+= lines[p].length()+1;
+                }
+
                 
                 if (fromCodeA.length() <= MAX_FILE_SIZE) {
                     var fromSolutionA = new Solution(fromCodeA, "A_BAD", "A_BAD", FAIL);
@@ -838,10 +847,27 @@ public class ApplicationSuggest extends ApplicationMethods {
                             writer.write(",");
                         firstItem=false;
                         writer.write("\r\n\t{\r\n");
+                        if(sugItem.startPosition >0){
+                            for (int p=0;p<LinePos.length;p++){
+                                if( LinePos[p] >= sugItem.startPosition ){
+                                    int p2=p-1;
+                                    if(p2>=0){
+                                        writer.write("\"line\":" +( p2 + 1 ) +",");            
+                                        writer.write("\"column\":" + (sugItem.startPosition -LinePos[p2]) +",");            // + 1 ?
+                                    }
+                                    break;
+                                }
+                            }
+                        }else{
+                            writer.write("\"line\": 0,");            
+                            writer.write("\"column\":0,");            // + 1 ?
+                        }
+
+
                         writer.write("\"position\":" +sugItem.startPosition +",");
                         writer.write("\"length\":" +sugItem.endPosition +",");
-                        writer.write("\"modification\":\"" +sugItem.SuggestionContent.replace("\"","\"\"").replace("\\", "\\\\") +"\",");
-                        writer.write("\"reason\":\"" + sugItem.reson.replace("\"","\"\"").replace("\\", "\\\\") +"\"");
+                        writer.write("\"modification\":\"" +sugItem.SuggestionContent.replace("\"","\\\"").replace("\\", "\\\\") +"\",");
+                        writer.write("\"reason\":\"" + sugItem.reson.replace("\"","\\\"").replace("\\", "\\\\") +"\"");
 
                         writer.write("}\r\n");
                     }
