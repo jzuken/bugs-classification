@@ -315,6 +315,31 @@ public class Application {
                 );
                 break;
 
+                case "lase.looklike.cluster":
+                if (args.length < 5 ) {
+                    System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
+                            "    Path to dataset" + System.lineSeparator() +
+                            "    Path to file with cluster list" + System.lineSeparator() +
+                            "    Path to folder to store matrix" + System.lineSeparator() +
+                            "    LASE variant (conctrete,  abstract)" + System.lineSeparator() +
+                            "    [Optional] --verbose=yes  for detail output" + System.lineSeparator() +
+                            "    [Optional] --markers=N  minimal markers quantity for similarity check, default 5" + System.lineSeparator() +
+                            "    [Optional] --anynode=true|false  use any node for similarity check or only node with label, default false" + System.lineSeparator() 
+                            );
+                    return;
+                }
+                ApplicationSuggest.LaseLookLikeCluster(
+                        Paths.get(args[1]),
+                        Paths.get(args[2]),
+                        Paths.get(args[3]),
+                        args[4],  
+                        getVerboseFromArgs(args),
+                        getNamedIntegerFromArgs("markers", 5, args),
+                        getNamedBooleanFromArgs("anynode", false, args)
+                        
+                );
+                break;
+
 
             case "suggestion":
                 if (args.length < 5 ) {
@@ -477,7 +502,7 @@ public class Application {
     private static Integer getNamedIntegerFromArgs(String Name, Integer defaultValue, String[] args) {
         String pName = "--" +Name.toLowerCase()+"=";
         var param = Arrays.stream(args).filter(x -> x.toLowerCase().startsWith(pName)).findFirst();
-        System.out.println(pName +"->"+param.get());
+        //System.out.println(pName +"->"+param.get());
         if (param.isEmpty()) {
             return defaultValue;
         }
@@ -490,7 +515,7 @@ public class Application {
 
         var param = Arrays.stream(args).filter(x -> x.toLowerCase().startsWith(pName)).findFirst();
 
-        System.out.println(pName +"->"+param.get());
+        //System.out.println(pName +"->"+param.get());
         
         if (param.isEmpty()) {
             return defaultValue;
