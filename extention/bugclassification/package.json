@@ -10,14 +10,19 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:bugclassification.helloWorld"
+		"onCommand:bugclassification.analysefile",
+		"onCommand:bugclassification.highlighterrors"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "bugclassification.helloWorld",
-				"title": "Hello World"
+				"command": "bugclassification.analysefile",
+				"title": "Analyse File"
+			},
+			{
+				"command": "bugclassification.highlighterrors",
+				"title": "Highlight Errors"
 			}
 		],
 		"configuration": {
