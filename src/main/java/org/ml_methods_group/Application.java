@@ -297,7 +297,7 @@ public class Application {
                             "    LASE variant (conctrete,  abstract)" + System.lineSeparator() +
                             "    [Optional] --verbose=yes  for detail output" + System.lineSeparator() +
                             "    [Optional] --markers=N  minimal markers quantity for similarity check, default 5" + System.lineSeparator() +
-                            "    [Optional] --anynode=true|false  use any node for similarity chec ok only node with label, default false" + System.lineSeparator() 
+                            "    [Optional] --anynode=true|false  use any node for similarity check or only node with label, default false" + System.lineSeparator() 
                             );
                     return;
                 }
@@ -326,7 +326,7 @@ public class Application {
                             "    [Optional] --verbose=yes  for detail output" + System.lineSeparator() +
                             "    [Optional] --markers=N  minimal markers quantity for similarity check, default 5" + System.lineSeparator() +
                             "    [Optional] --similarity=S  similarity level for generate suggestion, default 90" + System.lineSeparator() +
-                            "    [Optional] --anynode=true|false  use any node for similarity chec ok only node with label, default false" + System.lineSeparator() 
+                            "    [Optional] --anynode=true|false  use any node for similarity checr or only node with label, default false" + System.lineSeparator() 
                             );
                     return;
                 }
