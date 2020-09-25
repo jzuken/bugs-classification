@@ -853,11 +853,11 @@ public class ApplicationSuggest extends ApplicationMethods {
                                     int p2=p-1;
                                     if(p2>0){
                                         writer.write("\"line\":" +( p2 + 1 ) +",");            
-                                        writer.write("\"column\":" + (sugItem.startPosition - LinePos[p2]) + 2 +",");            // + 1 +\n ?
+                                        writer.write("\"column\":" + (sugItem.startPosition -LinePos[p2] +2) +",");            // + 1 ?
                                     }
                                     if(p2==0){
                                         writer.write("\"line\":" +( p2 + 1 ) +",");            
-                                        writer.write("\"column\":" + (sugItem.startPosition) + 1 +",");            // + 1 
+                                        writer.write("\"column\":" + (sugItem.startPosition + 1 ) +",");            // + 1 ?
                                     }
                                     break;
                                 }
@@ -867,11 +867,11 @@ public class ApplicationSuggest extends ApplicationMethods {
                             writer.write("\"column\":0,");            // + 1 ?
                         }
 
-
+                        //sugItem.SuggestionContent+= "\"test only\"";
                         writer.write("\"position\":" +sugItem.startPosition +",");
                         writer.write("\"length\":" +sugItem.endPosition +",");
-                        writer.write("\"modification\":\"" +sugItem.SuggestionContent.replace("\"","\\\"").replace("\\", "\\\\") +"\",");
-                        writer.write("\"reason\":\"" + sugItem.reson.replace("\"","\\\"").replace("\\", "\\\\") +"\"");
+                        writer.write("\"modification\":\"" +sugItem.SuggestionContent.replace("\\", "\\\\").replace("\"","\\\"") +"\",");
+                        writer.write("\"reason\":\"" + sugItem.reson.replace("\\", "\\\\").replace("\"","\\\"") +"\"");
 
                         writer.write("}\r\n");
                     }
