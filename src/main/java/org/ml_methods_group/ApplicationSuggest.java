@@ -345,7 +345,7 @@ public class ApplicationSuggest extends ApplicationMethods {
 
                                         List<ITree> po = TreeUtils.preOrder(srcA.getRoot());
                                         for (ITree n : po) {
-                                            String c = ActionContext.GetNodePath(n, true, srcA);
+                                            String c = ActionContext.GetNodePath(n, false, srcA);
                                             if (c.length() > 0) {
                                                 if (seekCode.containsKey(c)) {
                                                     if (!seekCheck.contains(c))
@@ -729,7 +729,7 @@ public class ApplicationSuggest extends ApplicationMethods {
 
                                             List<ITree> po = TreeUtils.preOrder(srcA.getRoot());
                                             for (ITree n : po) {
-                                                String c = ActionContext.GetNodePath(n, true, srcA);
+                                                String c = ActionContext.(n, false, srcA);
                                                 if (c.length() > 0) {
                                                     if (seekCode.containsKey(c)) {
                                                         if (!seekCheck.contains(c)) {
@@ -1143,7 +1143,7 @@ public class ApplicationSuggest extends ApplicationMethods {
 
                                             List<ITree> po = TreeUtils.preOrder(srcA.getRoot());
                                             for (ITree n : po) {
-                                                String c = ActionContext.GetNodePath(n, true, srcA);
+                                                String c = ActionContext.GetNodePath(n, false, srcA);
                                                 if (c.length() > 0) {
                                                     if (seekCode.containsKey(c)) {
                                                         if (!seekCheck.contains(c))
