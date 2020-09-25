@@ -853,7 +853,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                                     int p2=p-1;
                                     if(p2>=0){
                                         writer.write("\"line\":" +( p2 + 1 ) +",");            
-                                        writer.write("\"column\":" + (sugItem.startPosition -LinePos[p2]) +",");            // + 1 ?
+                                        writer.write("\"column\":" + (sugItem.startPosition - LinePos[p2]) + 2 +",");            // + 1 +\n ?
                                     }
                                     break;
                                 }
