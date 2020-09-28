@@ -82,31 +82,40 @@ export function activate(context: vscode.ExtensionContext) {
 						console.log("No Errors");
 						let suggestion = JSON.parse(data);
 						console.log("Json Parsed");
-						console.log(suggestion.suggestions[0]);
-			
-						if (suggestion.suggestions[0] && suggestion.suggestions[0].items.length > 0) {
-							let items = suggestion.suggestions[0].items;
-							
-							for (let i = 0; i < items.length; i++) {
-								if (vscode.window.activeTextEditor != undefined) {
-									// console.log("Line: " + items[i].line + " Column: " + (startColumn - 1) + " End: " + endColumn);
-									let startLine = items[i].line - 1;
-									let startColumn = items[i].column;
-									let endColumn = startColumn + items[i].length;
-									
-									console.log("Line: " + startLine + " Column: " + (startColumn - 1) + " End: " + endColumn);
-									let diag = new vscode.Diagnostic(
-										new vscode.Range(
-											new vscode.Position(startLine, startColumn-1), 
-											new vscode.Position(startLine, endColumn)
-										), 
-										items[i].reason, vscode.DiagnosticSeverity.Error
-									);
-									gDiagnosticsArray.push(diag);
-			
+						console.log(suggestion.suggestions);
+
+						suggestion.suggestions.forEach((s: { items: string | any[]; suggestFrom: string | null; }) => {
+							if (s.items.length > 0) {
+								let items = s.items;
+								
+								for (let i = 0; i < items.length; i++) {
+									if (vscode.window.activeTextEditor != undefined) {
+
+										let startLine = items[i].line - 1;
+										let startColumn = items[i].column-1;
+										let endColumn = startColumn + items[i].length;
+
+										let reason = "";
+										if (s.suggestFrom != null) {
+											reason += "From " + s.suggestFrom + "; ";
+										}
+										reason += items[i].reason
+
+										// console.log("Line: " + startLine + " Column: " + (startColumn) + " End: " + endColumn);
+										let diag = new vscode.Diagnostic(
+											new vscode.Range(
+												new vscode.Position(startLine, startColumn), 
+												new vscode.Position(startLine, endColumn)
+											), 
+											reason, vscode.DiagnosticSeverity.Error
+										);
+										gDiagnosticsArray.push(diag);
+				
+									}
 								}
 							}
-						}
+						});
+			
 			
 						if (vscode.window.activeTextEditor) {
 							gDiagnosticsCollection.set(vscode.window.activeTextEditor.document.uri, gDiagnosticsArray);
