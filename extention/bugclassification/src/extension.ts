@@ -22,6 +22,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	let classificationPath = "";
 	let defectListPath = "";
+	let libraryPath = "";
 
 	if (cfg.path != undefined || cfg.path != ""){
 		classificationPath = cfg.path;
@@ -34,33 +35,24 @@ export function activate(context: vscode.ExtensionContext) {
 	} else {
 		vscode.window.showInformationMessage('Path for defect list is not set. Please update it in settings.json');
 	}
+	if (cfg.librarypath != undefined || cfg.librarypath != ""){
+		libraryPath = cfg.librarypath;
+	} else {
+		vscode.window.showInformationMessage('Path for defect library is not set. Please update it in settings.json');
+	}
 
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
 	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('bugclassification.analysefile', () => {
-		// The code you place here will be executed every time your command is executed
+	let runclassifier = vscode.commands.registerCommand('bugclassification.runclassifier', () => {
 
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from BugClassification is started!');
-
-		// Current command is "Hello World"
-
-		// settings.json should look something like this:
-		// {
-		// 	"terminal.integrated.shell.windows": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
-		// 	"window.zoomLevel": 1,
-		// 	"bugclassification.path": "C:\\Users\\kWX910209\\Documents\\bugs-classification",
-		// 	"bugclassification.defectlist": "C:\\temp\\list_CE12800.txt"
-		// }
-
-		// should have paths to bug-classification folder, to defect list and to the current open file
-		if (classificationPath != "" && defectListPath != "" && currentFilePath != "") {
+		if (classificationPath != "" && defectListPath != "" && currentFilePath != "" && libraryPath != "") {
+			
 			const defaults = {
 				cwd: classificationPath,
 				env: process.env
 			};
-	
+
 			const { spawn } = require('child_process');
 	
 			const java = spawn('java', [
@@ -68,7 +60,7 @@ export function activate(context: vscode.ExtensionContext) {
 				classificationPath + "\\build\\libs\\bugs-classification-v1.jar", 
 				"suggestion",
 				currentFilePath,
-				classificationPath + "\\test\\dataset",
+				libraryPath,
 				defectListPath,
 				classificationPath + "\\test\\dataset\\suggestion",
 				// "--verbose=yes"
@@ -78,12 +70,53 @@ export function activate(context: vscode.ExtensionContext) {
 			java.stdout.on('data', (data: any) => {
 				console.log(`stdout: ${data}`);
 
-				if (data.toString().trim() == "Save results") {
-					console.log("Calculation completed. Safe to fetch suggestion.json");
+				if (data.toString().trim().includes("Save results")) {
+					console.log("Calculation completed. Start to fetch suggestion.json");
+
+					const fs = require('fs');
+
+					fs.readFile(classificationPath + "\\test\\dataset\\suggestion\\suggestions.json", (err: any, data: any) => {
+						console.log("File read");
+
+						if (err) throw err;
+						console.log("No Errors");
+						let suggestion = JSON.parse(data);
+						console.log("Json Parsed");
+						console.log(suggestion.suggestions[0]);
+			
+						if (suggestion.suggestions[0] && suggestion.suggestions[0].items.length > 0) {
+							let items = suggestion.suggestions[0].items;
+							
+							for (let i = 0; i < items.length; i++) {
+								if (vscode.window.activeTextEditor != undefined) {
+									// console.log("Line: " + items[i].line + " Column: " + (startColumn - 1) + " End: " + endColumn);
+									let startLine = items[i].line - 1;
+									let startColumn = items[i].column;
+									let endColumn = startColumn + items[i].length;
+									
+									console.log("Line: " + startLine + " Column: " + (startColumn - 1) + " End: " + endColumn);
+									let diag = new vscode.Diagnostic(
+										new vscode.Range(
+											new vscode.Position(startLine, startColumn-1), 
+											new vscode.Position(startLine, endColumn)
+										), 
+										items[i].reason, vscode.DiagnosticSeverity.Error
+									);
+									gDiagnosticsArray.push(diag);
+			
+								}
+							}
+						}
+			
+						if (vscode.window.activeTextEditor) {
+							gDiagnosticsCollection.set(vscode.window.activeTextEditor.document.uri, gDiagnosticsArray);
+						}
+					});
+
 					vscode.window.showInformationMessage('Analysis completed');
 				}
 			});
-	
+
 			java.stderr.on('data', (data: any) => {
 				console.error(`stderr: ${data}`);
 				vscode.window.showInformationMessage('Something went wrong');
@@ -101,56 +134,9 @@ export function activate(context: vscode.ExtensionContext) {
 		} else {
 			vscode.window.showInformationMessage('Path for classification or defect list is not set or possibly no files open to analyse. Please update it in settings.json');
 		}
-
 	});
 
-	let disposable2 = vscode.commands.registerCommand('bugclassification.highlighterrors', () => {
-		console.log("Start second command");
-
-		const fs = require('fs');
-
-		let lengthArr: number[] = [];
-
-		if (vscode.window.activeTextEditor != undefined) {
-			let docText = vscode.window.activeTextEditor.document.getText();
-			let docLines = docText.split("\n");
-
-			docLines.forEach(element => {
-				lengthArr.push(element.length);
-			});
-
-		}
-
-		fs.readFile(classificationPath + "\\test\\dataset\\suggestion\\suggestions.json", (err: any, data: any) => {
-			console.log("File read");
-			if (err) throw err;
-			let suggestion = JSON.parse(data);
-			console.log(suggestion.suggestions[0]);
-
-			if (suggestion.suggestions[0] && suggestion.suggestions[0].items.length > 0) {
-				let items = suggestion.suggestions[0].items;
-				
-				for (let i = 0; i < items.length; i++) {
-					if (vscode.window.activeTextEditor != undefined) {
-
-						console.log("Line: " + items[i].line + " Column: " + items[i].column + " End: " + (items[i].column + items[i].length));
-
-						let diag = new vscode.Diagnostic(new vscode.Range(new vscode.Position(items[i].line - 1, items[i].column),new vscode.Position(items[i].line - 1, items[i].column+items[i].length)), items[i].reason, vscode.DiagnosticSeverity.Error);
-						gDiagnosticsArray.push(diag);
-
-					}
-				}
-			}
-
-			if (vscode.window.activeTextEditor) {
-				gDiagnosticsCollection.set(vscode.window.activeTextEditor.document.uri, gDiagnosticsArray);
-			}
-		});
-
-	});
-
-	context.subscriptions.push(disposable);
-	context.subscriptions.push(disposable2);
+	context.subscriptions.push(runclassifier);
 }
 
 

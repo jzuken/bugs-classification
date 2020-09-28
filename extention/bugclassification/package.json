@@ -10,19 +10,14 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:bugclassification.analysefile",
-		"onCommand:bugclassification.highlighterrors"
+		"onCommand:bugclassification.runclassifier"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "bugclassification.analysefile",
-				"title": "Analyse File"
-			},
-			{
-				"command": "bugclassification.highlighterrors",
-				"title": "Highlight Errors"
+				"command": "bugclassification.runclassifier",
+				"title": "Run Classifier"
 			}
 		],
 		"configuration": {
@@ -37,6 +32,11 @@
 					"type": ["string", "null"],
 					"default": null,
 					"description": "Path to defect list file"
+				},
+				"bugclassification.librarypath": {
+					"type": ["string", "null"],
+					"default": null,
+					"description": "Path to defect library"
 				}
 			}
 		}
