@@ -729,7 +729,7 @@ public class ApplicationSuggest extends ApplicationMethods {
 
                                             List<ITree> po = TreeUtils.preOrder(srcA.getRoot());
                                             for (ITree n : po) {
-                                                String c = ActionContext.(n, false, srcA);
+                                                String c = ActionContext.GetNodePath(n, false, srcA);
                                                 if (c.length() > 0) {
                                                     if (seekCode.containsKey(c)) {
                                                         if (!seekCheck.contains(c)) {
@@ -1136,7 +1136,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                                         fromSolutionA = null;
                                     }
 
-                                    if (srcA != null && dstB != null && actB != null) {
+                                    if (srcA != null ) {
                                         List<String> seekCheck = new ArrayList<String>();
 
                                         if (seekCode.size() >= minCountOfMarkers) {
@@ -1193,7 +1193,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                                 String matrixFile = pathToMatrix.toString() + "\\";
                                 // matrixFile += "(" + calcDefect + ")_" +Cnt + "_" + Size + "_seek_"+ sizes[i]
                                 // + ".csv";
-                                matrixFile += calcDefect + "_F." + Cnt + "_P." + Size + "_S." + sizes[i] + ".csv";
+                                matrixFile += "C." +clusterNum+ "_"+ calcDefect + "_F." + Cnt + "_P." + Size + "_S." + sizes[i] +  ".csv";
                                 BufferedWriter writer = new BufferedWriter(new FileWriter(matrixFile));
                                 writer.write("\"" + calcDefect + "\"," + Cnt + "," + Size + "\r\n");
                                 {
@@ -1222,7 +1222,7 @@ public class ApplicationSuggest extends ApplicationMethods {
 
                     }
 
-                    String matrixFile = pathToMatrix.toString() + "\\looklike_" + clusterNum +".csv";
+                    String matrixFile = pathToMatrix.toString() + "\\C." +clusterNum+ "_looklike.csv";
                     BufferedWriter writer = new BufferedWriter(new FileWriter(matrixFile));
 
                     // first row - list of defects to test
