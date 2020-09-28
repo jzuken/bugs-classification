@@ -10,14 +10,14 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:bugclassification.helloWorld"
+		"onCommand:bugclassification.runclassifier"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "bugclassification.helloWorld",
-				"title": "Hello World"
+				"command": "bugclassification.runclassifier",
+				"title": "Run Classifier"
 			}
 		],
 		"configuration": {
@@ -32,6 +32,11 @@
 					"type": ["string", "null"],
 					"default": null,
 					"description": "Path to defect list file"
+				},
+				"bugclassification.librarypath": {
+					"type": ["string", "null"],
+					"default": null,
+					"description": "Path to defect library"
 				}
 			}
 		}
