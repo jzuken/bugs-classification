@@ -29,4 +29,4 @@ rem java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.ja
 
 rem java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.jar suggestion  .\test\dataset\bad\30\30.c  .\test\dataset .\test\dataset\list.txt .\test\dataset\suggestion --markers=2 --similarity=50 --anynode=true 
 
-java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.jar lase.looklike.cluster  .\test\dataset .\test\dataset\cluster_code_jac.txt .\test\dataset\l.ll.cluster concrete  --markers=2 --anynode=true --verbose=yes
+java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.jar lase.looklike.cluster  .\test\dataset .\test\dataset\cluster_code_jac.txt .\test\dataset\l.ll.cluster concrete  --verbose=yes --anynode=true --markers=2 
