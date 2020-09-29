@@ -1,4 +1,4 @@
-
+echo off
 rem d:\j\bin\java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.jar prepare.es  D:\Work\CE12800\2020\src_simple   D:\Work\CE12800\2020\result\ngram D:\Work\CE12800\2020\list.txt  ngram  --ngramsize=5
 rem d:\j\bin\java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.jar cluster.es  D:\Work\CE12800\2020\result\ngram  D:\Work\CE12800\2020\result D:\Work\CE12800\2020\list.txt ngram --algorithm=jac 
 
@@ -27,6 +27,6 @@ rem java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.ja
 
 rem java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.jar lase.looklike  .\test\dataset .\test\dataset\list.txt   .\test\dataset .\test\dataset\list.txt .\test\dataset\l.ll concrete --verbose=yes
 
-rem java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.jar suggestion  .\test\dataset\bad\30\30.c  .\test\dataset .\test\dataset\list.txt .\test\dataset\suggestion --markers=2 --similarity=50 --anynode=true 
+java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.jar suggestion  .\test\dataset\bad\40\40.c  .\test\dataset .\test\dataset\list.txt .\test\dataset\suggestion --markers=2 --similarity=50 --anynode=true 
 
-java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.jar lase.looklike.cluster  .\test\dataset .\test\dataset\cluster_code_jac.txt .\test\dataset\l.ll.cluster concrete  --verbose=yes --anynode=true --markers=2 
+rem java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.jar lase.looklike.cluster  .\test\dataset .\test\dataset\cluster_code_jac.txt .\test\dataset\l.ll.cluster concrete  --verbose=yes --anynode=true --markers=2 

@@ -525,6 +525,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                 for(int p=0;p<lines.length;p++){
                     LinePos[p]=curPos;
                     curPos+= lines[p].length()+1;
+                    //System.out.println("L:" + p + " pos:" +  LinePos[p] + " length:" + lines[p].length());
                 }
 
                 
@@ -832,20 +833,26 @@ public class ApplicationSuggest extends ApplicationMethods {
                         firstItem=false;
                         writer.write("\r\n\t{\r\n");
                         if(sugItem.startPosition >0){
+                            int p2=0;
+                            int col=0;
                             for (int p=0;p<LinePos.length;p++){
                                 if( LinePos[p] >= sugItem.startPosition ){
-                                    int p2=p-1;
+                                    p2=p-1;
+                                    col =sugItem.startPosition - LinePos[p2] ;
                                     if(p2>0){
-                                        writer.write("\"line\":" +( p2 + 1 ) +",");            
-                                        writer.write("\"column\":" + (sugItem.startPosition - LinePos[p2]) + 2 +",");            // + 1 +\n ?
+                                        col+=2;
+                                        writer.write("\"line\":" + p +",");            
+                                        writer.write("\"column\":" + col +",");            // + 1 +\n ?
                                     }
                                     if(p2==0){
-                                        writer.write("\"line\":" +( p2 + 1 ) +",");            
-                                        writer.write("\"column\":" + (sugItem.startPosition) + 1 +",");            // + 1 
+                                        col+=1;
+                                        writer.write("\"line\":" + p +",");            
+                                        writer.write("\"column\":" + col +",");            // + 1 
                                     }
                                     break;
                                 }
                             }
+                            //System.out.println("pos: " + sugItem.startPosition + " l:" + (p2+1) + " c:"+ col);
                         }else{
                             writer.write("\"line\": 0,");            
                             writer.write("\"column\":0,");            // + 1 ?
