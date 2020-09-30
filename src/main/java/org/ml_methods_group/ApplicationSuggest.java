@@ -358,6 +358,20 @@ public class ApplicationSuggest extends ApplicationMethods {
                                                 break;
                                         }
 
+                                        // check why self cross not equal 100%
+                                        if(defectA.equals(defectB)){
+                                            if (seekCheck.size() >0 && seekCheck.size() < seekCode.size()){
+                                                for(String cc: seekCode.keySet()){
+                                                    if(! seekCheck.contains(seekCode.get(cc).seekString)){
+                                                        System.out.println("Not found: "  + seekCode.get(cc).seekString);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        
+
+
+
                                         weightMatrix[i][j] = 100.0 * seekCheck.size() / seekCode.size();
                                     }
                                     seekCheck.clear();
@@ -681,8 +695,10 @@ public class ApplicationSuggest extends ApplicationMethods {
 
                                             emuCode += actString + "\n";
                                             if (seekString.length() > 0) {
-                                                if (!seekCode.containsKey(seekString))
+                                                if (!seekCode.containsKey(seekString)){
                                                     seekCode.put(seekString, new seekItem(seekString, actString));
+                                                    System.out.println("Found: " + seekString);
+                                                }
                                             }
 
                                         }
