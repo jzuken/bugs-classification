@@ -8,6 +8,7 @@ public class suggestion   implements Serializable {
     static final long serialVersionUID=1;
     
     public String BugLibraryItem; 
+    public String BugLibraryDescription; 
     public List<suggestionItem> suggestions;
 
     public suggestion(String bugLibDefect, List<suggestionItem> items) {
@@ -15,8 +16,9 @@ public class suggestion   implements Serializable {
         this.suggestions = items;
     }
 
-    public suggestion(String bugLibDefect) {
+    public suggestion(String bugLibDefect, String Description) {
         this.BugLibraryItem = bugLibDefect;
+        this.BugLibraryDescription = Description;
         this.suggestions = new ArrayList<suggestionItem>();
     }
 

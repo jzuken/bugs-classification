@@ -27,6 +27,11 @@ rem java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.ja
 
 rem java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.jar lase.looklike  .\test\dataset .\test\dataset\list.txt   .\test\dataset .\test\dataset\list.txt .\test\dataset\l.ll concrete --verbose=yes
 
-java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.jar suggestion  .\test\dataset\bad\40\40.c  .\test\dataset .\test\dataset\list.txt .\test\dataset\suggestion --markers=2 --similarity=50 --anynode=true 
+rem java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.jar suggestion  .\test\dataset\bad\40\40.c  .\test\dataset .\test\dataset\list40.txt .\test\dataset\suggestion --markers=6 --similarity=90 --anynode=true  --verbose=yes
 
 rem java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.jar lase.looklike.cluster  .\test\dataset .\test\dataset\cluster_code_jac.txt .\test\dataset\l.ll.cluster concrete  --verbose=yes --anynode=true --markers=2 
+
+java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.jar compile.buglib   .\test\dataset .\test\dataset\list.txt .\test\dataset\description.csv .\test\dataset\compiled --markers=6 --similarity=90 --anynode=true 
+
+java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.jar suggestion.fast  .\test\dataset\bad\40\40.c  .\test\dataset\compiled\buglibrary.bin .\test\dataset\suggestion.fast --markers=6 --similarity=90 --anynode=true
+

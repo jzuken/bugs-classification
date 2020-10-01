@@ -52,8 +52,10 @@ import org.ml_methods_group.common.ast.matches.testMatcher;
 import org.ml_methods_group.ApplicationMethods;
 import org.ml_methods_group.common.ast.srcmlGenerator;
 import org.ml_methods_group.common.ast.suggestionItem;
+import org.ml_methods_group.common.ast.buglib.buglibItem;
 import org.ml_methods_group.common.ast.suggestion;
 import org.ml_methods_group.common.ast.seekItem;
+import au.com.bytecode.opencsv.CSVReader;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -68,7 +70,14 @@ import java.util.stream.StreamSupport;
 import static org.ml_methods_group.common.Solution.Verdict.FAIL;
 import static org.ml_methods_group.common.Solution.Verdict.OK;
 
+
+
 public class ApplicationSuggest extends ApplicationMethods {
+
+    private enum DescriptionColumn{
+        DEFECT,
+        DESCRIPTION
+    }
 
     public static void LaseLookLike(Path pathToDataset1, Path pathToListFile1, Path pathToDataset2,
             Path pathToListFile2, Path pathToMatrix, String version, String verbose, Integer minCountOfMarkers, Boolean UseAnyNode) throws IOException {
@@ -363,7 +372,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                                             if (seekCheck.size() >0 && seekCheck.size() < seekCode.size()){
                                                 for(String cc: seekCode.keySet()){
                                                     if(! seekCheck.contains(seekCode.get(cc).seekString)){
-                                                        System.out.println("Not found: "  + seekCode.get(cc).seekString);
+                                                        System.out.println("Not found: "  + seekCode.get(cc).actionString);
                                                     }
                                                 }
                                             }
@@ -697,7 +706,6 @@ public class ApplicationSuggest extends ApplicationMethods {
                                             if (seekString.length() > 0) {
                                                 if (!seekCode.containsKey(seekString)){
                                                     seekCode.put(seekString, new seekItem(seekString, actString));
-                                                    System.out.println("Found: " + seekString);
                                                 }
                                             }
 
@@ -742,7 +750,7 @@ public class ApplicationSuggest extends ApplicationMethods {
 
                                         //if (seekCode.size() >= minCountOfMarkers) {
 
-                                            suggestion sug = new suggestion(defectB_Name);
+                                            suggestion sug = new suggestion(defectB_Name,"Description unknown");
 
                                             List<ITree> po = TreeUtils.preOrder(srcA.getRoot());
                                             for (ITree n : po) {
@@ -841,7 +849,7 @@ public class ApplicationSuggest extends ApplicationMethods {
                     if(!firstSug)
                         writer.write(",");
                     firstSug=false;
-                    writer.write("{\"suggestFrom\":\"" + sug.BugLibraryItem + "\",\"items\":\r\n[");
+                    writer.write("{\"suggestFrom\":\"" + sug.BugLibraryItem + "\",\"suggestDescription\":\"" + sug.BugLibraryDescription + "\",\"items\":\r\n[");
                     boolean firstItem = true;
                     for(suggestionItem sugItem : sug.suggestions){
                         if(!firstItem)
@@ -903,6 +911,417 @@ public class ApplicationSuggest extends ApplicationMethods {
         
            
     }
+
+
+    public static void BugLibCompile( Path pathToBugLib, Path pathToListFile, Path PathToDescriptionsCSV, Path pathToCompiledBugLibFolder,
+     Integer minCountOfMarkers, Integer minSugestionSimilarityLevel, Boolean UseAnyNode) throws IOException {
+
+        System.out.println("Markers: " + minCountOfMarkers);    
+        System.out.println("Minimal Suggestion level: " + minSugestionSimilarityLevel);    
+        System.out.println("Use any node: " + UseAnyNode);    
+
+        // check directory structure
+        File directory = new File(pathToCompiledBugLibFolder.toString());
+        if (!directory.exists()) {
+            directory.mkdir();
+        }
+
+        List<buglibItem> bugLibrary = new ArrayList<buglibItem>();
+
+
+        CSVReader reader = new CSVReader(new FileReader(PathToDescriptionsCSV.toString()), ',', '"', 1);
+        //Read all rows at once
+        List<String[]> allRows = reader.readAll();
+
+        Map<String,String> Descriptions = new HashMap<String,String>();
+        for(String d[] : allRows){
+            if(d.length > 1)
+                Descriptions.put(d[0],d[1]);
+        }
+
+
+        try {
+
+                // bug library ( bad + good files)
+                List<String> defects2 = Files.readAllLines(pathToListFile);
+                List<String> defectFiles2 = new ArrayList<String>();
+
+                final String badFolderName2 = pathToBugLib.toString() + "\\bad";
+                final String goodFolderName2 = pathToBugLib.toString() + "\\good";
+            
+                List<String> result2 = Files.walk(Paths.get(badFolderName2)).filter(Files::isRegularFile)
+                        .map(x -> x.toString()).collect(Collectors.toList());
+
+                // collect all files for defect to build matrix
+                for (String fName : result2) {
+                    boolean useFile = false;
+
+                    for (String defect : defects2) {
+
+                        if (fName.contains("\\" + defect + "\\")) {
+                            var Code = Files.readString(Paths.get(fName));
+                            if (Code.length() <= MAX_FILE_SIZE)
+                                useFile = true;
+                            break;
+                        }
+                    }
+                    if (useFile) {
+                        defectFiles2.add(fName);
+                    }
+                }
+
+                if ( defectFiles2.size() > 0) {
+                    // ------------------ threaded zone
+                    //List<Thread> Threads = new ArrayList<Thread>();
+                    List<Runnable> Tasks = new ArrayList<Runnable>();
+
+                    ExecutorService es =  Executors.newFixedThreadPool(4);
+                
+                    for (int i = 0; i < defectFiles2.size(); i++) {
+                        final int idx = i;
+
+
+                        //Thread myThread = new Thread(new Runnable() {
+                        Tasks.add( new Runnable() {
+                            public void run() // Этот метод будет выполняться в побочном потоке
+                            {
+
+                                System.out.println(idx +" start");
+                                final ASTGenerator generator = new CachedASTGenerator(new BasicASTNormalizer());
+
+                                // get template defects from second dataset
+                                String defectB = defectFiles2.get(idx);
+                                String defectB_Name = "";
+
+                                for (String defect : defects2) {
+
+                                    if (defectB.contains("\\" + defect + "\\")) {
+                                        defectB_Name = defect;
+                                        break;
+                                    }
+                                }
+
+                                TreeContext dstB = null;
+                                List<Action> actB = null;
+
+                                Map<String, seekItem> seekCode = new HashMap<String, seekItem>();
+                                try {
+
+                                    var fromCode = Files.readString(Paths.get(defectB));
+                                    var toCode = Files
+                                            .readString(Paths.get(defectB.replace(badFolderName2, goodFolderName2)));
+                                    if (fromCode.length() <= MAX_FILE_SIZE && toCode.length() <= MAX_FILE_SIZE) {
+
+                                        var fromSolution = new Solution(fromCode, "B_BAD", "B_BAD", FAIL);
+                                        var toSolution = new Solution(toCode, "B_GOOD", "B_GOOD", OK);
+
+                                        TreeContext srcB = null;
+
+                                        srcB = generator.buildTreeContext(fromSolution);
+                                        dstB = generator.buildTreeContext(toSolution);
+
+                                        Matcher matcherAst = Matchers.getInstance().getMatcher(srcB.getRoot(),
+                                                dstB.getRoot());
+                                        //System.out.print(".");
+                                        try {
+                                            matcherAst.match();
+                                        } catch (NullPointerException e) {
+                                            System.out.println(e.getMessage());
+                                        }
+
+                                        ActionGenerator actionGenerator = new ActionGenerator(srcB.getRoot(),
+                                                dstB.getRoot(), matcherAst.getMappings());
+                                        try {
+                                            actionGenerator.generate();
+                                        } catch (Exception e) {
+                                            System.out.println(e.getMessage());
+                                            e.printStackTrace();
+                                        }
+
+                                        actB = actionGenerator.getActions();
+
+                                        if (actB != null && actB.size() > 0) {
+                                            seekCode.clear();
+                                            for (Action action : actB) {
+
+                                                ITree actNode = null;
+                                                String actString = action.getName();
+                                                String seekString = "";
+
+                                                if (action.getName() == "UPD") {
+                                                    Update u = (Update) action;
+                                                    actNode = u.getNode();
+                                                    actString += " " + ActionContext.GetContextPath(action, false, srcB);
+                                                    if (UseAnyNode || actNode.hasLabel())
+                                                        seekString += ActionContext.GetContextPath(action, false, srcB);
+
+                                                    actString += " change to " + u.getValue();
+                                                }
+
+                                                if (action.getName() == "MOV" || action.getName() == "INS") {
+                                                    Addition ad = (Addition) action;
+                                                    actNode = ad.getParent();
+                                                    actString += " " + ActionContext.GetContextPath(action, false, srcB);
+                                                    if (UseAnyNode || actNode.hasLabel())
+                                                        seekString += ActionContext.GetContextPath(action, false, srcB);
+
+                                                }
+
+                                                if (action.getName() == "DEL") {
+                                                    Delete d = (Delete) action;
+                                                    actNode = d.getNode();
+                                                    actString += " " + ActionContext.GetContextPath(action, false, srcB);
+                                                    if (UseAnyNode || actNode.hasLabel())
+                                                        seekString += ActionContext.GetContextPath(action, false, srcB);
+
+                                                }
+
+                                                if (seekString.length() > 0) {
+                                                    if (!seekCode.containsKey(seekString)){
+                                                        seekCode.put(seekString, new seekItem(seekString, actString));
+                                                    }
+                                                }
+
+                                            }
+                                            buglibItem bli;
+                                            if(Descriptions.containsKey(defectB_Name)){
+                                                bli = new buglibItem(defectB_Name, Descriptions.get(defectB_Name), seekCode);
+                                            }else{
+                                                bli = new buglibItem(defectB_Name, "Unknown", seekCode);
+                                            }
+                                            bugLibrary.add(bli);
+                                        }
+                                        fromSolution = null;
+                                        toSolution = null;
+                                    }
+                                } catch (Exception any) {
+                                    System.out.println(any.getMessage());
+                                    any.printStackTrace();
+                                }
+                                System.out.println(idx +" done");
+
+                            }
+                            
+                        });
+                    }
+
+                    CompletableFuture<?>[] futures = Tasks.stream()
+                                .map(task -> CompletableFuture.runAsync(task, es))
+                                .toArray(CompletableFuture[]::new);
+                    CompletableFuture.allOf(futures).join();    
+                    es.shutdown();
+
+
+                    ObjectOutputStream objectOutputStream = new ObjectOutputStream(
+                            new FileOutputStream(pathToCompiledBugLibFolder.toString()+ "\\buglibrary.bin"));
+                    objectOutputStream.writeObject(bugLibrary);
+                    objectOutputStream.close();
+                }
+
+            } catch (IOException e) {
+            e.printStackTrace();
+            }
+
+
+   
+}
+
+
+public static void SuggestionFast(Path pathToFile, Path pathToCompiledBugLib, Path pathToSuggestion,
+ Integer minCountOfMarkers, Integer minSugestionSimilarityLevel, Boolean UseAnyNode) throws IOException {
+
+    System.out.println("Markers: " + minCountOfMarkers);    
+    System.out.println("Minimal Suggestion level: " + minSugestionSimilarityLevel);    
+    System.out.println("Use any node: " + UseAnyNode);    
+
+    // check directory structure
+    File directory = new File(pathToSuggestion.toString());
+    if (!directory.exists()) {
+    directory.mkdir();
+    }
+
+    final String testFileName = pathToFile.toString();
+    List<suggestion> sugList = new ArrayList<suggestion>();
+    List<buglibItem> bugLibrary;
+
+    ObjectInputStream objectInputStream = new ObjectInputStream(
+        new FileInputStream(pathToCompiledBugLib.toString()));
+        try {
+			bugLibrary  = (ArrayList<buglibItem>) objectInputStream.readObject();
+		} catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            return;
+		}
+
+    objectInputStream.close();
+
+    System.out.println("bug library size:" + bugLibrary.size());
+    
+    // collect common actions for cluster here
+    double[] weightMatrix = new double[bugLibrary.size()];
+
+    try {
+        if (testFileName.length() > 0 && bugLibrary.size() > 0) {
+            final String defectA = testFileName;
+                
+            var fromCodeA = Files.readString(Paths.get(defectA));
+            String [] lines = fromCodeA.split("\n");
+            int[] LinePos = new int[lines.length];
+            int curPos=0;
+            for(int p=0;p<lines.length;p++){
+                LinePos[p]=curPos;
+                curPos+= lines[p].length()+1;
+                //System.out.println("L:" + p + " pos:" +  LinePos[p] + " length:" + lines[p].length());
+            }
+
+            if (fromCodeA.length() <= MAX_FILE_SIZE) {
+                var fromSolutionA = new Solution(fromCodeA, "A_BAD", "A_BAD", FAIL);
+                ASTGenerator generator1 = new CachedASTGenerator(new BasicASTNormalizer());  
+                final TreeContext srcA =  generator1.buildTreeContext(fromSolutionA);
+                fromSolutionA = null;
+                generator1 = null;
+                final List<ITree> po = TreeUtils.preOrder(srcA.getRoot());
+
+                List<String> seekCheck = new ArrayList<String>();
+
+                for (int i = 0; i < bugLibrary.size(); i++) {
+                    int idx = i;
+
+                    // get template defects from second dataset
+                    buglibItem bli =  bugLibrary.get(idx);
+                    seekCheck.clear();
+                    System.out.println("bug library item:" + bli.bugID + " markers:" + bli.markers.size());
+
+                    if (bli!= null && bli.markers != null && bli.markers.size() >= minCountOfMarkers) {
+                        weightMatrix[idx] = 0;
+                        try {
+                            suggestion sug = new suggestion(bli.bugID, bli.bugDescription);
+                            for (ITree n : po) {
+                                String c = ActionContext.GetNodePath(n, false, srcA);
+                                if (c.length() > 0) {
+                                    if (bli.markers.containsKey(c)) {
+                                        if (!seekCheck.contains(c)) {
+                                            seekCheck.add(c);
+                                            suggestionItem sugItem = new suggestionItem(n.getId(),
+                                                    n.getPos(), n.getLength(),
+                                                    bli.markers.get(c).actionString,
+                                                    bli.markers.get(c).seekString);
+                                            sug.suggestions.add(sugItem);
+                                        }
+
+                                    }
+
+                                }
+                                // if all strings are found we can stop checking
+                                if (seekCheck.size() == bli.markers.size())
+                                    break;
+                            }
+
+                            weightMatrix[idx] = 100.0 * seekCheck.size() / bli.markers.size();
+
+                            if (weightMatrix[idx] >= minSugestionSimilarityLevel || weightMatrix[idx] == 100.0 ) {
+                                sugList.add(sug);
+                                sug = null;
+                            }
+
+                                
+                            System.out.println("defect:" + bli.bugID+" similarity: " + weightMatrix[idx]);
+
+                            seekCheck.clear();
+                           
+                        } catch (Exception any) {
+                            System.out.println(any.getMessage());
+                            any.printStackTrace();
+                        }
+                    }
+                }
+                seekCheck = null;
+
+                //System.out.println("");
+                System.out.println("Save results");
+                String matrixFile = pathToSuggestion.toString() + "\\";
+                matrixFile +=  "similarity.csv";
+                BufferedWriter writer = new BufferedWriter(new FileWriter(matrixFile));
+
+                for (int i = 0; i < bugLibrary.size(); i++) {
+
+                    // get template defects from second dataset
+                    String calcDefect = bugLibrary.get(i).bugID;
+                    
+                    writer.write("\"" + calcDefect + "\"");
+                    writer.write("," + weightMatrix[i]);
+                    writer.write("\r\n");
+                }
+                writer.close();
+
+
+                writer = new BufferedWriter(new FileWriter( pathToSuggestion.toString() + "\\suggestions.json"));
+                writer.write("{\"suggestions\":[\r\n");
+                boolean firstSug = true;
+                for (suggestion sug : sugList) {
+                    if(!firstSug)
+                        writer.write(",");
+                    firstSug=false;
+                    writer.write("{\"suggestFrom\":\"" + sug.BugLibraryItem + "\",\"suggestDescription\":\"" + sug.BugLibraryDescription.replace("\\", "\\\\").replace("\"","\\\"") + "\",\"items\":\r\n[");
+                    boolean firstItem = true;
+                    for(suggestionItem sugItem : sug.suggestions){
+                        if(!firstItem)
+                            writer.write(",");
+                        firstItem=false;
+                        writer.write("\r\n\t{\r\n");
+                        if(sugItem.startPosition >0){
+                            int p2=0;
+                            int col=0;
+                            for (int p=0;p<LinePos.length;p++){
+                                if( LinePos[p] >= sugItem.startPosition ){
+                                    p2=p-1;
+                                    col =sugItem.startPosition - LinePos[p2] ;
+                                    if(p2>0){
+                                        col+=2;
+                                        writer.write("\"line\":" + p +",");            
+                                        writer.write("\"column\":" + col +",");            // + 1 +\n ?
+                                    }
+                                    if(p2==0){
+                                        col+=1;
+                                        writer.write("\"line\":" + p +",");            
+                                        writer.write("\"column\":" + col +",");            // + 1 
+                                    }
+                                    break;
+                                }
+                            }
+                            //System.out.println("pos: " + sugItem.startPosition + " l:" + (p2+1) + " c:"+ col);
+                        }else{
+                            writer.write("\"line\": 0,");            
+                            writer.write("\"column\":0,");            // + 1 ?
+                        }
+
+
+                        writer.write("\"position\":" +sugItem.startPosition +",");
+                        writer.write("\"length\":" +sugItem.endPosition +",");
+                        writer.write("\"modification\":\"" +sugItem.SuggestionContent.replace("\\", "\\\\").replace("\"","\\\"") +"\",");
+                        writer.write("\"reason\":\"" + sugItem.reson.replace("\\", "\\\\") .replace("\"","\\\"") +"\"");
+
+                        writer.write("}\r\n");
+                    }
+                    
+                    writer.write("]\r\n");
+                    writer.write("}\r\n");
+                }
+                writer.write("]}\r\n");
+                writer.close();
+
+
+            
+
+            }
+
+        }
+
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+
+}
 
 
 

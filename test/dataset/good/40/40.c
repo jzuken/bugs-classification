@@ -43,7 +43,7 @@ int main(int argc, char **argv)
    char **line;
    if (argc != 2) stb_fatal("Usage: stb_build_matrix {build-file}\n");
    line = stb_stringfile(argv[1], &n);
-   if (line == 0) stb_fatal("Couldn't open file '%s'\n", argv[1]);
+   if (line == 0) stb_fatal("Couldn't open file '%s'\n");
 
    for (i=0; i < n; ++i) {
       char *p = stb_trimwhite(line[i]);

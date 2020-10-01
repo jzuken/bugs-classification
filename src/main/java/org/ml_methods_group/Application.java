@@ -364,6 +364,54 @@ public class Application {
                         getNamedIntegerFromArgs("markers", 5, args),
                         getNamedIntegerFromArgs("similarity", 90, args),
                         getNamedBooleanFromArgs("anynode", false, args)
+                );
+                break;
+
+
+                case "suggestion.fast":
+                if (args.length < 4 ) {
+                    System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
+                            "    Path to file for test" + System.lineSeparator() +
+                            "    Path to compiled bug library file" + System.lineSeparator() +
+                            "    Path to folder to store suggestion" + System.lineSeparator() +
+                            "    [Optional] --markers=N  minimal markers quantity for similarity check, default 5" + System.lineSeparator() +
+                            "    [Optional] --similarity=S  similarity level for generate suggestion, default 90" + System.lineSeparator() +
+                            "    [Optional] --anynode=true|false  use any node for similarity checr or only node with label, default false" + System.lineSeparator() 
+                            );
+                    return;
+                }
+                ApplicationSuggest.SuggestionFast(
+                        Paths.get(args[1]),
+                        Paths.get(args[2]),
+                        Paths.get(args[3]),
+                        getNamedIntegerFromArgs("markers", 5, args),
+                        getNamedIntegerFromArgs("similarity", 90, args),
+                        getNamedBooleanFromArgs("anynode", false, args)
+                        
+                );
+                break;
+
+                case "compile.buglib":
+                if (args.length < 5 ) {
+                    System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
+                            "    Path to bug library dataset" + System.lineSeparator() +
+                            "    Path to file with list of bug library defects" + System.lineSeparator() +
+                            "    Path to CSV file with defect description" + System.lineSeparator() +
+                            "    Path to folder to store compiled bug library" + System.lineSeparator() +
+                            "    [Optional] --markers=N  minimal markers quantity for similarity check, default 5" + System.lineSeparator() +
+                            "    [Optional] --similarity=S  similarity level for generate suggestion, default 90" + System.lineSeparator() +
+                            "    [Optional] --anynode=true|false  use any node for similarity checr or only node with label, default false" + System.lineSeparator() 
+                            );
+                    return;
+                }
+                ApplicationSuggest.BugLibCompile(
+                        Paths.get(args[1]),
+                        Paths.get(args[2]),
+                        Paths.get(args[3]),
+                        Paths.get(args[4]),
+                        getNamedIntegerFromArgs("markers", 5, args),
+                        getNamedIntegerFromArgs("similarity", 90, args),
+                        getNamedBooleanFromArgs("anynode", false, args)
                         
                 );
                 break;
