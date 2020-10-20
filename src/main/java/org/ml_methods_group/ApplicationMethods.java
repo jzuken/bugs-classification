@@ -35,6 +35,8 @@ import org.ml_methods_group.common.preparation.Unifier;
 import org.ml_methods_group.common.preparation.basic.BasicUnifier;
 import org.ml_methods_group.common.preparation.basic.MinValuePicker;
 import org.ml_methods_group.common.serialization.ProtobufSerializationUtils;
+import org.ml_methods_group.evaluation.approaches.ChangesApproach;
+import org.ml_methods_group.evaluation.approaches.JaccardApproach;
 import org.ml_methods_group.evaluation.approaches.clustering.ClusteringAlgorithm;
 import org.ml_methods_group.parsing.ParsingUtils;
 import org.ml_methods_group.testing.extractors.CachedFeaturesExtractor;
@@ -47,6 +49,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static org.ml_methods_group.common.Solution.Verdict.FAIL;
@@ -92,9 +95,9 @@ public class ApplicationMethods {
             return null;
         }
         ActionGenerator generator = new ActionGenerator(src, dst, matcher.getMappings());
-        try{
+        try {
             generator.generate();
-        } catch (Exception e){
+        } catch (Exception e) {
             System.out.println("Generator Error: " + e.getMessage());
             e.printStackTrace();
             return null;
@@ -102,10 +105,10 @@ public class ApplicationMethods {
 
         return generator.getActions();
     }
-  
+
     protected static void doClustering(Path storage, long baseTime, List<Changes> changes,
-                                     ClusteringAlgorithm algorithm,
-                                     double distanceLimit, int minClustersCount) throws IOException {
+                                       ClusteringAlgorithm algorithm,
+                                       double distanceLimit, int minClustersCount) throws IOException {
 
         Clusterer<Changes> clusterer = algorithm.getClusterer(changes, distanceLimit, minClustersCount);
 
@@ -119,9 +122,9 @@ public class ApplicationMethods {
     protected static String[] splitPath(String pathString) {
         Path path = Paths.get(pathString);
         return StreamSupport.stream(path.spliterator(), false).map(Path::toString)
-                            .toArray(String[]::new);
+                .toArray(String[]::new);
     }
-   
+
     protected static double getDiff(long baseTime) {
         return (System.currentTimeMillis() - baseTime) / 1000.0;
     }
@@ -134,7 +137,7 @@ public class ApplicationMethods {
         final ChangeGenerator changeGenerator = new BasicChangeGenerator(astGenerator);
         return changeGenerator.getChanges(fromSolution, toSolution);
     }
- 
+
     protected static void saveClustersToReadableFormat(Clusters<Changes> clusters, Path storage) throws IOException {
         Clusters<String> idClusters = clusters.map(x -> x.getOrigin().getId());
 
@@ -173,7 +176,7 @@ public class ApplicationMethods {
 
         System.out.println("Saving changes took " + ((System.currentTimeMillis() - start) / 1000.0) + " s");
     }
-   
+
     public static void mark(Path data, Path dst, int numExamples, int numClusters) throws IOException {
         final var clusters = ProtobufSerializationUtils.loadChangesClusters(data)
                 .getClusters().stream()
@@ -375,6 +378,202 @@ public class ApplicationMethods {
         doClustering(storage, baseTime, changes, algorithm, distanceLimit, minClustersCount);
     }
 
+    public static void makeJaccardMatrix(Path pathToDataset1, Path pathToListFile1, Path pathToDataset2, Path pathToListFile2,
+                                         Path pathToMatrix, String version, Boolean rename, Boolean parallel) throws IOException {
+
+        // check directory structure
+        File directory = new File(pathToMatrix.toString());
+        if (!directory.exists()) {
+            directory.mkdir();
+        }
+
+        // first dataset - test (bad files only)
+        List<String> defects1 = Files.readAllLines(pathToListFile1);
+        List<String> defectFiles1 = new ArrayList<String>();
+
+        String badFolderName1 = pathToDataset1.toString() + "\\bad";
+        String goodFolderName1 = pathToDataset1.toString() + "\\good";
+
+        try {
+
+            List<String> result1 = Files.walk(Paths.get(badFolderName1)).filter(Files::isRegularFile)
+                    .map(x -> x.toString()).collect(Collectors.toList());
+
+            // collect all files for defect to build matrix
+            for (String fName : result1) {
+                boolean useFile = false;
+
+                for (String defect : defects1) {
+
+                    if (fName.contains("\\" + defect + "\\")) {
+                        var Code = Files.readString(Paths.get(fName));
+                        if (Code.length() <= MAX_FILE_SIZE)
+                            useFile = true;
+                        break;
+                    }
+                }
+                if (useFile) {
+                    defectFiles1.add(fName);
+                }
+            }
+
+            // second dataset - template ( bad + good files)
+            List<String> defects2 = Files.readAllLines(pathToListFile2);
+
+            List<String> defectFiles2 = new ArrayList<String>();
+
+            String badFolderName2 = pathToDataset2.toString() + "\\bad";
+            String goodFolderName2 = pathToDataset2.toString() + "\\good";
+
+            List<String> result2 = Files.walk(Paths.get(badFolderName2)).filter(Files::isRegularFile)
+                    .map(x -> x.toString()).collect(Collectors.toList());
+
+            // collect all files for defect to build matrix
+            for (String fName : result2) {
+                boolean useFile = false;
+
+                for (String defect : defects2) {
+
+                    if (fName.contains("\\" + defect + "\\")) {
+                        var Code = Files.readString(Paths.get(fName));
+                        if (Code.length() <= MAX_FILE_SIZE)
+                            useFile = true;
+                        break;
+                    }
+                }
+                if (useFile) {
+                    defectFiles2.add(fName);
+                }
+            }
+
+            // collect changes for cluster here
+            double[][] distanceMatrix = new double[defectFiles2.size()][defectFiles1.size()];
+
+            // defect files is a collection of bad files
+            if (defectFiles1.size() > 0 && defectFiles2.size() > 0) {
+
+                ChangesApproach<List<String>> approach =
+                        version.toLowerCase().equals("default") ?
+                                JaccardApproach.getDefaultApproach() :
+                                version.toLowerCase().equals("full") ?
+                                        JaccardApproach.getFullApproach() :
+                                        JaccardApproach.getExtendedApproach();
+
+                Stream<String> fileStream2 = parallel? defectFiles2.parallelStream() : defectFiles2.stream();
+                List<Changes> defectChanges2 = fileStream2.map(defectB -> {
+                    try {
+                        // get template defects from second dataset
+                        var fromCode = Files.readString(Paths.get(defectB));
+                        var toCode = Files.readString(Paths.get(defectB.replace(badFolderName2, goodFolderName2)));
+                        if (fromCode.length() <= MAX_FILE_SIZE && toCode.length() <= MAX_FILE_SIZE) {
+
+                            var fromSolution = new Solution(fromCode, "B_BAD", "B_BAD", FAIL);
+                            var toSolution = new Solution(toCode, "B_GOOD", "B_GOOD", OK);
+
+                            final ASTGenerator generator = rename?
+                                    new CachedASTGenerator(new NamesASTNormalizer()):
+                                    new CachedASTGenerator(new BasicASTNormalizer());
+
+                            BasicChangeGenerator changesGenerator = new BasicChangeGenerator(generator);
+                            return changesGenerator.getChanges(fromSolution, toSolution);
+                        }
+                    } catch (Exception any) {
+                        System.out.println(any.getMessage());
+                        any.printStackTrace();
+                    }
+                    return null;
+                }).collect(Collectors.toList());
+
+                Stream<String> fileStream1 = parallel? defectFiles1.parallelStream() : defectFiles1.stream();
+                List<Changes> defectChanges1 = fileStream1.map(defectA -> {
+                    try {
+                        // get template defects from second dataset
+                        var fromCode = Files.readString(Paths.get(defectA));
+                        var toCode = Files.readString(Paths.get(defectA.replace(badFolderName1, goodFolderName1)));
+                        if (fromCode.length() <= MAX_FILE_SIZE && toCode.length() <= MAX_FILE_SIZE) {
+
+                            var fromSolution = new Solution(fromCode, "B_BAD", "B_BAD", FAIL);
+                            var toSolution = new Solution(toCode, "B_GOOD", "B_GOOD", OK);
+
+                            final ASTGenerator generator = rename?
+                                    new CachedASTGenerator(new NamesASTNormalizer()):
+                                    new CachedASTGenerator(new BasicASTNormalizer());
+
+                            BasicChangeGenerator changesGenerator = new BasicChangeGenerator(generator);
+                            return changesGenerator.getChanges(fromSolution, toSolution);
+                        }
+                    } catch (Exception any) {
+                        System.out.println(any.getMessage());
+                        any.printStackTrace();
+                    }
+                    return null;
+                }).collect(Collectors.toList());
+
+                for (int i = 0; i < defectFiles2.size(); i++) {
+
+                    Changes changes = defectChanges2.get(i);
+
+                    if (changes == null) {
+                        continue;
+                    }
+
+                    // scan all dataset 1 for test with template item from dataset 2
+                    for (int j = 0; j < defectFiles1.size(); j++) {
+                        System.out.println(">>>>" + i + "(" + defectFiles2.size() + ")" + " x " + j + "("
+                                + defectFiles1.size() + ")");
+                        distanceMatrix[i][j] = 1;
+
+                        if (defectChanges1.get(j) == null) {
+                            continue;
+                        }
+
+                        double distance = approach.metric.distance(
+                                approach.extractor.process(changes),
+                                approach.extractor.process(defectChanges1.get(j)));
+
+                        distanceMatrix[i][j] = distance;
+                    }
+
+                }
+            }
+
+            String matrixFile = pathToMatrix.toString() + "\\jaccard.csv";
+            BufferedWriter writer = new BufferedWriter(new FileWriter(matrixFile));
+
+            // first row - list of defects to test
+            writer.write("\"template to defect\"");
+            for (int j = 0; j < defectFiles1.size(); j++) {
+
+                for (String defect : defects1) {
+                    if (defectFiles1.get(j).contains("\\" + defect + "\\")) {
+                        writer.write(",\"" + defect + "\"");
+                        break;
+                    }
+                }
+            }
+            writer.write("\r\n");
+
+            // other rows one per template defect
+            for (int i = 0; i < defectFiles2.size(); i++) {
+
+                for (String defect : defects2) {
+                    if (defectFiles2.get(i).contains("\\" + defect + "\\")) {
+                        writer.write("\"" + defect + "\"");
+                        break;
+                    }
+                }
+                for (int j = 0; j < defectFiles1.size(); j++) {
+                    writer.write("," + distanceMatrix[i][j]);
+                }
+                writer.write("\r\n");
+            }
+            writer.close();
+        } catch (
+                IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public static void jaccardTreeWeight(Path pathToMaxTreeDir, String DefectA, String DefectB, String version) throws IOException {
 
         try {
@@ -423,21 +622,18 @@ public class ApplicationMethods {
 
             if (!defectAPath.equals("") && !defectBPath.equals("")) {
                 Scanner defectAInput = new Scanner(new File(defectAPath));
-                while (defectAInput.hasNextLine())
-                {
+                while (defectAInput.hasNextLine()) {
                     defectASet.add(defectAInput.nextLine());
                 }
                 Scanner defectBInput = new Scanner(new File(defectBPath));
-                while (defectBInput.hasNextLine())
-                {
+                while (defectBInput.hasNextLine()) {
                     defectBSet.add(defectBInput.nextLine());
                 }
             }
 
             if (!maxTreePath.equals("")) {
                 Scanner maxTreeInput = new Scanner(new File(maxTreePath));
-                while (maxTreeInput.hasNextLine())
-                {
+                while (maxTreeInput.hasNextLine()) {
                     maxTreeSet.add(maxTreeInput.nextLine());
                 }
 
@@ -457,9 +653,8 @@ public class ApplicationMethods {
             }
 
 
-
         } catch (IOException e) {
-            System.out.println( e.getMessage());
+            System.out.println(e.getMessage());
             e.printStackTrace();
         }
 

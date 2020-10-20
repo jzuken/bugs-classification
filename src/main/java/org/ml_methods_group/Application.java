@@ -501,6 +501,31 @@ public class Application {
                         args[4]
                 );
                 break;
+            case "jaccard.matrix":
+                if (args.length < 6 ) {
+                    System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
+                            "    Path to dataset with test data" + System.lineSeparator() +
+                            "    Path to file with list of defect to test" + System.lineSeparator() +
+                            "    Path to dataset with template defects" + System.lineSeparator() +
+                            "    Path to file with list of template defects" + System.lineSeparator() +
+                            "    Path to folder to store matrix" + System.lineSeparator() +
+                            "    [Optional] Parallel execution (parallel, default)" + System.lineSeparator() +
+                            "    [Optional] Jaccard distance variant (default, full, extended)" + System.lineSeparator() +
+                            "    [Optional] Changes builder variant (rename, default)" + System.lineSeparator()
+                    );
+                    return;
+                }
+                ApplicationMethods.makeJaccardMatrix(
+                        Paths.get(args[1]),
+                        Paths.get(args[2]),
+                        Paths.get(args[3]),
+                        Paths.get(args[4]),
+                        Paths.get(args[5]),
+                        args.length < 8? "default" : args[7],
+                        args.length >= 9 && args[8].equals("rename"),
+                        args.length >= 7 && args[6].equals("parallel"));
+
+                break;
 
             default:
                 System.out.println("Undefined command!");
