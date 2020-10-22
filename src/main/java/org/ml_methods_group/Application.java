@@ -124,6 +124,22 @@ public class Application {
                 );
                 break;
 
+            case "prepare.desc":
+                if (args.length < 3 ) {
+                    System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
+                            "    Path to dataset description CSV" + System.lineSeparator() +
+                            "    Path to store representation" + System.lineSeparator() 
+                            );
+                    return;
+                }
+                ApplicationES.prepareDescriptions(
+                        Paths.get(args[1]),
+                        Paths.get(args[2])
+
+                );
+                break;
+                
+
             case "cluster.es":
                 if (args.length < 3 || args.length > 6) {
                     System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +

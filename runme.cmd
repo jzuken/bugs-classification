@@ -35,4 +35,6 @@ rem java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.ja
 
 rem java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.jar suggestion.fast .\test\dataset\bad\40\40.c  .\test\dataset\compiled\buglibrary.bin .\test\dataset\suggestion.fast --markers=6 --similarity=90 --anynode=true
 
-java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.jar lase.looklike
+rem java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.jar lase.looklike
+
+java -Xmx12G -Dfile.encoding=UTF-8 -jar build\libs\bugs-classification-v1.jar  prepare.desc  .\test\dataset\description.csv .\test\dataset\desc 

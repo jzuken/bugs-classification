@@ -39,6 +39,7 @@ import org.ml_methods_group.evaluation.approaches.clustering.ClusteringAlgorithm
 import org.ml_methods_group.parsing.ParsingUtils;
 import org.ml_methods_group.testing.extractors.CachedFeaturesExtractor;
 import org.ml_methods_group.common.ast.matches.testMatcher;
+import org.eclipse.jdt.core.jdom.IDOMCompilationUnit;
 import org.ml_methods_group.ApplicationMethods;
 
 import java.io.*;
@@ -49,6 +50,8 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+
+import au.com.bytecode.opencsv.CSVReader;
 
 import static org.ml_methods_group.common.Solution.Verdict.FAIL;
 import static org.ml_methods_group.common.Solution.Verdict.OK;
@@ -264,13 +267,111 @@ public class ApplicationES extends ApplicationMethods {
     }
 
 
+    public static void prepareDescriptions(Path PathToDescriptionsCSV, Path pathToSaveRepresentations) throws IOException {
+
+        
+        File directory2 = new File(pathToSaveRepresentations.toString() );
+        if (!directory2.exists()) {
+            directory2.mkdir();
+        }
+
+        int processed=0;
+        int skipped=0;
+        int total=0;
+
+        CSVReader reader = new CSVReader(new FileReader(PathToDescriptionsCSV.toString()), ',', '"', 1);
+        //Read all rows at once
+        List<String[]> allRows = reader.readAll();
+
+        Map<String,String> Descriptions = new HashMap<String,String>();
+        for(String d[] : allRows){
+            if(d.length > 1)
+                Descriptions.put(d[0],d[1]);
+        }
+
+                     
+        try  {
+            
+            var baseTime = System.currentTimeMillis();
+
+            for (String ID : Descriptions.keySet()) {
+                total++;
+                if(total % 1000 ==0)
+                    System.out.println("******************* total: " + total);
+                Boolean useFile = true;
+                if(useFile){
+                    try{
+                    
+                    baseTime = System.currentTimeMillis();
+                    processed++;
+                    System.out.println("******************* total: " + total +", found: " + processed + ", skipped: " + skipped);
+                    String defectId = ID;
+                    System.out.println(getDiff(baseTime) + ": Defect id: " +  defectId  );
+                    File actionsFile = new File(pathToSaveRepresentations.toString()+"\\" + defectId);
+                    String data = Descriptions.get(ID);
+                    if(data.length() >0  ){
+                        
+                                String emuCode = "";
+
+                                if(actionsFile.exists()){
+                                    System.out.println(getDiff(baseTime) + ": repared file exists");
+                                }else{
+                                    System.out.println(getDiff(baseTime) + ": Prepare description");
+                                        data = data.replace("\"", "'");
+                                        data = data.replace("\n", " ");
+                                        data = data.replace("\r", " ");
+                                        data = data.replace("\t", " ");
+                                        data = data.replace(".", " ");
+                                        data = data.replace(",", " ");
+                                        data = data.replace(";", " ");
+                                        while(data.indexOf("  ") >=0){
+                                            data = data.replace("  ", " ");
+                                        }
+                                        String words[] = data.split(" ");
+                                        int Cnt = 0;
+                                        emuCode="";
+                                        for(String s : words){
+                                            emuCode+= "v=\""+ s +"\";\n";
+                                        }
+
+                                        emuCode = "void block(){\n" + emuCode + "}\n";
+                                        //System.out.println("emuCode: " + emuCode);
+
+                                        BufferedWriter writer =null;
+                                        writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
+                                        writer.write(emuCode);
+                                        writer.close();
+                                }
+                                System.out.println(getDiff(baseTime) + ": Done");
+                            }else{
+                                skipped++;
+                                
+                            }
+
+
+                    }catch(Exception any)
+                    {
+                        any.printStackTrace();
+                    }
+                }
+
+            }
+            System.out.println(getDiff(baseTime) + ": All files description prepared");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
+
     public static void clusterESDataset(Path pathToPrepared, Path pathToSaveCluster, Path pathToBugList, String version,  ClusteringAlgorithm algorithm,
                                          double distanceLimit, int minClustersCount) throws IOException {
 
         int processed=0;
         int skipped=0;
         int total=0;
-        List<Changes> AllChanges = new ArrayList();
+        List<Changes> AllChanges = new ArrayList<Changes>();
         List<String> defects = Files.readAllLines(pathToBugList); 
 
                                 

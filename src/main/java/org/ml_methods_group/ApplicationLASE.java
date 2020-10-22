@@ -660,16 +660,6 @@ public class ApplicationLASE extends ApplicationMethods {
     }
 
 
-
-
-
-   
-
-
-
-
-
-
     public static void scanCluster(Path pathToDataset, Path pathToClusterFile, Path pathToMatrix, String version)
             throws IOException {
         List<String> clusters = Files.readAllLines(pathToClusterFile);
