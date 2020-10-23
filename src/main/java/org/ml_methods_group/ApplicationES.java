@@ -287,7 +287,8 @@ public class ApplicationES extends ApplicationMethods {
         List<String[]> allRows = reader.readAll();
         String [] StopWords ={"this","is", "a", "the","are","was","were","be","been","an","these", 
         "what","where","can","must","on","it","of","in","to","do","does","did","done","dosen","t",
-        "by","resulting","will","all", "and", "not","when", "that","than","but","with","into","there", "so", "s"};
+        "by","resulting","will","all", "and", "not","when", "that","then","but","with","into","there", "so", "s", "at","if",
+        "problem","error","bug","cause","fail","failure"};
         List<String> StopList = Arrays.asList(StopWords);
         
         Map<String,String> Descriptions = new HashMap<String,String>();
@@ -450,22 +451,26 @@ public class ApplicationES extends ApplicationMethods {
 
              Clusters<CodeDescription> cd = h.buildClusters(AllChanges);
 
-             System.out.println(getDiff(baseTime) + ": Clusters are formed, saving results");
+             System.out.println(getDiff(baseTime) + ": Clusters are formed, saving results " );
              
              Clusters<String> idClusters = cd.map(x -> x.ID);
+
+             
 
              FileOutputStream fileStream = new FileOutputStream(clusterPath.toFile(), false);
      
              BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fileStream));
      
+             int cc=0;
              for (var cluster : idClusters.getClusters()) {
                  bw.write(String.join(" ", cluster.getElements()));
+                 cc++;
                  bw.newLine();
              }
      
              bw.close();
 
-             System.out.println(getDiff(baseTime) + ": Finished");
+             System.out.println(getDiff(baseTime) + ": Finished " + cc + " cluster(s)");
 
             
         } catch (Exception e) {
