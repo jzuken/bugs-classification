@@ -39,8 +39,11 @@ import org.ml_methods_group.evaluation.approaches.clustering.ClusteringAlgorithm
 import org.ml_methods_group.parsing.ParsingUtils;
 import org.ml_methods_group.testing.extractors.CachedFeaturesExtractor;
 import org.ml_methods_group.common.ast.matches.testMatcher;
+import org.ml_methods_group.common.ast.matches.testStringAlgoritm;
 import org.eclipse.jdt.core.jdom.IDOMCompilationUnit;
 import org.ml_methods_group.ApplicationMethods;
+import org.ml_methods_group.clustering.clusterers.HAC;
+import org.ml_methods_group.CodeDescription;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -282,7 +285,9 @@ public class ApplicationES extends ApplicationMethods {
         CSVReader reader = new CSVReader(new FileReader(PathToDescriptionsCSV.toString()), ',', '"', 1);
         //Read all rows at once
         List<String[]> allRows = reader.readAll();
-        String [] StopWords ={"this","is", "a", "the","are","was","were","be","been","an","these", "what","where","can","must","on","it","of","on","to","do","does","did","done"};
+        String [] StopWords ={"this","is", "a", "the","are","was","were","be","been","an","these", 
+        "what","where","can","must","on","it","of","in","to","do","does","did","done","dosen","t",
+        "by","resulting","will","all", "and", "not","when", "that","than","but","with","into","there", "so", "s"};
         List<String> StopList = Arrays.asList(StopWords);
         
         Map<String,String> Descriptions = new HashMap<String,String>();
@@ -316,7 +321,7 @@ public class ApplicationES extends ApplicationMethods {
                                 String emuCode = "";
 
                                
-                                    System.out.println(getDiff(baseTime) + ": Prepare description");
+                                    System.out.println(getDiff(baseTime) + ": Prepare CodeDescription");
                                         data = data.replace("\"", " ");
                                         data = data.replace("\'", " ");
                                         data = data.replace("\n", " ");
@@ -327,6 +332,8 @@ public class ApplicationES extends ApplicationMethods {
                                         data = data.replace("}", " ");
                                         data = data.replace("(", " ");
                                         data = data.replace(")", " ");
+                                        data = data.replace("[", " ");
+                                        data = data.replace("]", " ");
                                         data = data.replace(",", " ");
                                         data = data.replace(";", " ");
                                         data = data.replace(":", " ");
@@ -338,11 +345,11 @@ public class ApplicationES extends ApplicationMethods {
                                         String words[] = data.split(" ");
                                         emuCode="";
                                         for(String s : words){
-                                            if(! StopList.contains(s.toLowerCase()))
-                                                emuCode+= "v=\""+ s.toLowerCase() +"\";\n";
+                                             if(! StopList.contains(s.toLowerCase()))
+                                                emuCode += s.toLowerCase() +"\n";
                                         }
 
-                                        emuCode = "void block(){\n" + emuCode + "}\n";
+                                        //emuCode = "void block(){\n" + emuCode + "}\n";
                                         //System.out.println("emuCode: " + emuCode);
 
                                         BufferedWriter writer =null;
@@ -361,13 +368,113 @@ public class ApplicationES extends ApplicationMethods {
                 }
 
             }
-            System.out.println(getDiff(baseTime) + ": All files description prepared");
+            System.out.println(getDiff(baseTime) + ": All files CodeDescription prepared");
         } catch (Exception e) {
             e.printStackTrace();
         }
 
 
     }
+
+   
+
+
+
+
+
+    public static void clusterDescDataset(Path pathToPrepared, Path pathToSaveCluster, Path pathToBugList, String version,  
+    double distanceLimit, int minClustersCount) throws Exception {
+
+        int processed=0;
+        int skipped=0;
+        int total=0;
+
+        List<CodeDescription> AllChanges = new ArrayList<CodeDescription> ();
+        List<String> defects = Files.readAllLines(pathToBugList); 
+
+        File directory2 = new File(pathToSaveCluster.toString() );
+        if (!directory2.exists()) {
+            directory2.mkdir();
+        }
+
+
+        try  {
+            var baseTime = System.currentTimeMillis();
+            Path clusterPath = Paths.get(pathToSaveCluster.toString() + "/cluster_" + version + ".txt");
+            List<String> result = Files.walk(Paths.get(pathToPrepared.toString())).filter(Files::isRegularFile)
+            .map(x -> x.toString()).collect(Collectors.toList());
+            for (String fName : result) {
+                total++;
+                Boolean useFile = false;
+                String defectId ="";
+                for( String defect: defects) {
+                    if(fName.contains(defect)){
+                        var f = new File(fName);
+                        if(f.length() <= MAX_FILE_SIZE){
+                            useFile = true;
+                            defectId= defect;
+                        }
+                        break;
+                    }
+                }
+            
+                if(useFile){
+                    try{
+                        //String[] paths = splitPath(fName.replace(pathToPrepared.toString(), ""));
+                        //String defectId =  paths[paths.length-1];
+                        baseTime = System.currentTimeMillis();
+                        processed++;
+                        System.out.println("******************* total: " + total +", found: " + processed + ", skipped: " + skipped);
+                        String emuCode = "";
+                        System.out.println(getDiff(baseTime) + ":  " + defectId);
+                        emuCode = Files.readString(Paths.get(fName));
+                        if(! emuCode.equals("{}") ){
+                            CodeDescription d = new CodeDescription(defectId,emuCode);
+                            AllChanges.add ( d );
+                        }else{
+                            skipped++;
+                            System.out.println(getDiff(baseTime) + ": Skip no-action file");
+                        }
+
+
+                    }catch(Exception any){
+                        any.printStackTrace();
+                    }
+                }
+            }   
+
+        
+            System.out.println(getDiff(baseTime) + ": All changes are processed, starting clustering");
+
+             HAC<CodeDescription> h = new HAC<CodeDescription>(distanceLimit,minClustersCount,  new wordDistance());
+
+             Clusters<CodeDescription> cd = h.buildClusters(AllChanges);
+
+             System.out.println(getDiff(baseTime) + ": Clusters are formed, saving results");
+             
+             Clusters<String> idClusters = cd.map(x -> x.ID);
+
+             FileOutputStream fileStream = new FileOutputStream(clusterPath.toFile(), false);
+     
+             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fileStream));
+     
+             for (var cluster : idClusters.getClusters()) {
+                 bw.write(String.join(" ", cluster.getElements()));
+                 bw.newLine();
+             }
+     
+             bw.close();
+
+             System.out.println(getDiff(baseTime) + ": Finished");
+
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
 
 
     public static void clusterESDataset(Path pathToPrepared, Path pathToSaveCluster, Path pathToBugList, String version,  ClusteringAlgorithm algorithm,
@@ -415,8 +522,8 @@ public class ApplicationES extends ApplicationMethods {
                         System.out.println(getDiff(baseTime) + ":  " + defectId);
                         emuCode = Files.readString(Paths.get(fName));
                         if(! emuCode.equals("{}") ){
-                            var fromSolutionNG = new Solution("", defectId, defectId+"_EMPTY", FAIL);
-                            var toSolutionNG = new Solution(emuCode, defectId, defectId+"_ES", OK);
+                            var fromSolutionNG = new Solution("void block(){\n}\n", defectId, defectId, FAIL);
+                            var toSolutionNG = new Solution(emuCode, defectId, defectId+"_ok",OK);
                             System.out.println(getDiff(baseTime) + ": Creating es changes (" + emuCode.length() +" bytes )");
                             Changes change = getChanges(false, fromSolutionNG, toSolutionNG);
                             System.out.println(getDiff(baseTime) + ": Collect es changes");
@@ -446,6 +553,49 @@ public class ApplicationES extends ApplicationMethods {
 
     }
 
-  
+
+   
+
+
+    private static class wordDistance implements DistanceFunction<CodeDescription> {
+
+        private static final long serialVersionUID = 1L;
+    
+        @Override
+        public double distance(CodeDescription first, CodeDescription second) {
+            return distance(first, second, Double.POSITIVE_INFINITY);
+        }
+    
+        @Override
+        public double distance(CodeDescription s0, CodeDescription s1, double upperBound) {
+            int maxLen=0;
+            String commonWords="";
+            /* 
+            int[][] lengths = new int[s0.words.size() + 1][s1.words.size() + 1];
+            for (int i = 0; i < s0.words.size(); i++){
+                for (int j = 0; j < s1.words.size(); j++){
+                    if (s0.words.get(i).equals(s1.words.get(j)))    
+                        lengths[i + 1][j + 1] = lengths[i][j] + 1;
+                    if(lengths[i + 1][j + 1] >maxLen)
+                        maxLen=lengths[i + 1][j + 1];
+                }
+            }
+            */
+
+            for (int i = 0; i < s0.words.size(); i++){
+                for (int j = 0; j < s1.words.size(); j++){
+                    if (s0.words.get(i).equals(s1.words.get(j))){
+                        maxLen++;
+                        commonWords+=(s0.words.get(i)+" ");
+                        break;
+                    }    
+                }
+            }
+            
+            double dist = 1.0 - (double) maxLen / Math.max(Math.min(s0.words.size(),s1.words.size()),1);
+            System.out.println(s0.ID + " x " + s1.ID + " -> " + maxLen +" d=" + dist + " [" +commonWords +"]");
+            return dist >= upperBound ? upperBound : dist;
+        }
+    }
    
 }
