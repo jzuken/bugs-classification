@@ -146,6 +146,7 @@ public class Application {
                             "    Path to code prepared set" + System.lineSeparator() +
                             "    Path to store clustering" + System.lineSeparator() +
                             "    Path to list of defect file" + System.lineSeparator() +
+                            "    version " + System.lineSeparator() +
                             "    [Optional] --algorithm=X - Set clusterization algorithm (bow, vec, jac, ext_jac, full_jac, fuz_jac), default value bow" + System.lineSeparator() +
                             "    [Optional] --distanceLimit=X - Set clustering distance limit to X, default value 0.3" + System.lineSeparator() +
                             "    [Optional] --minClustersCount=X - Set minimum amount of clusters to X, default value 1" + System.lineSeparator() 
@@ -161,6 +162,31 @@ public class Application {
                         getDistanceLimitFromArgs(args),
                         getMinClustersCountFromArgs(args)
 
+                );
+                break;
+
+                case "cluster.desc":
+                if (args.length < 4 ) {
+                    System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
+                            "    Path to code prepared set" + System.lineSeparator() +
+                            "    Path to store clustering" + System.lineSeparator() +
+                            "    Path to list of defect file" + System.lineSeparator() +
+                            "    version " + System.lineSeparator() +
+                            "    [Optional] --distanceLimit=X - Set clustering distance limit to X, default value 0.3" + System.lineSeparator() +
+                            "    [Optional] --minClustersCount=X - Set minimum amount of clusters to X, default value 1" + System.lineSeparator() 
+                          
+                           );
+                    return;
+                }
+                ApplicationES.clusterDescDataset(
+                        Paths.get(args[1]),
+                        Paths.get(args[2]),
+                        Paths.get(args[3]),
+                        args[4],
+                        getDistanceLimitFromArgs(args),
+                        getMinClustersCountFromArgs(args)
+
+                        
                 );
                 break;
             case "build.lase":
