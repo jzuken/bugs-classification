@@ -282,7 +282,9 @@ public class ApplicationES extends ApplicationMethods {
         CSVReader reader = new CSVReader(new FileReader(PathToDescriptionsCSV.toString()), ',', '"', 1);
         //Read all rows at once
         List<String[]> allRows = reader.readAll();
-
+        String [] StopWords ={"this","is", "a", "the","are","was","were","be","been","an","these", "what","where","can","must","on","it","of","on","to","do","does","did","done"};
+        List<String> StopList = Arrays.asList(StopWords);
+        
         Map<String,String> Descriptions = new HashMap<String,String>();
         for(String d[] : allRows){
             if(d.length > 1)
@@ -307,31 +309,37 @@ public class ApplicationES extends ApplicationMethods {
                     System.out.println("******************* total: " + total +", found: " + processed + ", skipped: " + skipped);
                     String defectId = ID;
                     System.out.println(getDiff(baseTime) + ": Defect id: " +  defectId  );
-                    File actionsFile = new File(pathToSaveRepresentations.toString()+"\\" + defectId);
+                    File actionsFile = new File(pathToSaveRepresentations.toString()+"\\" + defectId+".c");
                     String data = Descriptions.get(ID);
                     if(data.length() >0  ){
                         
                                 String emuCode = "";
 
-                                if(actionsFile.exists()){
-                                    System.out.println(getDiff(baseTime) + ": repared file exists");
-                                }else{
+                               
                                     System.out.println(getDiff(baseTime) + ": Prepare description");
-                                        data = data.replace("\"", "'");
+                                        data = data.replace("\"", " ");
+                                        data = data.replace("\'", " ");
                                         data = data.replace("\n", " ");
                                         data = data.replace("\r", " ");
                                         data = data.replace("\t", " ");
                                         data = data.replace(".", " ");
+                                        data = data.replace("{", " ");
+                                        data = data.replace("}", " ");
+                                        data = data.replace("(", " ");
+                                        data = data.replace(")", " ");
                                         data = data.replace(",", " ");
                                         data = data.replace(";", " ");
+                                        data = data.replace(":", " ");
+                                        data = data.replace("=", " ");
+
                                         while(data.indexOf("  ") >=0){
                                             data = data.replace("  ", " ");
                                         }
                                         String words[] = data.split(" ");
-                                        int Cnt = 0;
                                         emuCode="";
                                         for(String s : words){
-                                            emuCode+= "v=\""+ s +"\";\n";
+                                            if(! StopList.contains(s.toLowerCase()))
+                                                emuCode+= "v=\""+ s.toLowerCase() +"\";\n";
                                         }
 
                                         emuCode = "void block(){\n" + emuCode + "}\n";
@@ -343,10 +351,7 @@ public class ApplicationES extends ApplicationMethods {
                                         writer.close();
                                 }
                                 System.out.println(getDiff(baseTime) + ": Done");
-                            }else{
-                                skipped++;
-                                
-                            }
+                     
 
 
                     }catch(Exception any)
@@ -373,6 +378,11 @@ public class ApplicationES extends ApplicationMethods {
         int total=0;
         List<Changes> AllChanges = new ArrayList<Changes>();
         List<String> defects = Files.readAllLines(pathToBugList); 
+
+        File directory2 = new File(pathToSaveCluster.toString() );
+        if (!directory2.exists()) {
+            directory2.mkdir();
+        }
 
                                 
         try  {
