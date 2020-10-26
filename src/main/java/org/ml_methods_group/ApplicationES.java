@@ -285,15 +285,28 @@ public class ApplicationES extends ApplicationMethods {
         CSVReader reader = new CSVReader(new FileReader(PathToDescriptionsCSV.toString()), ',', '"', 1);
         //Read all rows at once
         List<String[]> allRows = reader.readAll();
+
         String [] StopWords ={"this","is", "a", "the","are","was","were","be","been","an","these","other", 
         "what","where","can","must","on","it","of","in","to","do","does","did","done","dosen","t","has","as","no","need","because","after","while","from",
         "by","resulting","will","all", "and", "not","when", "that","then","but","with","into","there", "so", "s", "at","if","for","out","only","next","go","set","up",
         "problem","error","bug","cause","fail","failure","device","issue","issued","return","or",
-        "code","data","type","link","protocol","time","table","item","key","index","operation","value","mode",
-        "port","ports","interface","process","configuration","configure","configured","chip","traffic","tunel","mac","card","vlan","vxlan","message","sdk","route","items"
+        "code", "configuration","configure","configured","items" };
+
+        
+        
+        /* ={"this","is", "a", "the","are","was","were","be","been","an","these","other", 
+        "what","where","can","must","on","it","of","in","to","do","does","did","done","dosen","t","has","as","no","need","because","after","while","from",
+        "by","resulting","will","all", "and", "not","when", "that","then","but","with","into","there", "so", "s", "at","if","for","out","only","next","go","set","up",
+        "problem","error","bug","cause","issue","issued","return","or",
+        "code","data","type","items","time","item","key","value"
+        }; */
+
+        String [] ExcludeWords={
+            "port","ports","protocol","chip","traffic","tunel","mac","card","vlan","vxlan","board","arp","ecmp","icmp","dune"
         };
 
         List<String> StopList = Arrays.asList(StopWords);
+        List<String> ExcludeList = Arrays.asList(ExcludeWords);
         
         Map<String,String> Descriptions = new HashMap<String,String>();
         for(String d[] : allRows){
@@ -324,8 +337,6 @@ public class ApplicationES extends ApplicationMethods {
                     if(data.length() >0  ){
                         
                                 String emuCode = "";
-
-                               
                                     System.out.println(getDiff(baseTime) + ": Prepare CodeDescription");
                                         data = data.replace("\"", " ");
                                         data = data.replace("\'", " ");
@@ -333,6 +344,8 @@ public class ApplicationES extends ApplicationMethods {
                                         data = data.replace("\r", " ");
                                         data = data.replace("\t", " ");
                                         data = data.replace(".", " ");
+                                        data = data.replace("-", " ");
+                                        data = data.replace("_", " ");
                                         data = data.replace("{", " ");
                                         data = data.replace("}", " ");
                                         data = data.replace("(", " ");
@@ -350,17 +363,20 @@ public class ApplicationES extends ApplicationMethods {
                                         String words[] = data.split(" ");
                                         emuCode="";
                                         for(String s : words){
+                                            if(ExcludeList.contains(s.toLowerCase())){
+                                                emuCode="";
+                                                break;
+                                            }else{
                                              if(! StopList.contains(s.toLowerCase()))
                                                 emuCode += s.toLowerCase() +"\n";
+                                            }
                                         }
-
-                                        //emuCode = "void block(){\n" + emuCode + "}\n";
-                                        //System.out.println("emuCode: " + emuCode);
-
-                                        BufferedWriter writer =null;
-                                        writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
-                                        writer.write(emuCode);
-                                        writer.close();
+                                        if(emuCode.length()>0){
+                                            BufferedWriter writer =null;
+                                            writer = new BufferedWriter(new FileWriter(actionsFile.getAbsolutePath()));
+                                            writer.write(emuCode);
+                                            writer.close();
+                                        }
                                 }
                                 System.out.println(getDiff(baseTime) + ": Done");
                      
@@ -406,6 +422,7 @@ public class ApplicationES extends ApplicationMethods {
         try  {
             var baseTime = System.currentTimeMillis();
             Path clusterPath = Paths.get(pathToSaveCluster.toString() + "/cluster_" + version + ".txt");
+            Path dataPath = Paths.get(pathToSaveCluster.toString() + "/data_" + version + ".csv");
             List<String> result = Files.walk(Paths.get(pathToPrepared.toString())).filter(Files::isRegularFile)
             .map(x -> x.toString()).collect(Collectors.toList());
             for (String fName : result) {
@@ -449,7 +466,7 @@ public class ApplicationES extends ApplicationMethods {
             }   
 
         
-            System.out.println(getDiff(baseTime) + ": All changes are processed, starting clustering");
+            System.out.println(getDiff(baseTime) + ": All (" + AllChanges.size() +") files are processed, starting clustering");
 
              HAC<CodeDescription> h = new HAC<CodeDescription>(distanceLimit,minClustersCount,  new wordDistance());
 
@@ -459,13 +476,13 @@ public class ApplicationES extends ApplicationMethods {
              
              Clusters<String> idClusters = cd.map(x -> x.ID);
 
-             
-
+             int cc=0; 
+            {
              FileOutputStream fileStream = new FileOutputStream(clusterPath.toFile(), false);
      
              BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fileStream));
      
-             int cc=0;
+            
              for (var cluster : idClusters.getClusters()) {
                  bw.write(String.join(" ", cluster.getElements()));
                  cc++;
@@ -473,8 +490,23 @@ public class ApplicationES extends ApplicationMethods {
              }
      
              bw.close();
+            }
 
-             System.out.println(getDiff(baseTime) + ": Finished " + cc + " cluster(s)");
+             System.out.println(getDiff(baseTime) + ": Finished " + cc + " cluster(s) from (" + AllChanges.size() +") files");
+
+             {
+             FileOutputStream fileStream = new FileOutputStream(dataPath.toFile(), false);
+     
+             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fileStream));
+     
+             for (CodeDescription cds : AllChanges) {
+
+                 bw.write(cds.ID.replace("DTS201","") +",\"" + String.join(" ", cds.words) +"\"");
+                 bw.newLine();
+             }
+     
+             bw.close();
+            }
 
             
         } catch (Exception e) {
