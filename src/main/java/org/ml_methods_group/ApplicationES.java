@@ -285,10 +285,14 @@ public class ApplicationES extends ApplicationMethods {
         CSVReader reader = new CSVReader(new FileReader(PathToDescriptionsCSV.toString()), ',', '"', 1);
         //Read all rows at once
         List<String[]> allRows = reader.readAll();
-        String [] StopWords ={"this","is", "a", "the","are","was","were","be","been","an","these", 
-        "what","where","can","must","on","it","of","in","to","do","does","did","done","dosen","t",
-        "by","resulting","will","all", "and", "not","when", "that","then","but","with","into","there", "so", "s", "at","if",
-        "problem","error","bug","cause","fail","failure"};
+        String [] StopWords ={"this","is", "a", "the","are","was","were","be","been","an","these","other", 
+        "what","where","can","must","on","it","of","in","to","do","does","did","done","dosen","t","has","as","no","need","because","after","while","from",
+        "by","resulting","will","all", "and", "not","when", "that","then","but","with","into","there", "so", "s", "at","if","for","out","only","next","go","set","up",
+        "problem","error","bug","cause","fail","failure","device","issue","issued","return","or",
+        "code","data","type","link","protocol","time","table","item","key","index","operation","value","mode",
+        "port","ports","interface","process","configuration","configure","configured","chip","traffic","tunel","mac","card","vlan","vxlan","message","sdk","route","items"
+        };
+
         List<String> StopList = Arrays.asList(StopWords);
         
         Map<String,String> Descriptions = new HashMap<String,String>();
@@ -598,7 +602,8 @@ public class ApplicationES extends ApplicationMethods {
             }
             
             double dist = 1.0 - (double) maxLen / Math.max(Math.min(s0.words.size(),s1.words.size()),1);
-            System.out.println(s0.ID + " x " + s1.ID + " -> " + maxLen +" d=" + dist + " [" +commonWords +"]");
+            if(commonWords.length() >1)
+                System.out.println(s0.ID + " x " + s1.ID + " -> " + maxLen +" d=" + dist + " [" +commonWords +"]");
             return dist >= upperBound ? upperBound : dist;
         }
     }
